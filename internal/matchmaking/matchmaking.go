@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/haashi/omega-strikers-bot/internal/db"
+	"github.com/haashi/omega-strikers-bot/internal/discord"
 	"github.com/haashi/omega-strikers-bot/internal/match"
 	log "github.com/sirupsen/logrus"
 )
@@ -46,7 +47,20 @@ func Init() {
 	}
 	go func() {
 		for {
+
+			channelId := os.Getenv("channelid")
+			session := discord.GetSession()
+			playersInQueue, _ := db.GetPlayersInQueue()
+			queueSize := len(playersInQueue)
+			message, err := session.ChannelMessageSend(channelId, fmt.Sprintf("%d people in queue", queueSize))
+			if err != nil {
+				log.Error(err)
+			}
 			time.Sleep(15 * time.Second)
+			err = session.ChannelMessageDelete(channelId, message.ID)
+			if err != nil {
+				log.Error(err)
+			}
 			tryCreatingMatch()
 		}
 	}()

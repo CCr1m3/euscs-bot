@@ -31,9 +31,9 @@ func main() {
 		log.SetLevel(log.InfoLevel)
 	}
 	db.Init()
+	discord.Init()
 	match.Init()
 	matchmaking.Init()
-	discord.Init()
 	slashcommands.Init()
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)

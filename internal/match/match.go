@@ -35,12 +35,12 @@ func New(team1 []*db.Player, team2 []*db.Player) error {
 	for i := range team1 {
 		mentionMessage += "<@" + team1[i].DiscordID + ">"
 	}
-	mentionMessage += " vs "
+	mentionMessage += "\nversus\n"
 	for i := range team2 {
 		mentionMessage += "<@" + team2[i].DiscordID + ">"
 	}
 	initialMessage, err := session.ChannelMessageSendComplex(channelId, &discordgo.MessageSend{
-		Content: fmt.Sprintf("ID:%d | %s", matchId, mentionMessage),
+		Content: fmt.Sprintf("ID:%d\n%s", matchId, mentionMessage),
 	})
 	if err != nil {
 		return err
@@ -66,6 +66,15 @@ func New(team1 []*db.Player, team2 []*db.Player) error {
 	return match.Save()
 }
 
+func Init() {
+	go func() {
+		for {
+			time.Sleep(60 * time.Second)
+			deleteOldMatches()
+		}
+	}()
+}
+
 func (m *Match) Close(team1Score int, team2Score int) error {
 	session := discord.GetSession()
 	channelId := os.Getenv("channelid")
@@ -78,7 +87,7 @@ func (m *Match) Close(team1Score int, team2Score int) error {
 		log.Errorf(err.Error())
 	}
 	message, _ := session.ChannelMessage(channelId, m.MessageID)
-	editedMessage := message.Content + fmt.Sprintf(" | Final score : %d - %d", team1Score, team2Score)
+	editedMessage := message.Content + fmt.Sprintf("\nFinal score : %d - %d", team1Score, team2Score)
 	_, err = session.ChannelMessageEdit(message.ChannelID, message.ID, editedMessage)
 	if err != nil {
 		log.Errorf(err.Error())
@@ -88,15 +97,6 @@ func (m *Match) Close(team1Score int, team2Score int) error {
 		log.Errorf(err.Error())
 	}
 	return err
-}
-
-func Init() {
-	go func() {
-		for {
-			time.Sleep(60 * time.Second)
-			deleteOldMatches()
-		}
-	}()
 }
 
 func deleteOldMatches() {
