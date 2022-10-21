@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/haashi/omega-strikers-bot/internal/db"
@@ -36,11 +37,10 @@ func main() {
 	matchmaking.Init()
 	slashcommands.Init()
 	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt)
-	log.Println("press Ctrl+C to exit")
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+	log.Info("initialization done")
 	<-stop
+	log.Info("gracefully shutting down.")
 	slashcommands.Stop()
 	discord.Stop()
-
-	log.Println("gracefully shutting down.")
 }
