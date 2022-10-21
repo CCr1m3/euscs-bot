@@ -31,6 +31,7 @@ func New(team1 []*db.Player, team2 []*db.Player) error {
 	session := discord.GetSession()
 	match := Match{}
 	match.ID = fmt.Sprintf("%d", matchId)
+	log.Infof("creating new match %s", match.ID)
 	mentionMessage := ""
 	for i := range team1 {
 		mentionMessage += "<@" + team1[i].DiscordID + ">"

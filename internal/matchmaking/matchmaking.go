@@ -24,7 +24,10 @@ func Init() {
 		dummies := make([]string, 0)
 		for i := 0; i < 30; i++ {
 			playerID := fmt.Sprintf("%d", rand.Intn(math.MaxInt64))
-			db.CreatePlayer(playerID)
+			err := db.CreatePlayer(playerID)
+			if err != nil {
+				log.Error(err)
+			}
 			dummies = append(dummies, playerID)
 		}
 		go func() {
@@ -40,7 +43,10 @@ func Init() {
 					"forward")
 				inMatch, _ := player.IsInMatch()
 				if !player.IsInQueue() && !inMatch {
-					player.AddToQueue(roles[rand.Intn(len(roles))])
+					err := player.AddToQueue(roles[rand.Intn(len(roles))])
+					if err != nil {
+						log.Error(err)
+					}
 					time.Sleep(2 * time.Second)
 				}
 			}
@@ -58,14 +64,12 @@ func Init() {
 				log.Error(err)
 			}
 			time.Sleep(15 * time.Second)
-
 			tryCreatingMatch()
 		}
 	}()
 }
 
 func tryCreatingMatch() {
-	log.Info("trying to create a match")
 	playersInQueue, _ := db.GetPlayersInQueue()
 	goalieInQueue, err := db.GetGoaliesCountInQueue()
 	if err != nil {
@@ -79,15 +83,16 @@ func tryCreatingMatch() {
 		team1, team2 := algorithm()
 		players := append(team1, team2...)
 		for _, player := range players {
-			player.LeaveQueue()
+			err := player.LeaveQueue()
+			if err != nil {
+				log.Errorf("could not make player leave queue")
+			}
 		}
-		log.Info(fmt.Sprintf("enough people (%d) or goalie (%d) or forward (%d) in queue", len(playersInQueue), goalieInQueue, forwardInQueue))
 		err := match.New(team1, team2)
 		if err != nil {
 			log.Errorf("match creation went wrong")
 		}
 	} else {
-		log.Info(fmt.Sprintf("not enough people (%d) or goalie (%d) or forward (%d) in queue", len(playersInQueue), goalieInQueue, forwardInQueue))
 		return
 	}
 }
