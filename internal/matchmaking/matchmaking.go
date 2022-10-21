@@ -8,6 +8,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/haashi/omega-strikers-bot/internal/db"
 	"github.com/haashi/omega-strikers-bot/internal/discord"
 	"github.com/haashi/omega-strikers-bot/internal/match"
@@ -47,20 +48,17 @@ func Init() {
 	}
 	go func() {
 		for {
-
-			channelId := os.Getenv("channelid")
 			session := discord.GetSession()
 			playersInQueue, _ := db.GetPlayersInQueue()
 			queueSize := len(playersInQueue)
-			message, err := session.ChannelMessageSend(channelId, fmt.Sprintf("%d people in queue", queueSize))
+			var act []*discordgo.Activity
+			act = append(act, &discordgo.Activity{Name: fmt.Sprintf("%d people queuing", queueSize), Type: discordgo.ActivityTypeWatching})
+			err := session.UpdateStatusComplex(discordgo.UpdateStatusData{Activities: act})
 			if err != nil {
 				log.Error(err)
 			}
 			time.Sleep(15 * time.Second)
-			err = session.ChannelMessageDelete(channelId, message.ID)
-			if err != nil {
-				log.Error(err)
-			}
+
 			tryCreatingMatch()
 		}
 	}()
