@@ -1,6 +1,6 @@
 # todo
 
-- ~~Better interfacing between slashcommands -> handlers -> db (now its a bit messy) ~~
+- ~~Better interfacing between slashcommands -> handlers -> db (now its a bit messy)~~
 - /cancel instead of /result 0 0   (in case someone is not here)
 - /result reserved to people in the match only (probably reserved to loosing team too)
 - /result integer checking for winning state ( score between teams >=2)
