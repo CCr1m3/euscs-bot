@@ -3,7 +3,7 @@ package rank
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -16,7 +16,7 @@ func GetRankFromUsername(username string) (int, error) {
 		return 0, err
 	}
 	defer resp.Body.Close()
-	html, err := ioutil.ReadAll(resp.Body)
+	html, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return 0, err
 	}
