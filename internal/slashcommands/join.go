@@ -2,7 +2,6 @@ package slashcommands
 
 import (
 	"fmt"
-
 	"github.com/bwmarrin/discordgo"
 	"github.com/haashi/omega-strikers-bot/internal/matchmaking"
 	"github.com/haashi/omega-strikers-bot/internal/models"

@@ -28,6 +28,6 @@ func GetPlayerByUsername(username string) (*models.Player, error) {
 }
 
 func UpdatePlayer(p *models.Player) error {
-	_, err := db.NamedExec("UPDATE players SET elo=:elo,osuser=:osuser WHERE discordID=:discordID", p)
+	_, err := db.NamedExec("UPDATE players SET elo=:elo,osuser=:osuser, lastRankUpdate=:lastRankUpdate WHERE discordID=:discordID", p)
 	return err
 }

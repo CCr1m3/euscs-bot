@@ -41,12 +41,12 @@ func UpdateMatch(m *models.Match) error {
 
 func getTeamsInMatch(match *models.Match) error {
 	team1 := []*models.Player{}
-	err := db.Select(&team1, "SELECT elo,discordID,osuser FROM players JOIN matchesplayers ON matchesplayers.playerID == players.discordID WHERE matchID=? AND team=1", match.ID)
+	err := db.Select(&team1, "SELECT elo,discordID,osuser,lastRankUpdate FROM players JOIN matchesplayers ON matchesplayers.playerID == players.discordID WHERE matchID=? AND team=1", match.ID)
 	if err != nil {
 		return err
 	}
 	team2 := []*models.Player{}
-	err = db.Select(&team2, "SELECT elo,discordID,osuser FROM players JOIN matchesplayers ON matchesplayers.playerID == players.discordID WHERE matchID=? AND team=2", match.ID)
+	err = db.Select(&team2, "SELECT elo,discordID,osuser,lastRankUpdate FROM players JOIN matchesplayers ON matchesplayers.playerID == players.discordID WHERE matchID=? AND team=2", match.ID)
 	if err != nil {
 		return err
 	}
