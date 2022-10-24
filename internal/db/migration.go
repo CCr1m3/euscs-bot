@@ -55,10 +55,14 @@ INSERT INTO migrations (version) VALUES (0);
 var migration1 = `CREATE TABLE players (
     discordID text UNIQUE,
 		elo int DEFAULT 1500 NOT NULL,
-		role text DEFAULT "" NOT NULL,
-		queuing int DEFAULT 0 NOT NULL,
 		osuser text DEFAULT "",
-		PRIMARY KEY(discordID)
+		PRIMARY KEY (discordID)
+);
+CREATE TABLE queue (
+	playerID text UNIQUE,
+	role text DEFAULT "" NOT NULL,
+	PRIMARY KEY (playerID),
+	FOREIGN KEY (playerID) REFERENCES players(discordID)
 );`
 
 var migration2 = `CREATE TABLE matches (
@@ -66,7 +70,7 @@ var migration2 = `CREATE TABLE matches (
 	messageID text UNIQUE,
 	threadID text UNIQUE,
 	timestamp int,
-	running int DEFAULT 1 NOT NULL,
+	state int DEFAULT 0 NOT NULL,
 	team1score int DEFAULT 0 NOT NULL,
 	team2score int DEFAULT 0 NOT NULL,
 	PRIMARY KEY(matchID)

@@ -14,7 +14,7 @@ type SlashCommand interface {
 }
 
 var registeredCommands []*discordgo.ApplicationCommand
-var commands = []SlashCommand{Ping{}, Join{}, Leave{}, Result{}, Rank{}}
+var commands = []SlashCommand{Ping{}, Join{}, Leave{}, Result{}, Link{}, Who{}}
 
 func Init() {
 	session := discord.GetSession()
@@ -45,7 +45,7 @@ func Init() {
 }
 
 func Stop() {
-	session := discord.GetSession()
+	/*session := discord.GetSession()
 
 	log.Println("removing commands...")
 	// We need to fetch the commands, since deleting requires the command ID.
@@ -62,5 +62,5 @@ func Stop() {
 		if err != nil {
 			log.Errorf("cannot delete '%v' command: %v", v.Name, err)
 		}
-	}
+	}*/
 }

@@ -1,11 +1,7 @@
 package slashcommands
 
 import (
-	"fmt"
-
 	"github.com/bwmarrin/discordgo"
-	"github.com/haashi/omega-strikers-bot/internal/match"
-	log "github.com/sirupsen/logrus"
 )
 
 type Result struct{}
@@ -36,7 +32,7 @@ func (p Result) Options() []*discordgo.ApplicationCommandOption {
 }
 
 func (p Result) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	match, err := match.GetByThreadId(i.ChannelID)
+	/*match, err := match.GetByThreadId(i.ChannelID)
 	if err != nil {
 		log.Warningf("failed to find match by threadID %s : "+err.Error(), i.ChannelID)
 		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -68,5 +64,5 @@ func (p Result) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		log.Fatal("failed to send message")
 	}
 
-	match.Close(int(optionMap["team1-score"].IntValue()), int(optionMap["team2-score"].IntValue()))
+	match.Close(int(optionMap["team1-score"].IntValue()), int(optionMap["team2-score"].IntValue()))*/
 }

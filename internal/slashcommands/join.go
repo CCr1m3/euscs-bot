@@ -4,7 +4,8 @@ import (
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/haashi/omega-strikers-bot/internal/db"
+	"github.com/haashi/omega-strikers-bot/internal/matchmaking"
+	"github.com/haashi/omega-strikers-bot/internal/models"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -28,15 +29,15 @@ func (p Join) Options() []*discordgo.ApplicationCommandOption {
 			Choices: []*discordgo.ApplicationCommandOptionChoice{
 				{
 					Name:  "Forward",
-					Value: "forward",
+					Value: models.RoleForward,
 				},
 				{
 					Name:  "Goalie",
-					Value: "goalie",
+					Value: models.RoleGoalie,
 				},
 				{
 					Name:  "Flex",
-					Value: "flex",
+					Value: models.RoleFlex,
 				},
 			},
 		},
@@ -50,41 +51,27 @@ func (p Join) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		optionMap[opt.Name] = opt
 	}
 	var message string
-	player, err := db.GetPlayer(i.Member.User.ID)
+	playerID := i.Member.User.ID
+
+	isInQueue, err := matchmaking.IsPlayerInQueue(playerID)
 	if err != nil {
-		log.Infof("failed to get player :" + err.Error())
+		log.Errorf("failed to check if player is in queue:" + err.Error())
 	}
-	if player == nil {
-		err = db.CreatePlayer(i.Member.User.ID)
-		if err != nil {
-			log.Error("failed to create player :" + err.Error())
-			return
-		}
-		player, err = db.GetPlayer(i.Member.User.ID)
-		if err != nil {
-			log.Error("failed to get player :" + err.Error())
-			return
-		}
-	}
-	isInMatch, err := player.IsInMatch()
+	isInMatch, err := matchmaking.IsPlayerInMatch(playerID)
 	if err != nil {
-		log.Error("failed to search for player current match :" + err.Error())
-		return
+		log.Errorf("failed to check if player is in match:" + err.Error())
 	}
 	if isInMatch {
 		message = "You are already in a match !"
+	} else if isInQueue {
+		message = "You are already in the queue !"
 	} else {
-		if player.IsInQueue() {
-			message = "You are already in the queue !"
-		} else {
-			err := player.AddToQueue(optionMap["role"].StringValue())
-			if err != nil {
-				log.Errorf("%s failed to queue :"+err.Error(), player.DiscordID)
-				return
-			}
-			log.Debugf("%s joined the queue as a %s", player.DiscordID, optionMap["role"].StringValue())
-			message = fmt.Sprintf("You joined the queue as a %s !", optionMap["role"].StringValue())
+		err = matchmaking.AddPlayerToQueue(playerID, models.Role(optionMap["role"].StringValue()))
+		if err != nil {
+			log.Errorf("%s failed to queue :"+err.Error(), playerID)
+			return
 		}
+		message = fmt.Sprintf("You joined the queue as a %s !", optionMap["role"].StringValue())
 	}
 
 	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -95,6 +82,6 @@ func (p Join) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		},
 	})
 	if err != nil {
-		log.Error("failed to send message")
+		log.Errorf("failed to send message:" + err.Error())
 	}
 }

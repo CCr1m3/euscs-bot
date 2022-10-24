@@ -10,7 +10,6 @@ import (
 
 	"github.com/haashi/omega-strikers-bot/internal/db"
 	"github.com/haashi/omega-strikers-bot/internal/discord"
-	"github.com/haashi/omega-strikers-bot/internal/match"
 	"github.com/haashi/omega-strikers-bot/internal/matchmaking"
 	"github.com/haashi/omega-strikers-bot/internal/slashcommands"
 	"github.com/joho/godotenv"
@@ -33,7 +32,6 @@ func main() {
 	}
 	db.Init()
 	discord.Init()
-	match.Init()
 	matchmaking.Init()
 	slashcommands.Init()
 	stop := make(chan os.Signal, 1)
