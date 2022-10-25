@@ -1,11 +1,12 @@
 package rank
 
 import (
+	"os"
+	"time"
+
 	"github.com/haashi/omega-strikers-bot/internal/db"
 	"github.com/haashi/omega-strikers-bot/internal/models"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"time"
 )
 
 func Init() {
@@ -70,14 +71,14 @@ func UpdateRankIfNeeded(playerID string) error {
 		log.Infof("updating player elo %s", player.DiscordID)
 		rank, err := GetRankFromUsername(player.OSUser)
 		if err != nil {
-			log.Errorf("Failed to retrieve rank of player %s:"+err.Error(), player.DiscordID)
+			log.Errorf("Failed to retrieve rank of player %s: "+err.Error(), player.DiscordID)
 			return err
 		}
 		player.Elo = rank
 		player.LastRankUpdate = int(time.Now().Unix())
 		err = db.UpdatePlayer(player)
 		if err != nil {
-			log.Errorf("Failed to update player %s:"+err.Error(), player.DiscordID)
+			log.Errorf("Failed to update player %s: "+err.Error(), player.DiscordID)
 		}
 		return err
 	}

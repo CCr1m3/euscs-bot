@@ -26,14 +26,14 @@ func (p Leave) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 	isInQueue, err := matchmaking.IsPlayerInQueue(playerID)
 	if err != nil {
-		log.Errorf("failed to check if player is in queue:" + err.Error())
+		log.Errorf("failed to check if player is in queue: " + err.Error())
 	}
 	if !isInQueue {
 		message = "You are not in the queue !"
 	} else {
 		err = matchmaking.RemovePlayerFromQueue(playerID)
 		if err != nil {
-			log.Errorf("%s failed to leave the queue :"+err.Error(), playerID)
+			log.Errorf("%s failed to leave the queue: "+err.Error(), playerID)
 			return
 		}
 		message = "You left the queue !"
@@ -46,6 +46,6 @@ func (p Leave) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		},
 	})
 	if err != nil {
-		log.Error("failed to send message")
+		log.Errorf("failed to send message: " + err.Error())
 	}
 }

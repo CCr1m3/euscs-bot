@@ -91,13 +91,13 @@ func tryCreatingMatch() {
 
 		err := createNewMatch(team1, team2)
 		if err != nil {
-			log.Error("could not create new match:", err)
+			log.Error("could not create new match: ", err)
 		} else {
 			players := append(team1, team2...)
 			for _, player := range players {
 				err := RemovePlayerFromQueue(player.DiscordID)
 				if err != nil {
-					log.Error("could not make player leave queue:", err)
+					log.Error("could not make player leave queue: ", err)
 				}
 			}
 		}

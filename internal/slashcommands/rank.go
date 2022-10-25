@@ -42,6 +42,6 @@ func (p Rank) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		},
 	})
 	if err != nil {
-		log.Error("failed to send message")
+		log.Errorf("failed to send message: " + err.Error())
 	}
 }

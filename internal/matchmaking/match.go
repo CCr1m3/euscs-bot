@@ -28,6 +28,7 @@ func createNewMatch(team1 []*models.Player, team2 []*models.Player) error {
 	session := discord.GetSession()
 	match := &models.Match{}
 	match.ID = fmt.Sprintf("%d", matchId)
+	match.Timestamp = int(time.Now().Unix())
 	log.Infof("creating new match %s", match.ID)
 	mentionMessage := ""
 	for i := range team1 {
@@ -71,12 +72,12 @@ func CloseMatch(match *models.Match, team1Score int, team2Score int) error {
 	for _, member := range members {
 		err := session.ThreadMemberRemove(member.ID, member.UserID)
 		if err != nil {
-			log.Errorf("failed to kick players from match thread:" + err.Error())
+			log.Errorf("failed to kick players from match thread: " + err.Error())
 		}
 	}
 	_, err := session.ChannelDelete(match.ThreadID)
 	if err != nil {
-		log.Errorf("failed to deleted match thread:" + err.Error())
+		log.Errorf("failed to deleted match thread: " + err.Error())
 	}
 
 	match.Team1Score = team1Score
@@ -91,13 +92,13 @@ func CloseMatch(match *models.Match, team1Score int, team2Score int) error {
 
 	message, err := session.ChannelMessage(channelId, match.MessageID)
 	if err != nil {
-		log.Errorf("failed to get match message:" + err.Error())
+		log.Errorf("failed to get match message: " + err.Error())
 	}
 	var editedMessage string
 	if match.State == models.MatchStateCanceled {
 		err = session.ChannelMessageDelete(channelId, match.MessageID)
 		if err != nil {
-			log.Errorf("failed to deleted match message:" + err.Error())
+			log.Errorf("failed to deleted match message: " + err.Error())
 		}
 	} else {
 		team1elo := 0
@@ -113,27 +114,27 @@ func CloseMatch(match *models.Match, team1Score int, team2Score int) error {
 			p.Elo += team1ratingChange
 			err := db.UpdatePlayer(p)
 			if err != nil {
-				log.Errorf("failed to update rating of player %s : "+err.Error(), p.DiscordID)
+				log.Errorf("failed to update rating of player %s: "+err.Error(), p.DiscordID)
 			}
 		}
 		for _, p := range match.Team2 {
 			p.Elo += team2ratingChange
 			err := db.UpdatePlayer(p)
 			if err != nil {
-				log.Errorf("failed to update rating of player %s : "+err.Error(), p.DiscordID)
+				log.Errorf("failed to update rating of player %s: "+err.Error(), p.DiscordID)
 			}
 		}
 		editedMessage = message.Content + fmt.Sprintf("\nFinal score : %d - %d", team1Score, team2Score)
 		editedMessage += fmt.Sprintf("\nElo changes : %d vs %d", team1ratingChange, team2ratingChange)
 		_, err = session.ChannelMessageEdit(message.ChannelID, message.ID, editedMessage)
 		if err != nil {
-			log.Errorf("failed to edit match message:" + err.Error())
+			log.Errorf("failed to edit match message: " + err.Error())
 		}
 	}
 
 	err = db.UpdateMatch(match)
 	if err != nil {
-		log.Errorf("failed to update match:" + err.Error())
+		log.Errorf("failed to update match: " + err.Error())
 	}
 	return err
 }
@@ -141,12 +142,12 @@ func CloseMatch(match *models.Match, team1Score int, team2Score int) error {
 func deleteOldMatches() {
 	matches, err := db.GetRunningMatchesOrderedByTimestamp()
 	if err != nil {
-		log.Errorf("failed to fetch running matches by timestamp:" + err.Error())
+		log.Errorf("failed to fetch running matches by timestamp: " + err.Error())
 		return
 	}
 	for _, match := range matches {
 		if err != nil {
-			log.Errorf("failed to fetch running matches by timestamp:" + err.Error())
+			log.Errorf("failed to fetch running matches by timestamp: " + err.Error())
 			return
 		}
 		cleanDelay := time.Minute * 15
@@ -161,7 +162,7 @@ func deleteOldMatches() {
 				err = CloseMatch(match, 0, 0)
 			}
 			if err != nil {
-				log.Errorf("failed to close match:" + err.Error())
+				log.Errorf("failed to close match: " + err.Error())
 				return
 			}
 		} else {

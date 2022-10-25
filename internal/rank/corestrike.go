@@ -1,13 +1,14 @@
 package rank
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strconv"
+
+	"github.com/haashi/omega-strikers-bot/internal/models"
 )
 
 func GetRankFromUsername(username string) (int, error) {
@@ -27,6 +28,6 @@ func GetRankFromUsername(username string) (int, error) {
 		rating, err := strconv.ParseInt(matches[1], 10, 0)
 		return int(rating), err
 	} else {
-		return 0, errors.New("invalid username")
+		return 0, &models.RankUpdateUsernameError{Username: username}
 	}
 }

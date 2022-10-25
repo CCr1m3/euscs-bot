@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 
+	"github.com/haashi/omega-strikers-bot/internal/models"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -16,21 +17,21 @@ func migrate() error {
 	var start int
 	_, err := db.Exec(migrations[0])
 	if err != nil {
-		return err
+		return &models.DBError{Err: err}
 	}
 	start, err = getLatestMigration()
 	if err != nil {
-		return err
+		return &models.DBError{Err: err}
 	}
 	for i := start + 1; i < len(migrations); i++ {
 		log.Info(fmt.Sprintf("applying migration %d", i))
 		_, err = db.Exec(migrations[i])
 		if err != nil {
-			return err
+			return &models.DBError{Err: err}
 		}
 		_, err = db.Exec(`INSERT INTO migrations (version) VALUES (?)`, i)
 		if err != nil {
-			return err
+			return &models.DBError{Err: err}
 		}
 	}
 	return nil
@@ -43,6 +44,9 @@ func getLatestMigration() (int, error) {
 	ORDER BY version DESC
 	LIMIT 1`)
 	err := row.Scan(&ver)
+	if err != nil {
+		return 0, &models.DBError{Err: err}
+	}
 	return ver, err
 }
 

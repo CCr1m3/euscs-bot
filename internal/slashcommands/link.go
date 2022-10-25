@@ -1,10 +1,12 @@
 package slashcommands
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/haashi/omega-strikers-bot/internal/models"
 	"github.com/haashi/omega-strikers-bot/internal/rank"
 	log "github.com/sirupsen/logrus"
 )
@@ -41,8 +43,13 @@ func (p Link) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	username := strings.ToLower(optionMap["username"].StringValue())
 	err := rank.LinkPlayerToUsername(playerID, username)
 	if err != nil {
-		log.Errorf("failed to link player %s with username %s :"+err.Error(), playerID, username)
-		message = fmt.Sprintf("Failed to link to %s.", username)
+		log.Errorf("failed to link player %s with username %s: "+err.Error(), playerID, username)
+		var badUsernameErr *models.RankUpdateUsernameError
+		if errors.As(err, &badUsernameErr) {
+			message = fmt.Sprintf("Username not found: %s\n", badUsernameErr.Username)
+		} else {
+			message = fmt.Sprintf("Failed to link to %s.", username)
+		}
 	} else {
 		message = fmt.Sprintf("Successfully linked to %s.", username)
 	}
@@ -55,6 +62,6 @@ func (p Link) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		},
 	})
 	if err != nil {
-		log.Errorf("failed to send message:" + err.Error())
+		log.Errorf("failed to send message: " + err.Error())
 	}
 }

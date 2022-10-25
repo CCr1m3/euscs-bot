@@ -2,6 +2,7 @@ package slashcommands
 
 import (
 	"fmt"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/haashi/omega-strikers-bot/internal/matchmaking"
 	"github.com/haashi/omega-strikers-bot/internal/models"
@@ -54,11 +55,11 @@ func (p Join) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 	isInQueue, err := matchmaking.IsPlayerInQueue(playerID)
 	if err != nil {
-		log.Errorf("failed to check if player is in queue:" + err.Error())
+		log.Errorf("failed to check if player is in queue: " + err.Error())
 	}
 	isInMatch, err := matchmaking.IsPlayerInMatch(playerID)
 	if err != nil {
-		log.Errorf("failed to check if player is in match:" + err.Error())
+		log.Errorf("failed to check if player is in match: " + err.Error())
 	}
 	if isInMatch {
 		message = "You are already in a match !"
@@ -67,7 +68,7 @@ func (p Join) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	} else {
 		err = matchmaking.AddPlayerToQueue(playerID, models.Role(optionMap["role"].StringValue()))
 		if err != nil {
-			log.Errorf("%s failed to queue :"+err.Error(), playerID)
+			log.Errorf("%s failed to queue: "+err.Error(), playerID)
 			return
 		}
 		message = fmt.Sprintf("You joined the queue as a %s !", optionMap["role"].StringValue())
@@ -81,6 +82,6 @@ func (p Join) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		},
 	})
 	if err != nil {
-		log.Errorf("failed to send message:" + err.Error())
+		log.Errorf("failed to send message: " + err.Error())
 	}
 }

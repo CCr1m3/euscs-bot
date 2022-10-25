@@ -56,11 +56,11 @@ func (p Who) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if user != nil {
 		member, err := s.GuildMember(os.Getenv("guildid"), user.ID)
 		if err != nil {
-			log.Errorf("failed to get member from id %s :"+err.Error(), user.ID)
+			log.Errorf("failed to get member from id %s: "+err.Error(), user.ID)
 		}
 		username, err := rank.GetLinkedUsername(user.ID)
 		if err != nil {
-			log.Errorf("failed to get username of %s :"+err.Error(), user)
+			log.Errorf("failed to get username of %s: "+err.Error(), user)
 		}
 		if username == "" {
 			message = fmt.Sprintf("%s has not linked his omega strikers account.", member.Mention())
@@ -71,14 +71,14 @@ func (p Who) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	} else if username != "" {
 		userID, err := rank.GetLinkedUser(username)
 		if err != nil {
-			log.Errorf("failed to get user of %s :"+err.Error(), user)
+			log.Errorf("failed to get user of %s: "+err.Error(), user)
 		}
 		if userID == "" {
 			message = fmt.Sprintf("%s is not in this server.", username)
 		} else {
 			member, err := s.GuildMember(os.Getenv("guildid"), userID)
 			if err != nil {
-				log.Errorf("failed to get member from id %s :"+err.Error(), userID)
+				log.Errorf("failed to get member from id %s: "+err.Error(), userID)
 			}
 			message = fmt.Sprintf("%s is %s.", username, member.Mention())
 		}
