@@ -1,6 +1,8 @@
 package rank
 
 import (
+	"database/sql"
+	"errors"
 	"os"
 	"time"
 
@@ -35,12 +37,37 @@ func LinkPlayerToUsername(playerID string, username string) error {
 	if err != nil {
 		return err
 	}
-	player.OSUser = username
+	if player.OSUser == "" {
+		_, err := db.GetPlayerByUsername(username)
+		if !errors.Is(err, sql.ErrNoRows) {
+			return &models.UsernameAlreadyLinkedError{Username: username}
+		}
+		player.OSUser = username
+		err = db.UpdatePlayer(player)
+		if err != nil {
+			return err
+		}
+		err = UpdateRank(playerID, true)
+		return err
+	} else {
+		return &models.UserAlreadyLinkedError{UserID: playerID}
+	}
+}
+
+func UnlinkPlayer(playerID string) error {
+	player, err := getOrCreatePlayer(playerID)
+	if err != nil {
+		return err
+	}
+	if player.OSUser == "" {
+		return &models.NotLinkedError{UserID: playerID}
+	}
+	player.LastRankUpdate = 0
+	player.OSUser = ""
 	err = db.UpdatePlayer(player)
 	if err != nil {
 		return err
 	}
-	err = UpdateRankIfNeeded(playerID)
 	return err
 }
 
@@ -61,36 +88,53 @@ func GetLinkedUser(username string) (string, error) {
 }
 
 func UpdateRankIfNeeded(playerID string) error {
-	player, err := db.GetPlayerById(playerID)
+	player, err := getOrCreatePlayer(playerID)
 	if err != nil {
 		return err
 	}
+	if player.OSUser == "" {
+		return &models.NotLinkedError{UserID: playerID}
+	}
 	updateDelay := time.Hour * 24
 	if os.Getenv("mode") == "dev" {
-		updateDelay = time.Second * 5
+		updateDelay = time.Hour * 1
 	}
 	if time.Since(time.Unix(int64(player.LastRankUpdate), 0)) > updateDelay {
-		log.Infof("updating player elo %s", player.DiscordID)
-		rank, err := GetRankFromUsername(player.OSUser)
-		if err != nil {
-			log.Errorf("failed to retrieve rank of player %s: "+err.Error(), player.DiscordID)
-			return err
-		}
-		player.Elo = rank
-		player.LastRankUpdate = int(time.Now().Unix())
-		err = db.UpdatePlayer(player)
-		if err != nil {
-			log.Errorf("failed to update player %s: "+err.Error(), player.DiscordID)
-		}
-		go func() {
-			err := updatePlayerDiscordRole(player.DiscordID) //update in background
+		return UpdateRank(player.DiscordID, false)
+	} else {
+		return &models.RankUpdateTooFastError{UserID: playerID}
+	}
+}
+
+func UpdateRank(playerID string, updateDiscordRole bool) error {
+	player, err := getOrCreatePlayer(playerID)
+	if err != nil {
+		return err
+	}
+	if player.OSUser == "" {
+		return &models.NotLinkedError{UserID: playerID}
+	}
+	log.Infof("updating player elo %s", player.DiscordID)
+	rank, err := GetRankFromUsername(player.OSUser)
+	if err != nil {
+		log.Errorf("failed to retrieve rank of player %s: "+err.Error(), player.DiscordID)
+		return err
+	}
+	player.Elo = rank
+	player.LastRankUpdate = int(time.Now().Unix())
+	err = db.UpdatePlayer(player)
+	if err != nil {
+		log.Errorf("failed to update player %s: "+err.Error(), player.DiscordID)
+	}
+	if updateDiscordRole {
+		go func() { //update in background
+			err := updatePlayerDiscordRole(player.DiscordID)
 			if err != nil {
 				log.Errorf("failed to update discord role of user %s: "+err.Error(), player.DiscordID)
 			}
 		}()
-		return err
 	}
-	return nil
+	return err
 }
 
 func updatePlayerDiscordRole(playerID string) error {
@@ -99,12 +143,6 @@ func updatePlayerDiscordRole(playerID string) error {
 	player, err := db.GetPlayerById(playerID)
 	if err != nil {
 		return err
-	}
-	for _, rankRole := range discord.RankRoles {
-		err := session.GuildMemberRoleRemove(guildID, player.DiscordID, rankRole.ID)
-		if err != nil {
-			return err
-		}
 	}
 	var roleToAdd *discordgo.Role
 	if player.Elo >= 2900 {
@@ -123,6 +161,44 @@ func updatePlayerDiscordRole(playerID string) error {
 		roleToAdd = discord.RoleBronze
 	} else {
 		return nil
+	}
+	member, err := session.GuildMember(guildID, player.DiscordID)
+	if err != nil {
+		return err
+	}
+	var currentRole *discordgo.Role
+	for _, roleID := range member.Roles {
+		if roleID == discord.RoleOmega.ID {
+			currentRole = discord.RoleOmega
+		}
+		if roleID == discord.RoleChallenger.ID {
+			currentRole = discord.RoleChallenger
+		}
+		if roleID == discord.RoleDiamond.ID {
+			currentRole = discord.RoleDiamond
+		}
+		if roleID == discord.RolePlatinum.ID {
+			currentRole = discord.RolePlatinum
+		}
+		if roleID == discord.RoleGold.ID {
+			currentRole = discord.RoleGold
+		}
+		if roleID == discord.RoleSilver.ID {
+			currentRole = discord.RoleSilver
+		}
+		if roleID == discord.RoleBronze.ID {
+			currentRole = discord.RoleBronze
+		}
+	}
+	if currentRole != nil && currentRole.Position > roleToAdd.Position {
+		//we only update for peak elo
+		return nil
+	}
+	for _, rankRole := range discord.RankRoles {
+		err := session.GuildMemberRoleRemove(guildID, player.DiscordID, rankRole.ID)
+		if err != nil {
+			return err
+		}
 	}
 	err = session.GuildMemberRoleAdd(guildID, player.DiscordID, roleToAdd.ID)
 	return err

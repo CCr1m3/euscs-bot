@@ -15,6 +15,11 @@ func (p Ping) Description() string {
 	return "ping description"
 }
 
+func (p Ping) RequiredPerm() *int64 {
+	perm := int64(discordgo.PermissionSendMessages)
+	return &perm
+}
+
 func (p Ping) Options() []*discordgo.ApplicationCommandOption {
 	return nil
 }

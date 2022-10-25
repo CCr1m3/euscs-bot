@@ -1,14 +1,23 @@
 package matchmaking
 
 import (
+	"errors"
+
 	"github.com/haashi/omega-strikers-bot/internal/db"
 	"github.com/haashi/omega-strikers-bot/internal/models"
+	"github.com/haashi/omega-strikers-bot/internal/rank"
 	log "github.com/sirupsen/logrus"
 )
 
 func AddPlayerToQueue(playerID string, role models.Role) error {
 	p, err := getOrCreatePlayer(playerID)
 	if err != nil {
+		return err
+	}
+	err = rank.UpdateRankIfNeeded(playerID)
+	var tooFastErr *models.RankUpdateTooFastError
+	if errors.As(err, &tooFastErr) {
+	} else {
 		return err
 	}
 	err = db.AddPlayerToQueue(p, role)

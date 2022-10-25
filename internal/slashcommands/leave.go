@@ -16,6 +16,11 @@ func (p Leave) Description() string {
 	return "Allow you to leave the queue"
 }
 
+func (p Leave) RequiredPerm() *int64 {
+	perm := int64(discordgo.PermissionSendMessages)
+	return &perm
+}
+
 func (p Leave) Options() []*discordgo.ApplicationCommandOption {
 	return nil
 }

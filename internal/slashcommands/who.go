@@ -20,6 +20,11 @@ func (p Who) Description() string {
 	return "Allow you to know about an user"
 }
 
+func (p Who) RequiredPerm() *int64 {
+	perm := int64(discordgo.PermissionSendMessages)
+	return &perm
+}
+
 func (p Who) Options() []*discordgo.ApplicationCommandOption {
 	return []*discordgo.ApplicationCommandOption{
 		{
@@ -53,7 +58,9 @@ func (p Who) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 	var message string
 
-	if user != nil {
+	if user != nil && username != "" {
+		message = "Please enter only one of the argument."
+	} else if user != nil {
 		member, err := s.GuildMember(os.Getenv("guildid"), user.ID)
 		if err != nil {
 			log.Errorf("failed to get member from id %s: "+err.Error(), user.ID)

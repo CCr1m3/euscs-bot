@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -21,10 +22,16 @@ func Init() {
 	if os.Getenv("mode") == "dev" {
 		log.Info("starting dummy players")
 		dummies := make([]string, 0)
+		dummiesUsername := [30]string{"BaluGoalie", "Haaashi", "Piols", "Balu", "Lynx_", "Connax", "Masus", "Kolashiu", "Buntaoo", "Ballgrabber", "Jimray3", "IamTrusty", "Kidpan", "MathieuCalip", "Goku", "czem", "HHaie KuKi", "KeeperofLolis", "Madoushy", "LDC", "Yatta", "Immaculator", "goalkeeper diff", "Funii", "kirby", "mascha", "Thezs", "Cognity", "Sm1le", "Yuume"}
 		r := rand.New(rand.NewSource(2))
 		for i := 0; i < 30; i++ {
 			playerID := fmt.Sprintf("%d", r.Intn(math.MaxInt64))
-			_, err := getOrCreatePlayer(playerID)
+			player, err := getOrCreatePlayer(playerID)
+			if err != nil {
+				log.Error(err)
+			}
+			player.OSUser = strings.ToLower(dummiesUsername[i])
+			err = db.UpdatePlayer(player)
 			if err != nil {
 				log.Error(err)
 			}

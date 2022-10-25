@@ -11,10 +11,11 @@ type SlashCommand interface {
 	Description() string
 	Run(s *discordgo.Session, i *discordgo.InteractionCreate)
 	Options() []*discordgo.ApplicationCommandOption
+	RequiredPerm() *int64
 }
 
 var registeredCommands []*discordgo.ApplicationCommand
-var commands = []SlashCommand{Ping{}, Join{}, Leave{}, Result{}, Link{}, Who{}}
+var commands = []SlashCommand{Ping{}, Join{}, Leave{}, Result{}, Who{}, Link{}, Unlink{}, Update{}}
 
 func Init() {
 	session := discord.GetSession()
@@ -32,9 +33,10 @@ func Init() {
 	registeredCommands = make([]*discordgo.ApplicationCommand, len(commands))
 	for i, command := range commands {
 		appCommand := &discordgo.ApplicationCommand{
-			Name:        command.Name(),
-			Description: command.Description(),
-			Options:     command.Options(),
+			Name:                     command.Name(),
+			Description:              command.Description(),
+			Options:                  command.Options(),
+			DefaultMemberPermissions: command.RequiredPerm(),
 		}
 		cmd, err := session.ApplicationCommandCreate(session.State.User.ID, discord.GuildID, appCommand)
 		if err != nil {

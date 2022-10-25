@@ -1,6 +1,7 @@
 package slashcommands
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
@@ -17,6 +18,11 @@ func (p Join) Name() string {
 
 func (p Join) Description() string {
 	return "Allow you to join the queue"
+}
+
+func (p Join) RequiredPerm() *int64 {
+	perm := int64(discordgo.PermissionSendMessages)
+	return &perm
 }
 
 func (p Join) Options() []*discordgo.ApplicationCommandOption {
@@ -69,9 +75,15 @@ func (p Join) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		err = matchmaking.AddPlayerToQueue(playerID, models.Role(optionMap["role"].StringValue()))
 		if err != nil {
 			log.Errorf("%s failed to queue: "+err.Error(), playerID)
-			return
+			var notLinkedError *models.NotLinkedError
+			if errors.As(err, &notLinkedError) {
+				message = "You have not linked your omega strikers account. Please use '/rank link' first."
+			} else {
+				message = "Failed to put you in the queue."
+			}
+		} else {
+			message = fmt.Sprintf("You joined the queue as a %s !", optionMap["role"].StringValue())
 		}
-		message = fmt.Sprintf("You joined the queue as a %s !", optionMap["role"].StringValue())
 	}
 
 	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{

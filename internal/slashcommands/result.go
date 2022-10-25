@@ -14,6 +14,11 @@ func (p Result) Description() string {
 	return "Allow you to report a result using scores : team1 vs team2"
 }
 
+func (p Result) RequiredPerm() *int64 {
+	perm := int64(discordgo.PermissionSendMessages)
+	return &perm
+}
+
 func (p Result) Options() []*discordgo.ApplicationCommandOption {
 	return []*discordgo.ApplicationCommandOption{
 		{
