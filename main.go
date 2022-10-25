@@ -32,8 +32,8 @@ func main() {
 	}
 	db.Init()
 	discord.Init()
-	matchmaking.Init()
 	slashcommands.Init()
+	matchmaking.Init()
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	log.Info("initialization done")

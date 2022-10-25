@@ -4,7 +4,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/haashi/omega-strikers-bot/internal/db"
+	"github.com/haashi/omega-strikers-bot/internal/discord"
 	"github.com/haashi/omega-strikers-bot/internal/models"
 	log "github.com/sirupsen/logrus"
 )
@@ -71,16 +73,57 @@ func UpdateRankIfNeeded(playerID string) error {
 		log.Infof("updating player elo %s", player.DiscordID)
 		rank, err := GetRankFromUsername(player.OSUser)
 		if err != nil {
-			log.Errorf("Failed to retrieve rank of player %s: "+err.Error(), player.DiscordID)
+			log.Errorf("failed to retrieve rank of player %s: "+err.Error(), player.DiscordID)
 			return err
 		}
 		player.Elo = rank
 		player.LastRankUpdate = int(time.Now().Unix())
 		err = db.UpdatePlayer(player)
 		if err != nil {
-			log.Errorf("Failed to update player %s: "+err.Error(), player.DiscordID)
+			log.Errorf("failed to update player %s: "+err.Error(), player.DiscordID)
 		}
+		go func() {
+			err := updatePlayerDiscordRole(player.DiscordID) //update in background
+			if err != nil {
+				log.Errorf("failed to update discord role of user %s: "+err.Error(), player.DiscordID)
+			}
+		}()
 		return err
 	}
 	return nil
+}
+
+func updatePlayerDiscordRole(playerID string) error {
+	session := discord.GetSession()
+	guildID := os.Getenv("guildid")
+	player, err := db.GetPlayerById(playerID)
+	if err != nil {
+		return err
+	}
+	for _, rankRole := range discord.RankRoles {
+		err := session.GuildMemberRoleRemove(guildID, player.DiscordID, rankRole.ID)
+		if err != nil {
+			return err
+		}
+	}
+	var roleToAdd *discordgo.Role
+	if player.Elo >= 2900 {
+		roleToAdd = discord.RoleOmega
+	} else if player.Elo >= 2600 {
+		roleToAdd = discord.RoleChallenger
+	} else if player.Elo >= 2300 {
+		roleToAdd = discord.RoleDiamond
+	} else if player.Elo >= 2000 {
+		roleToAdd = discord.RolePlatinum
+	} else if player.Elo >= 1700 {
+		roleToAdd = discord.RoleGold
+	} else if player.Elo >= 1400 {
+		roleToAdd = discord.RoleSilver
+	} else if player.Elo >= 1100 {
+		roleToAdd = discord.RoleBronze
+	} else {
+		return nil
+	}
+	err = session.GuildMemberRoleAdd(guildID, player.DiscordID, roleToAdd.ID)
+	return err
 }

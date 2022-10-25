@@ -32,7 +32,10 @@ func Init() {
 	if err != nil {
 		log.Fatalf("cannot open the session: %v", err)
 	}
-
+	err = initRoles()
+	if err != nil {
+		log.Fatalf("cannot initialize roles: %v", err)
+	}
 }
 
 func Stop() {

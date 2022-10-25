@@ -11,3 +11,6 @@
 - rating based matchmaking
 - rematch ?
 - /swap 
+# bot permissions on discord dev portal
+![image.png](image.png)
+url : https://discord.com/api/oauth2/authorize?client_id={clientid}&permissions=397552912384&scope=applications.commands%20bot
