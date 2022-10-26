@@ -2,7 +2,6 @@ package slashcommands
 
 import (
 	"fmt"
-	"math"
 	"os"
 	"time"
 
@@ -11,48 +10,33 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type Result struct{}
+type Cancel struct{}
 
-func (p Result) Name() string {
-	return "result"
+func (p Cancel) Name() string {
+	return "cancel"
 }
 
-func (p Result) Description() string {
-	return "Allow you to report a result using scores : team1 vs team2"
+func (p Cancel) Description() string {
+	return "Allow you to cancel a match."
 }
 
-func (p Result) RequiredPerm() *int64 {
+func (p Cancel) RequiredPerm() *int64 {
 	perm := int64(discordgo.PermissionSendMessages)
 	return &perm
 }
 
-func (p Result) Options() []*discordgo.ApplicationCommandOption {
-	return []*discordgo.ApplicationCommandOption{
-		{
-			Type:        discordgo.ApplicationCommandOptionInteger,
-			Name:        "team1-score",
-			Description: "Score",
-			Required:    true,
-		},
-		{
-			Type:        discordgo.ApplicationCommandOptionInteger,
-			Name:        "team2-score",
-			Description: "Score",
-			Required:    true,
-		},
-	}
+func (p Cancel) Options() []*discordgo.ApplicationCommandOption {
+	return []*discordgo.ApplicationCommandOption{}
 }
 
-func (p Result) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func (p Cancel) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	options := i.ApplicationCommandData().Options
 	optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
 	for _, opt := range options {
 		optionMap[opt.Name] = opt
 	}
-	team1Score := optionMap["team1-score"].IntValue()
-	team2Score := optionMap["team2-score"].IntValue()
 
-	log.Debugf("%s used /result on channel %s with parameters: (%d-%d)", i.Member.User.ID, i.ChannelID, team1Score, team2Score)
+	log.Debugf("%s used /cancel on channel %s", i.Member.User.ID, i.ChannelID)
 	match, err := matchmaking.GetMatchByThreadId(i.ChannelID)
 	if err != nil {
 		log.Warningf("failed to find match by threadID %s : "+err.Error(), i.ChannelID)
@@ -64,31 +48,18 @@ func (p Result) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			},
 		})
 		if err != nil {
-			log.Error("failed to send message: " + err.Error())
+			log.Fatal("failed to send message")
 		}
 		return
 	}
-	if math.Abs(float64(team1Score-team2Score)) < 2 {
-		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: fmt.Sprintf("The result (%d-%d) is not a valid result.", team1Score, team2Score),
-			},
-		})
-		if err != nil {
-			log.Error("failed to send message: " + err.Error())
-		}
-		return
-	}
-
-	var message string = fmt.Sprintf("User %s reported score : (%d-%d).\nPlease react to this message to confirm score.", i.Member.Mention(), optionMap["team1-score"].IntValue(), optionMap["team2-score"].IntValue())
+	var message string = fmt.Sprintf("User %s wants to cancel this match.\nPlease react to this message to confirm.", i.Member.Mention())
 	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Content: message,
 		},
 	})
-	log.Debugf("getting players confirmation of score (%d-%d) of match %s", team1Score, team2Score, match.ID)
+	log.Debugf("getting players confirmation of cancellation of match %s", match.ID)
 	if err != nil {
 		log.Error("failed to send message: " + err.Error())
 	}
@@ -118,14 +89,14 @@ func (p Result) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			requiredReactions = 1
 		}
 		if len(playersOK) > requiredReactions {
-			log.Debugf("players confirmed score (%d-%d) of match %s", team1Score, team2Score, match.ID)
-			err = matchmaking.CloseMatch(match, int(team1Score), int(team2Score))
+			log.Debugf("players confirmed cancellation of match %s", match.ID)
+			err = matchmaking.CancelMatch(match)
 			if err != nil {
-				log.Errorf("failed to close match %s: "+err.Error(), match.ID)
+				log.Errorf("failed to cancel match %s: "+err.Error(), match.ID)
 			}
 			return
 		} else if len(playersNOK) > requiredReactions {
-			log.Debugf("players refused score (%d-%d) of match %s", team1Score, team2Score, match.ID)
+			log.Debugf("players refused cancellation of match %s", match.ID)
 			err = s.ChannelMessageDelete(discMessage.ChannelID, discMessage.ID)
 			if err != nil {
 				log.Errorf("failed to delete message: " + err.Error())

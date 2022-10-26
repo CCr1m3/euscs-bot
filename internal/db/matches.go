@@ -13,7 +13,6 @@ func CreateMatch(m *models.Match) error {
 	if err != nil {
 		return &models.DBError{Err: err}
 	}
-	//add players in matchesplayers
 	for _, player := range m.Team1 {
 		_, err = tx.Exec("INSERT INTO matchesplayers (matchID,playerID,team) VALUES (?,?,?)", m.ID, player.DiscordID, 1)
 		if err != nil {

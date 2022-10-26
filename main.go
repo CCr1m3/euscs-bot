@@ -22,7 +22,7 @@ func main() {
 	rand.Seed(time.Now().Unix())
 	err := godotenv.Load(".env")
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Warning("error loading .env file: " + err.Error())
 	}
 	logLevel := os.Getenv("loglevel")
 	if logLevel == "debug" {

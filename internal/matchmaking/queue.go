@@ -24,7 +24,7 @@ func AddPlayerToQueue(playerID string, role models.Role) error {
 	if err != nil {
 		return err
 	}
-	log.Debugf("%s joined the queue as a %s", playerID, role)
+	log.Infof("%s joined the queue as a %s", playerID, role)
 	return nil
 }
 
@@ -37,7 +37,7 @@ func RemovePlayerFromQueue(playerID string) error {
 	if err != nil {
 		return err
 	}
-	log.Debugf("%s left the queue", playerID)
+	log.Infof("%s left the queue", playerID)
 	return nil
 }
 

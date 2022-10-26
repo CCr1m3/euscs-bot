@@ -2,6 +2,7 @@ package discord
 
 import (
 	"os"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	log "github.com/sirupsen/logrus"
@@ -36,6 +37,10 @@ func Init() {
 	if err != nil {
 		log.Fatalf("cannot initialize roles: %v", err)
 	}
+	go func() {
+		threadCleanUp()
+		time.Sleep(time.Minute * 5)
+	}()
 }
 
 func Stop() {

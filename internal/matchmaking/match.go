@@ -75,9 +75,11 @@ func CloseMatch(match *models.Match, team1Score int, team2Score int) error {
 			log.Errorf("failed to kick players from match thread: " + err.Error())
 		}
 	}
-	_, err := session.ChannelDelete(match.ThreadID)
+	archive := true
+	lock := true
+	_, err := session.ChannelEdit(match.ThreadID, &discordgo.ChannelEdit{Archived: &archive, Locked: &lock})
 	if err != nil {
-		log.Errorf("failed to deleted match thread: " + err.Error())
+		log.Errorf("failed to lock match thread: " + err.Error())
 	}
 
 	match.Team1Score = team1Score
@@ -93,14 +95,10 @@ func CloseMatch(match *models.Match, team1Score int, team2Score int) error {
 	message, err := session.ChannelMessage(channelId, match.MessageID)
 	if err != nil {
 		log.Errorf("failed to get match message: " + err.Error())
+		return err
 	}
 	var editedMessage string
-	if match.State == models.MatchStateCanceled {
-		err = session.ChannelMessageDelete(channelId, match.MessageID)
-		if err != nil {
-			log.Errorf("failed to deleted match message: " + err.Error())
-		}
-	} else {
+	if match.State != models.MatchStateCanceled {
 		team1elo := 0
 		team2elo := 0
 		for _, p := range match.Team1 {
@@ -126,10 +124,13 @@ func CloseMatch(match *models.Match, team1Score int, team2Score int) error {
 		}
 		editedMessage = message.Content + fmt.Sprintf("\nFinal score : %d - %d", team1Score, team2Score)
 		editedMessage += fmt.Sprintf("\nElo changes : %d vs %d", team1ratingChange, team2ratingChange)
-		_, err = session.ChannelMessageEdit(message.ChannelID, message.ID, editedMessage)
-		if err != nil {
-			log.Errorf("failed to edit match message: " + err.Error())
-		}
+	} else {
+		editedMessage = message.Content + "\nMatch canceled."
+	}
+	_, err = session.ChannelMessageEdit(message.ChannelID, message.ID, editedMessage)
+	if err != nil {
+		log.Errorf("failed to edit match message: " + err.Error())
+		return err
 	}
 
 	err = db.UpdateMatch(match)
@@ -137,6 +138,10 @@ func CloseMatch(match *models.Match, team1Score int, team2Score int) error {
 		log.Errorf("failed to update match: " + err.Error())
 	}
 	return err
+}
+
+func CancelMatch(match *models.Match) error {
+	return CloseMatch(match, 0, 0)
 }
 
 func deleteOldMatches() {
