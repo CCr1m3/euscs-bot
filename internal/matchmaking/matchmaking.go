@@ -113,33 +113,58 @@ func tryCreatingMatch() {
 	}
 }
 
+func zeroFlexGoaliesSample(forwards int, flex int, goalies int, indices *[6]int) {
+
+}
+
+func oneFlexGoalieSample(forwards int, flex int, goalies int, indices *[6]int) {
+
+}
+
+func twoFlexGoaliesSample(forwards int, flex int, goalies int, indices *[6]int) {
+
+}
+
 func algorithm() ([]*models.Player, []*models.Player) {
 	playersInQueue, _ := db.GetPlayersInQueue()
-	rand.Shuffle(len(playersInQueue), func(i, j int) { playersInQueue[i], playersInQueue[j] = playersInQueue[j], playersInQueue[i] })
-	sort.SliceStable(playersInQueue, func(i, j int) bool { //goalie priority
-		if playersInQueue[i].Role == "goalie" && playersInQueue[j].Role != "goalie" {
-			return true
+	forwards, flex, goalies := 0, 0, 0
+	sort.SliceStable(playersInQueue, func(i, j int) bool { //goalie -> flex -> forward priority
+		if playersInQueue[i].Role == "goalie" || playersInQueue[j].Role == "goalie" {
+			return playersInQueue[i].Role == "goalie" && playersInQueue[j].Role != "goalie"
+		}
+		if playersInQueue[i].Role == "flex" || playersInQueue[j].Role == "flex" {
+			return playersInQueue[i].Role == "flex" && playersInQueue[j].Role != "flex"
 		}
 		return false
 	})
-	goalie1 := playersInQueue[0]
-	goalie2 := playersInQueue[1]
-	forwards := make([]*models.QueuedPlayer, 0)
 	for _, player := range playersInQueue {
-		if player.DiscordID == goalie1.DiscordID || player.DiscordID == goalie2.DiscordID {
-			continue
-		}
-		if player.Role == "goalie" {
-			continue
-		}
-		forwards = append(forwards, player)
-		if len(forwards) >= 4 {
-			break
+		switch player.Role {
+		case "goalie":
+			goalies++
+		case "flex":
+			flex++
+		case "forward":
+			forwards++
 		}
 	}
-	team1 := []*models.Player{&goalie1.Player}
-	team2 := []*models.Player{&goalie2.Player}
-	team1 = append(team1, &forwards[0].Player, &forwards[1].Player)
-	team2 = append(team2, &forwards[2].Player, &forwards[3].Player)
-	return team1, team2
+	// Number of possible combinations multiplied by 4!*2/((forwards+flex-2)((forwards+flex-3))) (math don't worry about it)
+	// All these formulas behave nicely and give 0 when there are no possibilities.
+	zeroFlexGoalies := float64(goalies * (goalies - 1) * (forwards + flex) * (forwards + flex - 1))
+	oneFlexGoalie := float64(goalies * flex * 2 * (forwards + flex - 1) * (forwards + flex - 4))
+	twoFlexGoalies := float64(flex * (flex - 1) * (forwards + flex - 4) * (forwards + flex - 5))
+	totalPossibilities := zeroFlexGoalies + oneFlexGoalie + twoFlexGoalies
+	zeroFlexGoaliesProbability := zeroFlexGoalies / totalPossibilities
+	oneOrZeroFlexGoalieProbability := oneFlexGoalie/totalPossibilities + zeroFlexGoaliesProbability
+	var indices [6]int
+	for i := 0; i < 1000; i++ {
+		r := rand.Float64()
+		if r < zeroFlexGoaliesProbability {
+			zeroFlexGoaliesSample(forwards, flex, goalies, &indices)
+		} else if r < oneOrZeroFlexGoalieProbability {
+			oneFlexGoalieSample(forwards, flex, goalies, &indices)
+		} else {
+			twoFlexGoaliesSample(forwards, flex, goalies, &indices)
+		}
+		// TODO: check the range of the players and note the best.
+	}
 }
