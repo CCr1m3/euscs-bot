@@ -1,46 +1,41 @@
-package main
+package chat
 
 import (
-	"log"
 	"os"
 	"strings"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/haashi/omega-strikers-bot/internal/discord"
+	log "github.com/sirupsen/logrus"
 )
 
-func main() {
-	guildid := "1023624205272617061"
-	bottoken := ""
-	var err error
-	session, err := discordgo.New(bottoken)
+func fetchAllMessages() {
+	session := discord.GetSession()
+	f, _ := os.Create("messages")
+	channels, err := session.GuildChannels(discord.GuildID)
 	if err != nil {
-		log.Fatalf("invalid bot parameters: %v", err)
+		log.Errorf("failed to get guild channels: " + err.Error())
 	}
-	session.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-		log.Printf("logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
-	})
-
-	err = session.Open()
-	if err != nil {
-		log.Fatalf("cannot open the session: %v", err)
-	}
-	f, _ := os.Create("log")
-	channels, err := session.GuildChannels(guildid)
 	for _, channel := range channels {
 		//get all messages
+		log.Debugf("getting messages from %s", channel.Name)
 		messages, err := session.ChannelMessages(channel.ID, 100, "", "", "")
 		if err != nil {
-			log.Fatalf("invalid bot parameters: %v", err)
+			log.Errorf("failed to get messages: " + err.Error())
 		}
 		for len(messages) != 0 {
 			for _, message := range messages {
-				f.WriteString(strings.ToLower(message.Content))
-				f.WriteString("\n")
+				if message.Author.ID == session.State.User.ID {
+					continue
+				}
+				_, err = f.WriteString(strings.ToLower(message.Content) + "\n")
+				if err != nil {
+					log.Errorf("failed to write messages: " + err.Error())
+				}
 			}
 			lastMessage := messages[len(messages)-1]
 			messages, err = session.ChannelMessages(channel.ID, 100, lastMessage.ID, "", "")
 			if err != nil {
-				log.Fatalf("invalid bot parameters: %v", err)
+				log.Errorf("failed to get messages: " + err.Error())
 			}
 		}
 	}

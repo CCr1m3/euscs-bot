@@ -17,7 +17,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func init() { flag.Parse() }
+func init() {
+	flag.Parse()
+}
 
 func main() {
 	rand.Seed(time.Now().Unix())
@@ -32,9 +34,8 @@ func main() {
 		log.SetLevel(log.InfoLevel)
 	}
 	db.Init()
-	chat.LoadMarkovFromFile("log")
-
 	discord.Init()
+	chat.Init()
 	slashcommands.Init()
 	matchmaking.Init()
 	stop := make(chan os.Signal, 1)

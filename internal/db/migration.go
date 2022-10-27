@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/haashi/omega-strikers-bot/internal/models"
 	log "github.com/sirupsen/logrus"
@@ -17,7 +18,7 @@ var migrations = []string{
 func migrate() error {
 	var start int
 	_, err := db.Exec(migrations[0])
-	if err != nil {
+	if !strings.Contains(err.Error(), "UNIQUE") {
 		return &models.DBError{Err: err}
 	}
 	start, err = getLatestMigration()

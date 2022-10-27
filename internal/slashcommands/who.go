@@ -2,7 +2,6 @@ package slashcommands
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
@@ -61,7 +60,7 @@ func (p Who) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if user != nil && username != "" {
 		message = "Please enter only one of the argument."
 	} else if user != nil {
-		member, err := s.GuildMember(os.Getenv("guildid"), user.ID)
+		member, err := s.GuildMember(i.GuildID, user.ID)
 		if err != nil {
 			log.Errorf("failed to get member from id %s: "+err.Error(), user.ID)
 		}
@@ -83,7 +82,7 @@ func (p Who) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		if userID == "" {
 			message = fmt.Sprintf("%s is not in this server.", username)
 		} else {
-			member, err := s.GuildMember(os.Getenv("guildid"), userID)
+			member, err := s.GuildMember(i.GuildID, userID)
 			if err != nil {
 				log.Errorf("failed to get member from id %s: "+err.Error(), userID)
 			}
