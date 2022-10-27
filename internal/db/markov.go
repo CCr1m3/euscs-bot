@@ -10,9 +10,6 @@ func AddMarkovOccurences(ms []*models.Markov) error {
 		return err
 	}
 	for _, m := range ms {
-		if m == nil {
-			break
-		}
 		res, err := tx.Exec("UPDATE markov SET count=count+1 WHERE word1=? AND word2=? AND word3=?", m.Word1, m.Word2, m.Word3)
 		if err != nil {
 			return err
