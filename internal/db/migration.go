@@ -18,7 +18,7 @@ var migrations = []string{
 func migrate() error {
 	var start int
 	_, err := db.Exec(migrations[0])
-	if !strings.Contains(err.Error(), "UNIQUE") {
+	if err != nil && !strings.Contains(err.Error(), "UNIQUE") {
 		return &models.DBError{Err: err}
 	}
 	start, err = getLatestMigration()
