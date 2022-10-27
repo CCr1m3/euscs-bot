@@ -15,6 +15,7 @@
 - Automatically leave queue after a time (1h?). Probably tag the person who was forced out. Add queue time into match quality calculations. 
 - Match predictions. Disallow people playing in a match from predicting.
 - Currency system. Get currency from winning (more, 20?), losing (less, 10?) and predicting correctly (5?). Pay with currency for @ Ai.Mi (20).
+- Punish dodging people in some way (reduce match priority by reducing quality of matches with dodging players?)
 # bot permissions on discord dev portal
 ![image.png](image.png)
 url : https://discord.com/api/oauth2/authorize?client_id={clientid}&permissions=397552912384&scope=applications.commands%20bot
