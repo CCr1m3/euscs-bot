@@ -139,7 +139,7 @@ func UpdateRank(playerID string, updateDiscordRole bool) error {
 
 func updatePlayerDiscordRole(playerID string) error {
 	session := discord.GetSession()
-	guildID := os.Getenv("guildid")
+	guildID := discord.GuildID
 	player, err := db.GetPlayerById(playerID)
 	if err != nil {
 		return err

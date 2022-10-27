@@ -9,7 +9,6 @@ import (
 )
 
 var GuildID string
-var BotToken string
 var session *discordgo.Session
 
 func GetSession() *discordgo.Session {
@@ -19,9 +18,9 @@ func GetSession() *discordgo.Session {
 func Init() {
 	log.Info("starting discord service")
 	GuildID = os.Getenv("guildid")
-	BotToken = os.Getenv("token")
+	botToken := os.Getenv("token")
 	var err error
-	session, err = discordgo.New("Bot " + BotToken)
+	session, err = discordgo.New("Bot " + botToken)
 	if err != nil {
 		log.Fatalf("invalid bot parameters: %v", err)
 	}
@@ -29,6 +28,7 @@ func Init() {
 	session.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		log.Printf("logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
 	})
+
 	err = session.Open()
 	if err != nil {
 		log.Fatalf("cannot open the session: %v", err)

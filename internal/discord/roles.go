@@ -2,7 +2,6 @@ package discord
 
 import (
 	"errors"
-	"os"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -18,7 +17,7 @@ var RoleBronze *discordgo.Role
 var RankRoles []*discordgo.Role
 
 func initRoles() error {
-	roles, err := session.GuildRoles(os.Getenv("guildid"))
+	roles, err := session.GuildRoles(GuildID)
 	if err != nil {
 		return err
 	}
