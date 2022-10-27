@@ -11,23 +11,39 @@ func CreateMatch(m *models.Match) error {
 	}
 	_, err = tx.NamedExec("INSERT INTO matches (matchID,threadID,messageID,timestamp) VALUES (:matchID,:threadID,:messageID,:timestamp)", m)
 	if err != nil {
-		return &models.DBError{Err: err}
+		err2 := tx.Rollback()
+		if err2 != nil {
+			return &models.DBError{Err: err}
+		}
+		return &models.DBError{Err: err2}
 	}
 	for _, player := range m.Team1 {
 		_, err = tx.Exec("INSERT INTO matchesplayers (matchID,playerID,team) VALUES (?,?,?)", m.ID, player.DiscordID, 1)
 		if err != nil {
-			return &models.DBError{Err: err}
+			err2 := tx.Rollback()
+			if err2 != nil {
+				return &models.DBError{Err: err}
+			}
+			return &models.DBError{Err: err2}
 		}
 	}
 	for _, player := range m.Team2 {
 		_, err = tx.Exec("INSERT INTO matchesplayers (matchID,playerID,team) VALUES (?,?,?)", m.ID, player.DiscordID, 2)
 		if err != nil {
-			return &models.DBError{Err: err}
+			err2 := tx.Rollback()
+			if err2 != nil {
+				return &models.DBError{Err: err}
+			}
+			return &models.DBError{Err: err2}
 		}
 	}
 	err = tx.Commit()
 	if err != nil {
-		return &models.DBError{Err: err}
+		err2 := tx.Rollback()
+		if err2 != nil {
+			return &models.DBError{Err: err}
+		}
+		return &models.DBError{Err: err2}
 	}
 	return nil
 }
@@ -43,12 +59,12 @@ func UpdateMatch(m *models.Match) error {
 
 func getTeamsInMatch(match *models.Match) error {
 	team1 := []*models.Player{}
-	err := db.Select(&team1, "SELECT elo,discordID,osuser,lastRankUpdate FROM players JOIN matchesplayers ON matchesplayers.playerID == players.discordID WHERE matchID=? AND team=1", match.ID)
+	err := db.Select(&team1, "SELECT elo,discordID,osuser,lastrankupdate FROM players JOIN matchesplayers ON matchesplayers.playerID == players.discordID WHERE matchID=? AND team=1", match.ID)
 	if err != nil {
 		return &models.DBError{Err: err}
 	}
 	team2 := []*models.Player{}
-	err = db.Select(&team2, "SELECT elo,discordID,osuser,lastRankUpdate FROM players JOIN matchesplayers ON matchesplayers.playerID == players.discordID WHERE matchID=? AND team=2", match.ID)
+	err = db.Select(&team2, "SELECT elo,discordID,osuser,lastrankupdate FROM players JOIN matchesplayers ON matchesplayers.playerID == players.discordID WHERE matchID=? AND team=2", match.ID)
 	if err != nil {
 		return &models.DBError{Err: err}
 	}

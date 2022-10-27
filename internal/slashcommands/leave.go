@@ -17,7 +17,7 @@ func (p Leave) Description() string {
 }
 
 func (p Leave) RequiredPerm() *int64 {
-	perm := int64(discordgo.PermissionSendMessages)
+	perm := int64(discordgo.PermissionViewChannel)
 	return &perm
 }
 

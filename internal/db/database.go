@@ -6,25 +6,24 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var instance *sqlx.DB
 var db *sqlx.DB
 
 func getInstance() *sqlx.DB {
-	if instance == nil {
-		db, err := sqlx.Open("sqlite3", "./omega-strikers-bot.db")
+	if db == nil {
+		var err error
+		db, err = sqlx.Open("sqlite3", "./omega-strikers-bot.db")
 		if err != nil {
 			log.Fatal(err)
 		}
-		instance = db
-		return instance
+		return db
 	} else {
-		return instance
+		return db
 	}
 }
 
 func Init() {
 	log.Info("starting db service")
-	db = getInstance()
+	getInstance()
 	err := migrate()
 	if err != nil {
 		log.Fatal(err)

@@ -1,10 +1,10 @@
 package discord
 
 import (
-	"errors"
-	"os"
+	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	log "github.com/sirupsen/logrus"
 )
 
 var RoleOmega *discordgo.Role
@@ -14,15 +14,20 @@ var RolePlatinum *discordgo.Role
 var RoleGold *discordgo.Role
 var RoleSilver *discordgo.Role
 var RoleBronze *discordgo.Role
+var RoleRookie *discordgo.Role
+var ApplicationRole *discordgo.Role
 
 var RankRoles []*discordgo.Role
 
 func initRoles() error {
-	roles, err := session.GuildRoles(os.Getenv("guildid"))
+	roles, err := session.GuildRoles(GuildID)
 	if err != nil {
 		return err
 	}
 	for _, role := range roles {
+		if strings.Contains(role.Name, "eu-omega-strikers") {
+			ApplicationRole = role
+		}
 		if role.Name == "Omega" {
 			RoleOmega = role
 		}
@@ -44,27 +49,66 @@ func initRoles() error {
 		if role.Name == "Bronze" {
 			RoleBronze = role
 		}
+		if role.Name == "Rookie" {
+			RoleRookie = role
+		}
 	}
+	mentionnable := true
+	hoist := true
 	if RoleOmega == nil {
-		return errors.New("missing discord role omega in the guild")
+		color := 15548997
+		RoleOmega, err = session.GuildRoleCreate(GuildID, &discordgo.RoleParams{Name: "Omega", Color: &color, Mentionable: &mentionnable, Hoist: &hoist})
+		if err != nil {
+			log.Fatalf("failed to create role RoleOmega")
+		}
 	}
 	if RoleChallenger == nil {
-		return errors.New("missing discord role challenger in the guild")
+		color := 10181046
+		RoleChallenger, err = session.GuildRoleCreate(GuildID, &discordgo.RoleParams{Name: "Challenger", Color: &color, Mentionable: &mentionnable, Hoist: &hoist})
+		if err != nil {
+			log.Fatalf("failed to create role RoleChallenger")
+		}
 	}
 	if RoleDiamond == nil {
-		return errors.New("missing discord role diamond in the guild")
+		color := 3447003
+		RoleDiamond, err = session.GuildRoleCreate(GuildID, &discordgo.RoleParams{Name: "Diamond", Color: &color, Mentionable: &mentionnable, Hoist: &hoist})
+		if err != nil {
+			log.Fatalf("failed to create role RoleDiamond")
+		}
 	}
 	if RolePlatinum == nil {
-		return errors.New("missing discord role platinum in the guild")
+		color := 2067276
+		RolePlatinum, err = session.GuildRoleCreate(GuildID, &discordgo.RoleParams{Name: "Platinum", Color: &color, Mentionable: &mentionnable, Hoist: &hoist})
+		if err != nil {
+			log.Fatalf("failed to create role RolePlatinum")
+		}
 	}
 	if RoleGold == nil {
-		return errors.New("missing discord role gold in the guild")
+		color := 16776960
+		RoleGold, err = session.GuildRoleCreate(GuildID, &discordgo.RoleParams{Name: "Gold", Color: &color, Mentionable: &mentionnable, Hoist: &hoist})
+		if err != nil {
+			log.Fatalf("failed to create role RoleGold")
+		}
 	}
 	if RoleSilver == nil {
-		return errors.New("missing discord role silver in the guild")
+		color := 12370112
+		RoleSilver, err = session.GuildRoleCreate(GuildID, &discordgo.RoleParams{Name: "Silver", Color: &color, Mentionable: &mentionnable, Hoist: &hoist})
+		if err != nil {
+			log.Fatalf("failed to create role RoleSilver")
+		}
 	}
 	if RoleBronze == nil {
-		return errors.New("missing discord role bronze in the guild")
+		color := 15105570
+		RoleBronze, err = session.GuildRoleCreate(GuildID, &discordgo.RoleParams{Name: "Bronze", Color: &color, Mentionable: &mentionnable, Hoist: &hoist})
+		if err != nil {
+			log.Fatalf("failed to create role RoleBronze")
+		}
+	}
+	if RoleRookie == nil {
+		RoleRookie, err = session.GuildRoleCreate(GuildID, &discordgo.RoleParams{Name: "Rookie", Mentionable: &mentionnable, Hoist: &hoist})
+		if err != nil {
+			log.Fatalf("failed to create role RoleRookie")
+		}
 	}
 	RankRoles = []*discordgo.Role{RoleOmega, RoleChallenger, RoleDiamond, RolePlatinum, RoleGold, RoleSilver, RoleBronze}
 	return err

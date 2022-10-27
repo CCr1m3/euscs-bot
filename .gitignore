@@ -1,4 +1,4 @@
-prod/
 .env
 omega-strikers-bot.db
 url
+messages

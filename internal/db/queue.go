@@ -20,7 +20,7 @@ func RemovePlayerFromQueue(p *models.Player) error {
 
 func GetPlayersInQueue() ([]*models.QueuedPlayer, error) {
 	players := []*models.QueuedPlayer{}
-	err := db.Select(&players, "SELECT discordID,osuser,elo,role FROM queue JOIN players ON queue.playerID = players.discordID")
+	err := db.Select(&players, "SELECT discordID,osuser,elo,role,lastrankupdate FROM queue JOIN players ON queue.playerID = players.discordID")
 	if err != nil {
 		return nil, &models.DBError{Err: err}
 	}
@@ -49,7 +49,7 @@ func GetGoaliesCountInQueue() (int, error) {
 
 func GetForwardsCountInQueue() (int, error) {
 	var count int
-	row := db.QueryRow("SELECT COUNT(*) FROM queue WHERE (role='forward' OR role='flex')")
+	row := db.QueryRow("SELECT COUNT(*) FROM queue WHERE role='forward' OR role='flex'")
 	err := row.Scan(&count)
 	if err != nil {
 		return 0, &models.DBError{Err: err}

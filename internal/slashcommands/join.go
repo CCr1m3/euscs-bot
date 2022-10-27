@@ -21,7 +21,7 @@ func (p Join) Description() string {
 }
 
 func (p Join) RequiredPerm() *int64 {
-	perm := int64(discordgo.PermissionSendMessages)
+	perm := int64(discordgo.PermissionViewChannel)
 	return &perm
 }
 

@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/haashi/omega-strikers-bot/internal/chat"
 	"github.com/haashi/omega-strikers-bot/internal/db"
 	"github.com/haashi/omega-strikers-bot/internal/discord"
 	"github.com/haashi/omega-strikers-bot/internal/matchmaking"
@@ -16,7 +17,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func init() { flag.Parse() }
+func init() {
+	flag.Parse()
+}
 
 func main() {
 	rand.Seed(time.Now().Unix())
@@ -32,6 +35,7 @@ func main() {
 	}
 	db.Init()
 	discord.Init()
+	chat.Init()
 	slashcommands.Init()
 	matchmaking.Init()
 	stop := make(chan os.Signal, 1)
