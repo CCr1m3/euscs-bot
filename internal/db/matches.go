@@ -13,18 +13,18 @@ func CreateMatch(m *models.Match) error {
 	if err != nil {
 		err2 := tx.Rollback()
 		if err2 != nil {
-			return &models.DBError{Err: err}
+			return &models.DBError{Err: err2}
 		}
-		return &models.DBError{Err: err2}
+		return &models.DBError{Err: err}
 	}
 	for _, player := range m.Team1 {
 		_, err = tx.Exec("INSERT INTO matchesplayers (matchID,playerID,team) VALUES (?,?,?)", m.ID, player.DiscordID, 1)
 		if err != nil {
 			err2 := tx.Rollback()
 			if err2 != nil {
-				return &models.DBError{Err: err}
+				return &models.DBError{Err: err2}
 			}
-			return &models.DBError{Err: err2}
+			return &models.DBError{Err: err}
 		}
 	}
 	for _, player := range m.Team2 {
@@ -32,18 +32,18 @@ func CreateMatch(m *models.Match) error {
 		if err != nil {
 			err2 := tx.Rollback()
 			if err2 != nil {
-				return &models.DBError{Err: err}
+				return &models.DBError{Err: err2}
 			}
-			return &models.DBError{Err: err2}
+			return &models.DBError{Err: err}
 		}
 	}
 	err = tx.Commit()
 	if err != nil {
 		err2 := tx.Rollback()
 		if err2 != nil {
-			return &models.DBError{Err: err}
+			return &models.DBError{Err: err2}
 		}
-		return &models.DBError{Err: err2}
+		return &models.DBError{Err: err}
 	}
 	return nil
 }
@@ -116,7 +116,7 @@ func GetRunningMatchesOrderedByTimestamp() ([]*models.Match, error) {
 
 func IsPlayerInMatch(p *models.Player) (bool, error) {
 	var count int
-	row := db.QueryRow("SELECT COUNT(*) FROM matches JOIN matchesplayers ON matches.matchID = matchesplayers.matchID WHERE playerID=? and state=0", p.DiscordID)
+	row := db.QueryRow("SELECT COUNT(*) FROM matches JOIN matchesplayers ON matches.matchID = matchesplayers.matchID WHERE playerID=? and state<=0", p.DiscordID)
 	err := row.Scan(&count)
 	if err != nil {
 		return false, &models.DBError{Err: err}

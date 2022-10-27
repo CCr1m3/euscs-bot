@@ -1,12 +1,9 @@
 package slashcommands
 
 import (
-	"fmt"
-	"os"
-	"time"
-
 	"github.com/bwmarrin/discordgo"
 	"github.com/haashi/omega-strikers-bot/internal/matchmaking"
+	"github.com/haashi/omega-strikers-bot/internal/models"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -52,57 +49,28 @@ func (p Cancel) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 		return
 	}
-	var message string = fmt.Sprintf("User %s wants to cancel this match.\nPlease react to this message to confirm.", i.Member.Mention())
+	if match.State == models.MatchStateVoteInProgress {
+		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "A confirmation is already in progress.",
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
+		})
+		if err != nil {
+			log.Error("failed to send message: " + err.Error())
+		}
+		return
+	}
 	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: message,
+			Content: "Confirmation started.",
+			Flags:   discordgo.MessageFlagsEphemeral,
 		},
 	})
-	log.Debugf("getting players confirmation of cancellation of match %s", match.ID)
 	if err != nil {
 		log.Error("failed to send message: " + err.Error())
 	}
-	discMessage, err := s.InteractionResponse(i.Interaction)
-	if err != nil {
-		log.Error("failed to get message: " + err.Error())
-	}
-	err = s.MessageReactionAdd(discMessage.ChannelID, discMessage.ID, "✅")
-	if err != nil {
-		log.Errorf("failed add reaction: " + err.Error())
-	}
-	err = s.MessageReactionAdd(discMessage.ChannelID, discMessage.ID, "❌")
-	if err != nil {
-		log.Errorf("failed add reaction: " + err.Error())
-	}
-	for {
-		playersOK, err := s.MessageReactions(discMessage.ChannelID, discMessage.ID, "✅", 10, "", "")
-		if err != nil {
-			log.Errorf("failed to get reactions: " + err.Error())
-		}
-		playersNOK, err := s.MessageReactions(discMessage.ChannelID, discMessage.ID, "❌", 10, "", "")
-		if err != nil {
-			log.Errorf("failed to get reactions: " + err.Error())
-		}
-		requiredReactions := 4
-		if os.Getenv("mode") == "dev" {
-			requiredReactions = 1
-		}
-		if len(playersOK) > requiredReactions {
-			log.Debugf("players confirmed cancellation of match %s", match.ID)
-			err = matchmaking.CancelMatch(match)
-			if err != nil {
-				log.Errorf("failed to cancel match %s: "+err.Error(), match.ID)
-			}
-			return
-		} else if len(playersNOK) > requiredReactions {
-			log.Debugf("players refused cancellation of match %s", match.ID)
-			err = s.ChannelMessageDelete(discMessage.ChannelID, discMessage.ID)
-			if err != nil {
-				log.Errorf("failed to delete message: " + err.Error())
-			}
-			return
-		}
-		time.Sleep(time.Second)
-	}
+	matchmaking.VoteCancelMatch(match)
 }
