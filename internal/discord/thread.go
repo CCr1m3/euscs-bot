@@ -8,7 +8,7 @@ import (
 )
 
 func threadCleanUp() {
-	channelID := os.Getenv("channelid")
+	channelID := MatchesChannel.ID
 	archivedSince := time.Now().Add(-time.Hour * 4)
 	if os.Getenv("mode") == "dev" {
 		archivedSince = time.Now().Add(-time.Minute * 10)
