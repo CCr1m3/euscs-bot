@@ -13,14 +13,14 @@ import (
 	"github.com/haashi/omega-strikers-bot/internal/db"
 	"github.com/haashi/omega-strikers-bot/internal/discord"
 	"github.com/haashi/omega-strikers-bot/internal/models"
+	"github.com/haashi/omega-strikers-bot/internal/scheduled"
 	log "github.com/sirupsen/logrus"
 )
 
 func Init() {
 	log.Info("starting matchmaking service")
-
 	if os.Getenv("mode") == "dev" {
-		log.Info("starting dummy players")
+		log.Debug("starting dummy players")
 		dummies := make([]string, 0)
 		dummiesUsername := [30]string{"BaluGoalie", "Haaashi", "Piols", "Balu", "Lynx_", "Connax", "Masus", "Kolashiu", "Buntaoo", "Ballgrabber", "Jimray3", "IamTrusty", "Kidpan", "MathieuCalip", "Goku", "czem", "HHaie KuKi", "KeeperofLolis", "Madoushy", "LDC", "Yatta", "Immaculator", "goalkeeper diff", "Funii", "kirby", "mascha", "Thezs", "Cognity", "Sm1le", "Yuume"}
 		r := rand.New(rand.NewSource(2))
@@ -37,50 +37,42 @@ func Init() {
 			}
 			dummies = append(dummies, playerID)
 		}
-		go func() {
-			for {
-				playerID := dummies[rand.Intn(len(dummies))]
-				player, _ := getOrCreatePlayer(playerID)
-				roles := make([]models.Role, 0)
-				roles = append(roles,
-					models.RoleGoalie,
-					models.RoleFlex,
-					models.RoleForward,
-					models.RoleForward,
-					models.RoleForward)
-				inMatch, _ := IsPlayerInMatch(player.DiscordID)
-				inQueue, _ := IsPlayerInQueue(player.DiscordID)
-				if !inQueue && !inMatch {
-					err := AddPlayerToQueue(player.DiscordID, roles[rand.Intn(len(roles))])
-					if err != nil {
-						log.Error(err)
-					}
-					time.Sleep(2 * time.Second)
+		dummiesFunc := func() {
+			playerID := dummies[rand.Intn(len(dummies))]
+			player, _ := getOrCreatePlayer(playerID)
+			roles := make([]models.Role, 0)
+			roles = append(roles,
+				models.RoleGoalie,
+				models.RoleFlex,
+				models.RoleForward,
+				models.RoleForward,
+				models.RoleForward)
+			inMatch, _ := IsPlayerInMatch(player.DiscordID)
+			inQueue, _ := IsPlayerInQueue(player.DiscordID)
+			if !inQueue && !inMatch {
+				err := AddPlayerToQueue(player.DiscordID, roles[rand.Intn(len(roles))])
+				if err != nil {
+					log.Error(err)
 				}
 			}
-		}()
+		}
+		scheduled.TaskManager.Add(scheduled.Task{ID: "dummies", Run: dummiesFunc, Frequency: time.Second})
 	}
-	go func() {
-		for {
-			session := discord.GetSession()
-			playersInQueue, _ := db.GetPlayersInQueue()
-			queueSize := len(playersInQueue)
-			var act []*discordgo.Activity
-			act = append(act, &discordgo.Activity{Name: fmt.Sprintf("%d people queuing", queueSize), Type: discordgo.ActivityTypeWatching})
-			err := session.UpdateStatusComplex(discordgo.UpdateStatusData{Activities: act})
-			if err != nil {
-				log.Error(err)
-			}
-			time.Sleep(15 * time.Second)
-			tryCreatingMatch()
-		}
-	}()
-	go func() {
-		for {
-			deleteOldMatches()
-			time.Sleep(60 * time.Second)
-		}
-	}()
+	scheduled.TaskManager.Add(scheduled.Task{ID: "updatesession", Run: updateStatus, Frequency: time.Second * 15})
+	scheduled.TaskManager.Add(scheduled.Task{ID: "trycreatingmatch", Run: tryCreatingMatch, Frequency: time.Second * 15})
+	scheduled.TaskManager.Add(scheduled.Task{ID: "closeoldmatches", Run: deleteOldMatches, Frequency: time.Minute})
+}
+
+func updateStatus() {
+	session := discord.GetSession()
+	playersInQueue, _ := db.GetPlayersInQueue()
+	queueSize := len(playersInQueue)
+	var act []*discordgo.Activity
+	act = append(act, &discordgo.Activity{Name: fmt.Sprintf("%d people queuing", queueSize), Type: discordgo.ActivityTypeWatching})
+	err := session.UpdateStatusComplex(discordgo.UpdateStatusData{Activities: act})
+	if err != nil {
+		log.Error(err)
+	}
 }
 
 func tryCreatingMatch() {

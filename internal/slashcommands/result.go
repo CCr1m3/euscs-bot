@@ -22,7 +22,7 @@ func (p Result) Description() string {
 }
 
 func (p Result) RequiredPerm() *int64 {
-	perm := int64(discordgo.PermissionSendMessages)
+	perm := int64(discordgo.PermissionViewChannel)
 	return &perm
 }
 
