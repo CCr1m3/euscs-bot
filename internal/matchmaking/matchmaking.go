@@ -214,6 +214,7 @@ func balanceTeams(indices *[6]int, players []*models.QueuedPlayer) ([]*models.Pl
 	}
 	team1 := []*models.Player{&players[indices[0]].Player, &players[indices[bestSplit[0]+1]].Player, &players[indices[bestSplit[1]+1]].Player}
 	team2 := []*models.Player{&players[indices[1]].Player, &players[indices[bestSplit[2]+1]].Player, &players[indices[bestSplit[3]+1]].Player}
+	log.Debugf("Elos of 1st team (goalie 1st): %d %d %d, 2nd team: %d %d %d", players[indices[0]].Elo, players[indices[bestSplit[0]+1]].Elo, players[indices[bestSplit[1]+1]].Elo, players[indices[1]].Elo, players[indices[bestSplit[2]+1]].Elo, players[indices[bestSplit[3]+1]].Elo)
 	log.Debugf("Best team balance found is %.2f", bestBalance)
 	return team1, team2
 }
