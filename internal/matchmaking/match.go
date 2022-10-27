@@ -24,7 +24,7 @@ func GetMatchByThreadId(threadID string) (*models.Match, error) {
 
 func createNewMatch(team1 []*models.Player, team2 []*models.Player) error {
 	matchId := rand.Intn(math.MaxInt32)
-	channelId := os.Getenv("channelid")
+	channelId := discord.MatchesChannel.ID
 	session := discord.GetSession()
 	match := &models.Match{}
 	match.ID = fmt.Sprintf("%d", matchId)
@@ -67,7 +67,7 @@ func createNewMatch(team1 []*models.Player, team2 []*models.Player) error {
 
 func CloseMatch(match *models.Match, team1Score int, team2Score int) error {
 	session := discord.GetSession()
-	channelId := os.Getenv("channelid")
+	channelId := discord.MatchesChannel.ID
 	members, _ := session.ThreadMembers(match.ThreadID)
 	for _, member := range members {
 		err := session.ThreadMemberRemove(member.ID, member.UserID)

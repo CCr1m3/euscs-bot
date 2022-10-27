@@ -160,8 +160,9 @@ func updatePlayerDiscordRole(playerID string) error {
 	} else if player.Elo >= 1100 {
 		roleToAdd = discord.RoleBronze
 	} else {
-		return nil
+		roleToAdd = discord.RoleRookie
 	}
+
 	member, err := session.GuildMember(guildID, player.DiscordID)
 	if err != nil {
 		return err
@@ -188,6 +189,9 @@ func updatePlayerDiscordRole(playerID string) error {
 		}
 		if roleID == discord.RoleBronze.ID {
 			currentRole = discord.RoleBronze
+		}
+		if roleID == discord.RoleRookie.ID {
+			currentRole = discord.RoleRookie
 		}
 	}
 	if currentRole != nil && currentRole.Position > roleToAdd.Position {

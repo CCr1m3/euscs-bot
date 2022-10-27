@@ -37,6 +37,10 @@ func Init() {
 	if err != nil {
 		log.Fatalf("cannot initialize roles: %v", err)
 	}
+	err = initChannels()
+	if err != nil {
+		log.Fatalf("cannot initialize channels: %v", err)
+	}
 	scheduled.TaskManager.Add(scheduled.Task{ID: "threadcleanup", Run: threadCleanUp, Frequency: time.Hour})
 }
 
