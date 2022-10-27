@@ -4,22 +4,13 @@ import (
 	"os"
 	"testing"
 
-	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
 func init() {
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Warning("error loading .env file: " + err.Error())
-	}
-	logLevel := os.Getenv("loglevel")
-	if logLevel == "debug" {
-		log.SetLevel(log.DebugLevel)
-	} else {
-		log.SetLevel(log.InfoLevel)
-	}
+	logrus.SetLevel(log.DebugLevel)
 }
 
 func clearDB() {

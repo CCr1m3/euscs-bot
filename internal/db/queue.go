@@ -49,7 +49,7 @@ func GetGoaliesCountInQueue() (int, error) {
 
 func GetForwardsCountInQueue() (int, error) {
 	var count int
-	row := db.QueryRow("SELECT COUNT(*) FROM queue WHERE (role='forward' OR role='flex')")
+	row := db.QueryRow("SELECT COUNT(*) FROM queue WHERE role='forward' OR role='flex'")
 	err := row.Scan(&count)
 	if err != nil {
 		return 0, &models.DBError{Err: err}
