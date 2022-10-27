@@ -95,7 +95,10 @@ func tryCreatingMatch() {
 	}
 	if len(playersInQueue) >= 6 && goalieInQueue >= 2 && forwardInQueue >= 4 {
 		team1, team2 := algorithm()
-
+		if len(team1) == 0 {
+			log.Debug("Match not created, algorithm deemed no match of quality")
+			return
+		}
 		err := createNewMatch(team1, team2)
 		if err != nil {
 			log.Error("could not create new match: ", err)
@@ -113,30 +116,118 @@ func tryCreatingMatch() {
 	}
 }
 
+// Haashi please don't kill me, I'm just optimizing. This needs to be as fast as possible.
 func zeroFlexGoaliesSample(forwards int, flex int, goalies int, indices *[6]int) {
-
+	indices[0] = rand.Intn(goalies)
+	indices[1] = rand.Intn(goalies - 1)
+	if indices[1] >= indices[0] {
+		indices[1]++
+	}
+	indices[2] = rand.Intn(forwards+flex) + goalies
+	indices[3] = rand.Intn(forwards+flex-1) + goalies
+	if indices[3] >= indices[2] {
+		indices[3]++
+	}
+	indices[4] = rand.Intn(forwards+flex) + goalies
+	for indices[4] == indices[3] || indices[4] == indices[2] {
+		indices[4] = rand.Intn(forwards+flex) + goalies
+	}
+	indices[5] = rand.Intn(forwards+flex) + goalies
+	for indices[5] == indices[4] || indices[5] == indices[3] || indices[5] == indices[2] {
+		indices[5] = rand.Intn(forwards+flex) + goalies
+	}
 }
 
 func oneFlexGoalieSample(forwards int, flex int, goalies int, indices *[6]int) {
-
+	indices[0] = rand.Intn(goalies)
+	indices[1] = rand.Intn(flex) + goalies
+	indices[2] = rand.Intn(flex+forwards-1) + goalies
+	if indices[2] >= indices[1] {
+		indices[2]++
+	}
+	indices[3] = rand.Intn(forwards+flex) + goalies
+	for indices[3] == indices[2] || indices[3] == indices[1] {
+		indices[3] = rand.Intn(forwards+flex) + goalies
+	}
+	indices[4] = rand.Intn(forwards+flex) + goalies
+	for indices[4] == indices[3] || indices[4] == indices[2] || indices[4] == indices[1] {
+		indices[4] = rand.Intn(forwards+flex) + goalies
+	}
+	indices[5] = rand.Intn(forwards+flex) + goalies
+	for indices[5] == indices[4] || indices[5] == indices[3] || indices[5] == indices[2] || indices[5] == indices[1] {
+		indices[5] = rand.Intn(forwards+flex) + goalies
+	}
 }
 
 func twoFlexGoaliesSample(forwards int, flex int, goalies int, indices *[6]int) {
+	indices[0] = rand.Intn(flex) + goalies
+	indices[1] = rand.Intn(flex-1) + goalies
+	if indices[1] >= indices[0] {
+		indices[1]++
+	}
+	indices[3] = rand.Intn(forwards+flex) + goalies
+	for indices[3] == indices[2] || indices[3] == indices[1] || indices[3] == indices[0] {
+		indices[3] = rand.Intn(forwards+flex) + goalies
+	}
+	indices[4] = rand.Intn(forwards+flex) + goalies
+	for indices[4] == indices[3] || indices[4] == indices[2] || indices[4] == indices[1] || indices[4] == indices[0] {
+		indices[4] = rand.Intn(forwards+flex) + goalies
+	}
+	indices[5] = rand.Intn(forwards+flex) + goalies
+	for indices[5] == indices[4] || indices[5] == indices[3] || indices[5] == indices[2] || indices[5] == indices[1] || indices[5] == indices[0] {
+		indices[5] = rand.Intn(forwards+flex) + goalies
+	}
+}
 
+func evaluatePlayers(indices *[6]int, players []*models.QueuedPlayer) int {
+	const eloRange = 500
+	maxElo, minElo := -1, 1<<20
+	for i := 0; i < 6; i++ {
+		player := players[indices[i]]
+		if player.Elo > maxElo {
+			maxElo = player.Elo
+		}
+		if player.Elo < minElo {
+			minElo = player.Elo
+		}
+	}
+	log.Debugf("Match quality is %d", eloRange-(maxElo-minElo))
+	return eloRange - (maxElo - minElo)
+}
+
+func evaluateTeams(team1 []*models.Player, team2 []*models.Player) float64 {
+	return float64(team1[0].Elo)*0.4 + float64(team1[1].Elo)*0.3 + float64(team1[2].Elo)*0.3 - (float64(team2[0].Elo)*0.4 + float64(team2[1].Elo)*0.3 + float64(team2[2].Elo)*0.3)
+}
+
+func balanceTeams(indices *[6]int, players []*models.QueuedPlayer) ([]*models.Player, []*models.Player) {
+	fwdsSplit := [6][4]int{{1, 2, 3, 4}, {1, 3, 2, 4}, {1, 4, 2, 3}, {2, 3, 1, 4}, {2, 4, 1, 3}, {3, 4, 1, 2}}
+	bestSplit := fwdsSplit[0]
+	bestBalance := float64(1 << 20)
+	for _, split := range fwdsSplit {
+		team1 := []*models.Player{&players[indices[0]].Player, &players[indices[split[0]+1]].Player, &players[indices[split[1]+1]].Player}
+		team2 := []*models.Player{&players[indices[1]].Player, &players[indices[split[2]+1]].Player, &players[indices[split[3]+1]].Player}
+		balance := evaluateTeams(team1, team2)
+		if math.Abs(balance) < math.Abs(bestBalance) {
+			bestSplit = split
+			bestBalance = balance
+		}
+	}
+	team1 := []*models.Player{&players[indices[0]].Player, &players[indices[bestSplit[0]+1]].Player, &players[indices[bestSplit[1]+1]].Player}
+	team2 := []*models.Player{&players[indices[1]].Player, &players[indices[bestSplit[2]+1]].Player, &players[indices[bestSplit[3]+1]].Player}
+	log.Debugf("Best team balance found is %.2f", bestBalance)
+	return team1, team2
 }
 
 func algorithm() ([]*models.Player, []*models.Player) {
 	playersInQueue, _ := db.GetPlayersInQueue()
 	forwards, flex, goalies := 0, 0, 0
 	sort.SliceStable(playersInQueue, func(i, j int) bool { //goalie -> flex -> forward priority
-		if playersInQueue[i].Role == "goalie" || playersInQueue[j].Role == "goalie" {
-			return playersInQueue[i].Role == "goalie" && playersInQueue[j].Role != "goalie"
-		}
-		if playersInQueue[i].Role == "flex" || playersInQueue[j].Role == "flex" {
-			return playersInQueue[i].Role == "flex" && playersInQueue[j].Role != "flex"
-		}
-		return false
+		return (playersInQueue[i].Role == "goalie" && playersInQueue[j].Role != "goalie") || (playersInQueue[i].Role == "flex" && playersInQueue[j].Role == "forward")
 	})
+	log.Debug("These are the players in sorted queue:")
+	for i, player := range playersInQueue {
+		log.Debugf("%d %s %s %d", i, player.Role, player.OSUser, player.Elo)
+	}
 	for _, player := range playersInQueue {
 		switch player.Role {
 		case "goalie":
@@ -155,8 +246,15 @@ func algorithm() ([]*models.Player, []*models.Player) {
 	totalPossibilities := zeroFlexGoalies + oneFlexGoalie + twoFlexGoalies
 	zeroFlexGoaliesProbability := zeroFlexGoalies / totalPossibilities
 	oneOrZeroFlexGoalieProbability := oneFlexGoalie/totalPossibilities + zeroFlexGoaliesProbability
+	log.Debugf("Relative probabilities for X flex goalies - 0: %.2f, 1: %.2f, 2: %.2f", zeroFlexGoalies, oneFlexGoalie, twoFlexGoalies)
 	var indices [6]int
-	for i := 0; i < 1000; i++ {
+	var bestIndices [6]int
+	bestQuality := -1
+	samplesTaken := 1000
+	if os.Getenv("mode") == "dev" {
+		samplesTaken = 10
+	}
+	for i := 0; i < samplesTaken; i++ {
 		r := rand.Float64()
 		if r < zeroFlexGoaliesProbability {
 			zeroFlexGoaliesSample(forwards, flex, goalies, &indices)
@@ -165,6 +263,14 @@ func algorithm() ([]*models.Player, []*models.Player) {
 		} else {
 			twoFlexGoaliesSample(forwards, flex, goalies, &indices)
 		}
-		// TODO: check the range of the players and note the best.
+		log.Debugf("Indices of sampled players: %d %d %d %d %d %d", indices[0], indices[1], indices[2], indices[3], indices[4], indices[5])
+		quality := evaluatePlayers(&indices, playersInQueue)
+		if quality > bestQuality {
+			bestQuality, bestIndices = quality, indices
+		}
 	}
+	if bestQuality < 0 {
+		return []*models.Player{}, []*models.Player{}
+	}
+	return balanceTeams(&bestIndices, playersInQueue)
 }
