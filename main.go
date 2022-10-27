@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/haashi/omega-strikers-bot/internal/chat"
 	"github.com/haashi/omega-strikers-bot/internal/db"
 	"github.com/haashi/omega-strikers-bot/internal/discord"
 	"github.com/haashi/omega-strikers-bot/internal/matchmaking"
@@ -31,6 +32,8 @@ func main() {
 		log.SetLevel(log.InfoLevel)
 	}
 	db.Init()
+	chat.LoadMarkovFromFile("log")
+
 	discord.Init()
 	slashcommands.Init()
 	matchmaking.Init()

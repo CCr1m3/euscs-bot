@@ -2,9 +2,11 @@ package discord
 
 import (
 	"os"
+	"regexp"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/haashi/omega-strikers-bot/internal/chat"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -29,6 +31,8 @@ func Init() {
 	session.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		log.Printf("logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
 	})
+	session.AddHandler(MentionReaction)
+
 	err = session.Open()
 	if err != nil {
 		log.Fatalf("cannot open the session: %v", err)
@@ -45,4 +49,14 @@ func Init() {
 
 func Stop() {
 	session.Close()
+}
+
+func MentionReaction(s *discordgo.Session, m *discordgo.MessageCreate) {
+
+	r := regexp.MustCompile(s.State.User.Mention())
+	// Ignore all messages created by the bot itself
+	// This isn't required in this specific example but it's a good practice.
+	if r.MatchString(m.Content) {
+		s.ChannelMessageSend(m.ChannelID, chat.GenerateRandomMessage())
+	}
 }

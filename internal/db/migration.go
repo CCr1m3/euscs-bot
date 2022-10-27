@@ -11,6 +11,7 @@ var migrations = []string{
 	migration0,
 	migration1,
 	migration2,
+	migration3,
 }
 
 func migrate() error {
@@ -51,7 +52,8 @@ func getLatestMigration() (int, error) {
 }
 
 var migration0 = `CREATE TABLE IF NOT EXISTS migrations (
-	version int
+	version int,
+	PRIMARY KEY (version)
 );
 INSERT INTO migrations (version) VALUES (0);
 `
@@ -87,5 +89,13 @@ CREATE TABLE matchesplayers (
 	FOREIGN KEY (playerID) REFERENCES players(discordID),
 	FOREIGN KEY (matchID) REFERENCES matches(matchID),
 	PRIMARY KEY (playerID,matchID)
+);
+`
+var migration3 = `CREATE TABLE markov (
+	word1 text,
+	word2	text,
+	word3	text,
+	count int,
+	PRIMARY KEY (word1,word2,word3)
 );
 `
