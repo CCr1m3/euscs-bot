@@ -1,6 +1,5 @@
 # todo
 
-- /result reserved to people in the match only (probably reserved to loosing team too)
 - Pinned message on dedicated channel with howto use bot
 - #request channel for bot talk and commands
 - Automatically leave queue after a time (1h?). Probably tag the person who was forced out. Add queue time into match quality calculations. 
@@ -11,6 +10,7 @@
 - /autojoin (rejoin queue after match if match was not canceled)
 - rematch ?
 - /swap
+- ~~/result reserved to people in the match only (probably reserved to loosing team too)~~
 - ~~/result integer checking for winning state ( score between teams >=2)~~
 - ~~better matchmaking algorithms (now it takes 6 players randomly in the pool, and is often first come first serve since it's matching every 15 secs)~~
 - ~~rating update (elo based)~~

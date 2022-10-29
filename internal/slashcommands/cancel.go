@@ -49,6 +49,31 @@ func (p Cancel) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 		return
 	}
+	inMatch := false
+	for _, p := range match.Team1 {
+		if p.DiscordID == i.Member.User.ID {
+			inMatch = true
+		}
+	}
+	for _, p := range match.Team2 {
+		if p.DiscordID == i.Member.User.ID {
+			inMatch = true
+		}
+	}
+	if !inMatch {
+		log.Warningf("user %s is not in match %s : ", i.Member.User.ID, match.ID)
+		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "You are not a player of this match.",
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
+		})
+		if err != nil {
+			log.Error("failed to send message: " + err.Error())
+		}
+		return
+	}
 	if match.State == models.MatchStateVoteInProgress {
 		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
