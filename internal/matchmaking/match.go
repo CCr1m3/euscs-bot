@@ -36,12 +36,12 @@ func createNewMatch(team1 []*models.Player, team2 []*models.Player) error {
 	for i := range team1 {
 		mentionMessage += "<@" + team1[i].DiscordID + ">"
 	}
-	mentionMessage += "\nversus\n"
+	mentionMessage += " VS\n"
 	for i := range team2 {
 		mentionMessage += "<@" + team2[i].DiscordID + ">"
 	}
 	initialMessage, err := session.ChannelMessageSendComplex(channelId, &discordgo.MessageSend{
-		Content: fmt.Sprintf("ID:%d\n%s", matchId, mentionMessage),
+		Content: fmt.Sprintf("ID:%d | %s", matchId, mentionMessage),
 	})
 	if err != nil {
 		return err
@@ -192,9 +192,9 @@ func CloseMatch(match *models.Match) error {
 	}
 	var editedMessage string
 	if match.State == models.MatchStateCanceled {
-		editedMessage = message.Content + "\nCanceled"
+		editedMessage = "~~" + message.Content + "~~" + " | Canceled"
 	} else {
-		editedMessage = message.Content + fmt.Sprintf("\nFinal score : %d - %d", match.Team1Score, match.Team2Score)
+		editedMessage = message.Content + fmt.Sprintf(" | Final score : %d - %d", match.Team1Score, match.Team2Score)
 	}
 	_, err = session.ChannelMessageEdit(message.ChannelID, message.ID, editedMessage)
 	if err != nil {
