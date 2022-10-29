@@ -63,6 +63,7 @@ func Init() {
 	scheduled.TaskManager.Add(scheduled.Task{ID: "trycreatingmatch", Run: tryCreatingMatch, Frequency: time.Second * 15})
 	scheduled.TaskManager.Add(scheduled.Task{ID: "closeoldmatches", Run: deleteOldMatches, Frequency: time.Minute})
 	scheduled.TaskManager.Add(scheduled.Task{ID: "removelongqueuers", Run: removeLongQueuers, Frequency: time.Minute})
+	scheduled.TaskManager.Add(scheduled.Task{ID: "threadcleanup", Run: threadCleanUp, Frequency: time.Hour})
 	waitingForVoteMatches, err := db.GetWaitingForVotesMatches()
 	if err != nil {
 		log.Error("failed to get matches with a vote in progress:" + err.Error())
@@ -103,7 +104,7 @@ func tryCreatingMatch() {
 	if len(playersInQueue) >= 6 && goalieInQueue >= 2 && forwardInQueue >= 4 {
 		team1, team2 := algorithm()
 		if len(team1) == 0 {
-			log.Debug("Match not created, algorithm deemed no match of quality")
+			log.Debug("match not created, algorithm deemed no match of quality")
 			return
 		}
 		err := createNewMatch(team1, team2)
@@ -230,8 +231,8 @@ func balanceTeams(indices *[6]int, players []*models.QueuedPlayer) ([]*models.Pl
 	}
 	team1 := []*models.Player{&players[indices[0]].Player, &players[indices[bestSplit[0]+1]].Player, &players[indices[bestSplit[1]+1]].Player}
 	team2 := []*models.Player{&players[indices[1]].Player, &players[indices[bestSplit[2]+1]].Player, &players[indices[bestSplit[3]+1]].Player}
-	log.Debugf("Elos of 1st team (goalie 1st): %d %d %d, 2nd team: %d %d %d", players[indices[0]].Elo, players[indices[bestSplit[0]+1]].Elo, players[indices[bestSplit[1]+1]].Elo, players[indices[1]].Elo, players[indices[bestSplit[2]+1]].Elo, players[indices[bestSplit[3]+1]].Elo)
-	log.Debugf("Best team balance found is %.2f", bestBalance)
+	log.Debugf("elos: 1st team: %d %d %d, 2nd team: %d %d %d", players[indices[0]].Elo, players[indices[bestSplit[0]+1]].Elo, players[indices[bestSplit[1]+1]].Elo, players[indices[1]].Elo, players[indices[bestSplit[2]+1]].Elo, players[indices[bestSplit[3]+1]].Elo)
+	log.Debugf("best team balance: %.2f", bestBalance)
 	return team1, team2
 }
 
@@ -244,7 +245,7 @@ func algorithm() ([]*models.Player, []*models.Player) {
 	sort.SliceStable(playersInQueue, func(i, j int) bool { //goalie -> flex -> forward priority
 		return (playersInQueue[i].Role == "goalie" && playersInQueue[j].Role != "goalie") || (playersInQueue[i].Role == "flex" && playersInQueue[j].Role == "forward")
 	})
-	log.Debug("These are the players in sorted queue:")
+	log.Debug("players in sorted queue:")
 	for i, player := range playersInQueue {
 		log.Debugf("%d %s %s %d", i, player.Role, player.OSUser, player.Elo)
 	}
@@ -266,13 +267,13 @@ func algorithm() ([]*models.Player, []*models.Player) {
 	totalPossibilities := zeroFlexGoalies + oneFlexGoalie + twoFlexGoalies
 	zeroFlexGoaliesProbability := zeroFlexGoalies / totalPossibilities
 	oneOrZeroFlexGoalieProbability := oneFlexGoalie/totalPossibilities + zeroFlexGoaliesProbability
-	log.Debugf("Relative probabilities for X flex goalies - 0: %.2f, 1: %.2f, 2: %.2f", zeroFlexGoalies, oneFlexGoalie, twoFlexGoalies)
+	log.Debugf("relative probabilities for X flex goalies: 0: %.2f, 1: %.2f, 2: %.2f", zeroFlexGoalies, oneFlexGoalie, twoFlexGoalies)
 	var indices [6]int
 	var bestIndices [6]int
 	bestQuality := -1
 	samplesTaken := 1000
 	if os.Getenv("mode") == "dev" {
-		samplesTaken = 10
+		samplesTaken = 100
 	}
 	for i := 0; i < samplesTaken; i++ {
 		r := rand.Float64()
@@ -291,5 +292,6 @@ func algorithm() ([]*models.Player, []*models.Player) {
 	if bestQuality < 0 {
 		return []*models.Player{}, []*models.Player{}
 	}
+	log.Debugf("best indices: %d %d %d %d %d %d", bestIndices[0], bestIndices[1], bestIndices[2], bestIndices[3], bestIndices[4], bestIndices[5])
 	return balanceTeams(&bestIndices, playersInQueue)
 }

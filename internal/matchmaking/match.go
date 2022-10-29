@@ -196,6 +196,7 @@ func CloseMatch(match *models.Match) error {
 	} else {
 		editedMessage = message.Content + fmt.Sprintf(" | Final score : %d - %d", match.Team1Score, match.Team2Score)
 	}
+
 	_, err = session.ChannelMessageEdit(message.ChannelID, message.ID, editedMessage)
 	if err != nil {
 		log.Errorf("failed to edit match message: " + err.Error())
@@ -205,7 +206,61 @@ func CloseMatch(match *models.Match) error {
 	if err != nil {
 		log.Errorf("failed to update match: " + err.Error())
 	}
+	if match.State != models.MatchStateCanceled {
+		players := append(match.Team1, match.Team2...)
+
+		if match.State == models.MatchStateTeam1Won {
+			for _, p := range match.Team1 {
+				p.Currency += 10
+			}
+		} else if match.State == models.MatchStateTeam2Won {
+			for _, p := range match.Team2 {
+				p.Currency += 10
+			}
+		}
+		for _, p := range players {
+			p.Currency += 10
+			err = db.UpdatePlayer(p)
+			if err != nil {
+				log.Errorf("failed to update player %s: "+err.Error(), p.DiscordID)
+			}
+		}
+		predictions, err := db.GetPlayersPredictionOnMatch(match)
+		if err != nil {
+			log.Errorf("failed to get predictions for match %s: "+err.Error(), match.ID)
+		}
+		for _, pred := range predictions {
+			if match.State == models.MatchState(pred.Team) {
+				pred.Player.Currency += 10
+				err = db.UpdatePlayer(&pred.Player)
+				if err != nil {
+					log.Errorf("failed to update player %s: "+err.Error(), pred.DiscordID)
+				}
+			}
+		}
+	}
+
 	return err
+}
+
+func threadCleanUp() {
+	session := discord.GetSession()
+	channelID := discord.MatchesChannel.ID
+	archivedSince := time.Now().Add(-time.Hour * 4)
+	if os.Getenv("mode") == "dev" {
+		archivedSince = time.Now().Add(-time.Minute * 10)
+	}
+	threads, err := session.ThreadsArchived(channelID, &archivedSince, 100)
+	if err != nil {
+		log.Error("could not get archived threads: " + err.Error())
+		return
+	}
+	for _, thread := range threads.Threads {
+		_, err = session.ChannelDelete(thread.ID)
+		if err != nil {
+			log.Errorf("could not delete thread %s: "+err.Error(), thread.ID)
+		}
+	}
 }
 
 func deleteOldMatches() {

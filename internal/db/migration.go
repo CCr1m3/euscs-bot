@@ -64,6 +64,7 @@ var migration1 = `CREATE TABLE players (
 		elo int DEFAULT 1500 NOT NULL,
 		osuser text DEFAULT "",
 		lastrankupdate int DEFAULT 0 NOT NULL,
+		currency int DEFAULT 0 NOT NULL,
 		PRIMARY KEY (discordID)
 );
 CREATE TABLE queue (
@@ -93,6 +94,14 @@ CREATE TABLE matchesplayers (
 	FOREIGN KEY (matchID) REFERENCES matches(matchID),
 	PRIMARY KEY (playerID,matchID)
 );
+CREATE TABLE predictions (
+	matchID text,
+	team int,
+	playerID text,
+	FOREIGN KEY (playerID) REFERENCES players(discordID),
+	FOREIGN KEY (matchID) REFERENCES matches(matchID),
+	PRIMARY KEY (playerID,matchID)
+)
 `
 var migration3 = `CREATE TABLE markov (
 	word1 text,
