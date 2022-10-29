@@ -60,19 +60,16 @@ func (p Who) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if user != nil && username != "" {
 		message = "Please enter only one of the argument."
 	} else if user != nil {
-		member, err := s.GuildMember(i.GuildID, user.ID)
-		if err != nil {
-			log.Errorf("failed to get member from id %s: "+err.Error(), user.ID)
-		}
+
 		username, err := rank.GetLinkedUsername(user.ID)
 		if err != nil {
 			log.Errorf("failed to get username of %s: "+err.Error(), user)
 		}
 		if username == "" {
-			message = fmt.Sprintf("%s has not linked his omega strikers account.", member.Mention())
+			message = fmt.Sprintf("%s has not linked his omega strikers account.", "<@"+user.ID+">")
 		} else {
 
-			message = fmt.Sprintf("%s is %s in omega strikers.", member.Mention(), username)
+			message = fmt.Sprintf("%s is %s in omega strikers.", "<@"+user.ID+">", username)
 		}
 	} else if username != "" {
 		userID, err := rank.GetLinkedUser(username)
@@ -82,11 +79,7 @@ func (p Who) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		if userID == "" {
 			message = fmt.Sprintf("%s is not in this server.", username)
 		} else {
-			member, err := s.GuildMember(i.GuildID, userID)
-			if err != nil {
-				log.Errorf("failed to get member from id %s: "+err.Error(), userID)
-			}
-			message = fmt.Sprintf("%s is %s.", username, member.Mention())
+			message = fmt.Sprintf("%s is %s.", username, "<@"+userID+">")
 		}
 	} else {
 		message = "Please enter at least one of the argument."
