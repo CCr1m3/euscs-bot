@@ -2,7 +2,6 @@ package discord
 
 import (
 	"os"
-	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/haashi/omega-strikers-bot/internal/scheduled"
@@ -41,7 +40,6 @@ func Init() {
 	if err != nil {
 		log.Fatalf("cannot initialize channels: %v", err)
 	}
-	scheduled.TaskManager.Add(scheduled.Task{ID: "threadcleanup", Run: threadCleanUp, Frequency: time.Hour})
 }
 
 func Stop() {

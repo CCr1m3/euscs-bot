@@ -32,5 +32,6 @@ Once linked, you can access the discord matchmaking queue using /join or leave i
 You are encouraged to both queue solo queue and here to find faster matches.
 Once a match has been found, you will be pinged into a thread inside the %s channel. Further instructions will be given inside the channel on how to report in game score.
 You gain currency from participating, and more by winning. You can use /currency to know how much coins you have.
+You can also /predict for a team in any running matches. It will give you some currency if you win.
 I also respond to pings, so feel free to @ me to get a funny message (or maybe not, I am bot after all). My response costs you currency.`, MatchesChannel.Mention())
 }
