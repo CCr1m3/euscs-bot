@@ -2,6 +2,9 @@ package matchmaking
 
 import (
 	"errors"
+	"github.com/haashi/omega-strikers-bot/internal/discord"
+	"os"
+	"time"
 
 	"github.com/haashi/omega-strikers-bot/internal/db"
 	"github.com/haashi/omega-strikers-bot/internal/models"
@@ -20,7 +23,7 @@ func AddPlayerToQueue(playerID string, role models.Role) error {
 	} else {
 		return err
 	}
-	err = db.AddPlayerToQueue(p, role)
+	err = db.AddPlayerToQueue(p, role, int(time.Now().Unix()))
 	if err != nil {
 		return err
 	}
@@ -47,4 +50,22 @@ func IsPlayerInQueue(playerID string) (bool, error) {
 		return false, err
 	}
 	return db.IsPlayerInQueue(p)
+}
+
+func removeLongQueuers() {
+	playersInQueue, _ := db.GetPlayersInQueue()
+	cleanDelay := time.Hour
+	if os.Getenv("mode") == "dev" {
+		cleanDelay = time.Minute
+	}
+	for _, player := range playersInQueue {
+		if time.Since(time.Unix(int64(player.EntryTime), 0)) > cleanDelay {
+			db.RemovePlayerFromQueue(&player.Player)
+			_, err := discord.GetSession().ChannelMessageSend(discord.AimiRequestsChannel.ID, "<@"+player.DiscordID+">, you have been removed from the queue for inactivity. Please use the /leave command next time if you didn't mean to still be in queue. If you're still here wanting to queue, /join again!")
+			if err != nil {
+				log.Error(err)
+			}
+			log.Infof("removing player %s from queue", player.OSUser)
+		}
+	}
 }

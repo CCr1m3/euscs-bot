@@ -2,8 +2,8 @@ package db
 
 import "github.com/haashi/omega-strikers-bot/internal/models"
 
-func AddPlayerToQueue(p *models.Player, role models.Role) error {
-	_, err := db.Exec("INSERT INTO queue (playerID,role) VALUES (?,?)", p.DiscordID, role)
+func AddPlayerToQueue(p *models.Player, role models.Role, entryTime int) error {
+	_, err := db.Exec("INSERT INTO queue (playerID,role,entryTime) VALUES (?,?,?)", p.DiscordID, role, entryTime)
 	if err != nil {
 		return &models.DBError{Err: err}
 	}
@@ -20,7 +20,7 @@ func RemovePlayerFromQueue(p *models.Player) error {
 
 func GetPlayersInQueue() ([]*models.QueuedPlayer, error) {
 	players := []*models.QueuedPlayer{}
-	err := db.Select(&players, "SELECT discordID,osuser,elo,role,lastrankupdate,currency FROM queue JOIN players ON queue.playerID = players.discordID")
+	err := db.Select(&players, "SELECT discordID,osuser,elo,role,lastrankupdate,currency,entrytime FROM queue JOIN players ON queue.playerID = players.discordID")
 	if err != nil {
 		return nil, &models.DBError{Err: err}
 	}

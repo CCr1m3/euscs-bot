@@ -18,13 +18,13 @@ func Test_db_AddPlayerToQueue(t *testing.T) {
 		t.Errorf("failed to get player: " + err.Error())
 	}
 
-	if err := AddPlayerToQueue(p, models.RoleFlex); err != nil {
+	if err := AddPlayerToQueue(p, models.RoleFlex, 0); err != nil {
 		t.Errorf("AddPlayerToQueue() error: " + err.Error())
 	}
 	if inQueue, err := IsPlayerInQueue(p); err != nil || !inQueue {
 		t.Errorf("AddPlayerToQueue() error: player is not in queue" + err.Error())
 	}
-	if err := AddPlayerToQueue(p, models.RoleFlex); err == nil {
+	if err := AddPlayerToQueue(p, models.RoleFlex, 0); err == nil {
 		t.Errorf("AddPlayerToQueue() should be in error: player is already in queue")
 	}
 	ps, err := GetPlayersInQueue()
@@ -51,7 +51,7 @@ func Test_db_RemovePlayerFromQueue(t *testing.T) {
 		t.Errorf("failed to get player: " + err.Error())
 	}
 
-	if err := AddPlayerToQueue(p, models.RoleFlex); err != nil {
+	if err := AddPlayerToQueue(p, models.RoleFlex, 0); err != nil {
 		t.Errorf("AddPlayerToQueue() error: " + err.Error())
 	}
 	if err := RemovePlayerFromQueue(p); err != nil {
@@ -83,7 +83,7 @@ func Test_db_GetGoaliesCountInQueue(t *testing.T) {
 		t.Errorf("failed to get player: " + err.Error())
 	}
 
-	if err := AddPlayerToQueue(p, models.RoleFlex); err != nil {
+	if err := AddPlayerToQueue(p, models.RoleFlex, 0); err != nil {
 		t.Errorf("AddPlayerToQueue() error: " + err.Error())
 	}
 	err = CreatePlayer("12346")
@@ -95,7 +95,7 @@ func Test_db_GetGoaliesCountInQueue(t *testing.T) {
 		t.Errorf("failed to get player: " + err.Error())
 	}
 
-	if err := AddPlayerToQueue(p2, models.RoleGoalie); err != nil {
+	if err := AddPlayerToQueue(p2, models.RoleGoalie, 0); err != nil {
 		t.Errorf("AddPlayerToQueue() error: " + err.Error())
 	}
 
@@ -129,7 +129,7 @@ func Test_db_GetForwardsCountInQueue(t *testing.T) {
 		t.Errorf("failed to get player: " + err.Error())
 	}
 
-	if err := AddPlayerToQueue(p, models.RoleForward); err != nil {
+	if err := AddPlayerToQueue(p, models.RoleForward, 0); err != nil {
 		t.Errorf("AddPlayerToQueue() error: " + err.Error())
 	}
 
