@@ -9,6 +9,7 @@ import (
 var MatchesChannel *discordgo.Channel
 var AiMiChannels *discordgo.Channel
 var HowToChannel *discordgo.Channel
+var AimiRequestsChannel *discordgo.Channel
 
 func initChannels() error {
 	channels, err := session.GuildChannels(GuildID)
@@ -24,6 +25,9 @@ func initChannels() error {
 		}
 		if channel.Name == "matches" {
 			MatchesChannel = channel
+		}
+		if channel.Name == "aimi-requests" {
+			AimiRequestsChannel = channel
 		}
 	}
 	if AiMiChannels == nil {
@@ -56,9 +60,11 @@ func initChannels() error {
 			log.Fatal("failed to open channel matches for bot: ", err.Error())
 		}
 	}
-	err = initHowTo()
-	if err != nil {
-		log.Fatal("failed to init howto channel: ", err.Error())
+	if AimiRequestsChannel == nil {
+		AimiRequestsChannel, err = session.GuildChannelCreateComplex(GuildID, discordgo.GuildChannelCreateData{Name: "aimi-requests", Type: discordgo.ChannelTypeGuildText, ParentID: AiMiChannels.ID})
+		if err != nil {
+			log.Fatal("failed to create channel aimi-requests: ", err.Error())
+		}
 	}
 	return nil
 }

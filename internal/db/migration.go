@@ -69,6 +69,7 @@ var migration1 = `CREATE TABLE players (
 CREATE TABLE queue (
 	playerID text UNIQUE,
 	role text DEFAULT "" NOT NULL,
+	entryTime int,
 	PRIMARY KEY (playerID),
 	FOREIGN KEY (playerID) REFERENCES players(discordID)
 );`

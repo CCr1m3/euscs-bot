@@ -62,6 +62,7 @@ func Init() {
 	scheduled.TaskManager.Add(scheduled.Task{ID: "updatesession", Run: updateStatus, Frequency: time.Second * 5})
 	scheduled.TaskManager.Add(scheduled.Task{ID: "trycreatingmatch", Run: tryCreatingMatch, Frequency: time.Second * 15})
 	scheduled.TaskManager.Add(scheduled.Task{ID: "closeoldmatches", Run: deleteOldMatches, Frequency: time.Minute})
+	//scheduled.TaskManager.Add(scheduled.Task{ID: "removelongqueuers", Run: removeLongQueuers, Frequency: time.Minute})
 	waitingForVoteMatches, err := db.GetWaitingForVotesMatches()
 	if err != nil {
 		log.Error("failed to get matches with a vote in progress:" + err.Error())

@@ -10,5 +10,6 @@ const (
 
 type QueuedPlayer struct {
 	Player
-	Role Role
+	Role      Role
+	EntryTime int
 }
