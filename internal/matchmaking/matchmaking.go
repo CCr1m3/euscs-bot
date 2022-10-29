@@ -14,6 +14,7 @@ import (
 	"github.com/haashi/omega-strikers-bot/internal/discord"
 	"github.com/haashi/omega-strikers-bot/internal/models"
 	"github.com/haashi/omega-strikers-bot/internal/scheduled"
+	"github.com/haashi/omega-strikers-bot/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -119,66 +120,72 @@ func tryCreatingMatch() {
 }
 
 // Haashi please don't kill me, I'm just optimizing. This needs to be as fast as possible.
-func zeroFlexGoaliesSample(forwards int, flex int, goalies int, indices *[6]int) {
-	indices[0] = rand.Intn(goalies)
-	indices[1] = rand.Intn(goalies - 1)
+func zeroFlexGoaliesSample(forwards int, flex int, goalies int) [6]int {
+	indices := [6]int{}
+	indices[0] = utils.FastRandN(goalies)
+	indices[1] = utils.FastRandN(goalies - 1)
 	if indices[1] >= indices[0] {
 		indices[1]++
 	}
-	indices[2] = rand.Intn(forwards+flex) + goalies
-	indices[3] = rand.Intn(forwards+flex-1) + goalies
+	indices[2] = utils.FastRandN(forwards+flex) + goalies
+	indices[3] = utils.FastRandN(forwards+flex-1) + goalies
 	if indices[3] >= indices[2] {
 		indices[3]++
 	}
-	indices[4] = rand.Intn(forwards+flex) + goalies
+	indices[4] = utils.FastRandN(forwards+flex) + goalies
 	for indices[4] == indices[3] || indices[4] == indices[2] {
-		indices[4] = rand.Intn(forwards+flex) + goalies
+		indices[4] = utils.FastRandN(forwards+flex) + goalies
 	}
-	indices[5] = rand.Intn(forwards+flex) + goalies
+	indices[5] = utils.FastRandN(forwards+flex) + goalies
 	for indices[5] == indices[4] || indices[5] == indices[3] || indices[5] == indices[2] {
-		indices[5] = rand.Intn(forwards+flex) + goalies
+		indices[5] = utils.FastRandN(forwards+flex) + goalies
 	}
+	return indices
 }
 
-func oneFlexGoalieSample(forwards int, flex int, goalies int, indices *[6]int) {
-	indices[0] = rand.Intn(goalies)
-	indices[1] = rand.Intn(flex) + goalies
-	indices[2] = rand.Intn(flex+forwards-1) + goalies
+func oneFlexGoalieSample(forwards int, flex int, goalies int) [6]int {
+	indices := [6]int{}
+	indices[0] = utils.FastRandN(goalies)
+	indices[1] = utils.FastRandN(flex) + goalies
+	indices[2] = utils.FastRandN(flex+forwards-1) + goalies
 	if indices[2] >= indices[1] {
 		indices[2]++
 	}
-	indices[3] = rand.Intn(forwards+flex) + goalies
+	indices[3] = utils.FastRandN(forwards+flex) + goalies
 	for indices[3] == indices[2] || indices[3] == indices[1] {
-		indices[3] = rand.Intn(forwards+flex) + goalies
+		indices[3] = utils.FastRandN(forwards+flex) + goalies
 	}
-	indices[4] = rand.Intn(forwards+flex) + goalies
+	indices[4] = utils.FastRandN(forwards+flex) + goalies
 	for indices[4] == indices[3] || indices[4] == indices[2] || indices[4] == indices[1] {
-		indices[4] = rand.Intn(forwards+flex) + goalies
+		indices[4] = utils.FastRandN(forwards+flex) + goalies
 	}
-	indices[5] = rand.Intn(forwards+flex) + goalies
+	indices[5] = utils.FastRandN(forwards+flex) + goalies
 	for indices[5] == indices[4] || indices[5] == indices[3] || indices[5] == indices[2] || indices[5] == indices[1] {
-		indices[5] = rand.Intn(forwards+flex) + goalies
+		indices[5] = utils.FastRandN(forwards+flex) + goalies
 	}
+	return indices
 }
 
-func twoFlexGoaliesSample(forwards int, flex int, goalies int, indices *[6]int) {
-	indices[0] = rand.Intn(flex) + goalies
-	indices[1] = rand.Intn(flex-1) + goalies
+func twoFlexGoaliesSample(forwards int, flex int, goalies int) [6]int {
+	indices := [6]int{}
+	indices[0] = utils.FastRandN(flex) + goalies
+	indices[1] = utils.FastRandN(flex-1) + goalies
 	if indices[1] >= indices[0] {
 		indices[1]++
 	}
-	indices[3] = rand.Intn(forwards+flex) + goalies
+	indices[3] = utils.FastRandN(forwards+flex) + goalies
 	for indices[3] == indices[2] || indices[3] == indices[1] || indices[3] == indices[0] {
-		indices[3] = rand.Intn(forwards+flex) + goalies
+		indices[3] = utils.FastRandN(forwards+flex) + goalies
 	}
-	indices[4] = rand.Intn(forwards+flex) + goalies
+	indices[4] = utils.FastRandN(forwards+flex) + goalies
 	for indices[4] == indices[3] || indices[4] == indices[2] || indices[4] == indices[1] || indices[4] == indices[0] {
-		indices[4] = rand.Intn(forwards+flex) + goalies
+		indices[4] = utils.FastRandN(forwards+flex) + goalies
 	}
-	indices[5] = rand.Intn(forwards+flex) + goalies
+	indices[5] = utils.FastRandN(forwards+flex) + goalies
 	for indices[5] == indices[4] || indices[5] == indices[3] || indices[5] == indices[2] || indices[5] == indices[1] || indices[5] == indices[0] {
-		indices[5] = rand.Intn(forwards+flex) + goalies
+		indices[5] = utils.FastRandN(forwards+flex) + goalies
 	}
+	return indices
 }
 
 func evaluatePlayers(indices *[6]int, players []*models.QueuedPlayer) int {
@@ -193,7 +200,6 @@ func evaluatePlayers(indices *[6]int, players []*models.QueuedPlayer) int {
 			minElo = player.Elo
 		}
 	}
-	log.Debugf("Match quality is %d", eloRange-(maxElo-minElo))
 	return eloRange - (maxElo - minElo)
 }
 
@@ -260,13 +266,12 @@ func algorithm() ([]*models.Player, []*models.Player) {
 	for i := 0; i < samplesTaken; i++ {
 		r := rand.Float64()
 		if r < zeroFlexGoaliesProbability {
-			zeroFlexGoaliesSample(forwards, flex, goalies, &indices)
+			indices = zeroFlexGoaliesSample(forwards, flex, goalies)
 		} else if r < oneOrZeroFlexGoalieProbability {
-			oneFlexGoalieSample(forwards, flex, goalies, &indices)
+			indices = oneFlexGoalieSample(forwards, flex, goalies)
 		} else {
-			twoFlexGoaliesSample(forwards, flex, goalies, &indices)
+			indices = twoFlexGoaliesSample(forwards, flex, goalies)
 		}
-		log.Debugf("Indices of sampled players: %d %d %d %d %d %d", indices[0], indices[1], indices[2], indices[3], indices[4], indices[5])
 		quality := evaluatePlayers(&indices, playersInQueue)
 		if quality > bestQuality {
 			bestQuality, bestIndices = quality, indices
