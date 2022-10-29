@@ -45,6 +45,10 @@ func initChannels() error {
 		if err != nil {
 			log.Fatal("failed to lock channel matches: ", err.Error())
 		}
+		err = session.ChannelPermissionSet(HowToChannel.ID, ApplicationRole.ID, discordgo.PermissionOverwriteTypeRole, discordgo.PermissionSendMessages, 0)
+		if err != nil {
+			log.Fatal("failed to open channel matches for bot: ", err.Error())
+		}
 	}
 	if MatchesChannel == nil {
 		MatchesChannel, err = session.GuildChannelCreateComplex(GuildID, discordgo.GuildChannelCreateData{Name: "matches", Type: discordgo.ChannelTypeGuildText, ParentID: AiMiChannels.ID})
@@ -65,6 +69,10 @@ func initChannels() error {
 		if err != nil {
 			log.Fatal("failed to create channel aimi-requests: ", err.Error())
 		}
+	}
+	err = initHowTo()
+	if err != nil {
+		log.Fatal("failed to init channel how-to: ", err.Error())
 	}
 	return nil
 }

@@ -85,7 +85,7 @@ func (p Predict) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 	}
 	if inMatch {
-		log.Warningf("can't predict: user %s is in match %s : ", i.Member.User.ID, match.ID)
+		log.Warningf("can't predict: user %s is in match %s", i.Member.User.ID, match.ID)
 		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{

@@ -24,6 +24,7 @@ func CreateVoteMessage(channelID string, content string, choices []string) (*dis
 }
 
 func FetchVoteResults(message *discordgo.Message, choices []string, allowedVoters []string) ([][]*discordgo.User, error) {
+	log.Debugf("fetching vote results for message %s with choices %v", message.ID, choices)
 	s := discord.GetSession()
 	alreadyVoted := make(map[string]bool)
 	voteReactions := make([][]*discordgo.User, 0)
