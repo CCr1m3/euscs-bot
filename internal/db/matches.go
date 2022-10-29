@@ -9,7 +9,7 @@ func CreateMatch(m *models.Match) error {
 	if err != nil {
 		return &models.DBError{Err: err}
 	}
-	_, err = tx.NamedExec("INSERT INTO matches (matchID,threadID,messageID,timestamp) VALUES (:matchID,:threadID,:messageID,:timestamp)", m)
+	_, err = tx.NamedExec("INSERT INTO matches (matchID,threadID,messageID,votemessageID,timestamp) VALUES (:matchID,:threadID,:messageID,:votemessageID,:timestamp)", m)
 	if err != nil {
 		err2 := tx.Rollback()
 		if err2 != nil {
@@ -50,7 +50,7 @@ func CreateMatch(m *models.Match) error {
 
 func UpdateMatch(m *models.Match) error {
 	//update players in matchesplayers (probably delete and recreate)
-	_, err := db.NamedExec("UPDATE matches SET state=:state, team1score=:team1score, team2score=:team2score WHERE matchID=:matchID", m)
+	_, err := db.NamedExec("UPDATE matches SET state=:state, team1score=:team1score, team2score=:team2score,votemessageID=:votemessageID WHERE matchID=:matchID", m)
 	if err != nil {
 		return &models.DBError{Err: err}
 	}
@@ -102,6 +102,21 @@ func GetMatchByID(matchID string) (*models.Match, error) {
 func GetRunningMatchesOrderedByTimestamp() ([]*models.Match, error) {
 	matches := []*models.Match{}
 	err := db.Select(&matches, "SELECT * FROM matches WHERE state=0 ORDER BY timestamp ASC LIMIT 50")
+	if err != nil {
+		return nil, &models.DBError{Err: err}
+	}
+	for _, match := range matches {
+		err = getTeamsInMatch(match)
+		if err != nil {
+			return nil, &models.DBError{Err: err}
+		}
+	}
+	return matches, nil
+}
+
+func GetWaitingForVotesMatches() ([]*models.Match, error) {
+	matches := []*models.Match{}
+	err := db.Select(&matches, "SELECT * FROM matches WHERE state=-1")
 	if err != nil {
 		return nil, &models.DBError{Err: err}
 	}
