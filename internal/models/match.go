@@ -22,3 +22,8 @@ const (
 	MatchStateVoteInProgress MatchState = -1
 	MatchStateCanceled       MatchState = 3
 )
+
+type Prediction struct {
+	Player
+	Team int `db:"team"`
+}

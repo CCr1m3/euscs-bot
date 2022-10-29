@@ -31,3 +31,15 @@ func GetPlayerCurrency(playerID string) (int, error) {
 	}
 	return p.Currency, nil
 }
+
+func AddPrediction(playerID string, matchID string, team int) error {
+	_, err := getOrCreatePlayer(playerID)
+	if err != nil {
+		return err
+	}
+	err = db.CreatePrediction(playerID, matchID, team)
+	if err != nil {
+		return err
+	}
+	return nil
+}

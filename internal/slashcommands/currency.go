@@ -15,7 +15,7 @@ func (p Currency) Name() string {
 }
 
 func (p Currency) Description() string {
-	return "currency description"
+	return "Allow you to know how much you have."
 }
 
 func (p Currency) RequiredPerm() *int64 {

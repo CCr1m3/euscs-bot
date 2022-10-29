@@ -93,6 +93,14 @@ CREATE TABLE matchesplayers (
 	FOREIGN KEY (matchID) REFERENCES matches(matchID),
 	PRIMARY KEY (playerID,matchID)
 );
+CREATE TABLE predictions (
+	matchID text,
+	team int,
+	playerID text,
+	FOREIGN KEY (playerID) REFERENCES players(discordID),
+	FOREIGN KEY (matchID) REFERENCES matches(matchID),
+	PRIMARY KEY (playerID,matchID)
+)
 `
 var migration3 = `CREATE TABLE markov (
 	word1 text,

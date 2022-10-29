@@ -1,39 +1,63 @@
 package slashcommands
 
 import (
+	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/bwmarrin/discordgo"
+	"github.com/haashi/omega-strikers-bot/internal/currency"
 	"github.com/haashi/omega-strikers-bot/internal/matchmaking"
-	"github.com/haashi/omega-strikers-bot/internal/models"
 	log "github.com/sirupsen/logrus"
 )
 
-type Cancel struct{}
+type Predict struct{}
 
-func (p Cancel) Name() string {
-	return "cancel"
+func (p Predict) Name() string {
+	return "predict"
 }
 
-func (p Cancel) Description() string {
-	return "Allow you to cancel a match."
+func (p Predict) Description() string {
+	return "Allow you to predict on a match."
 }
 
-func (p Cancel) RequiredPerm() *int64 {
+func (p Predict) RequiredPerm() *int64 {
 	perm := int64(discordgo.PermissionViewChannel)
 	return &perm
 }
 
-func (p Cancel) Options() []*discordgo.ApplicationCommandOption {
-	return []*discordgo.ApplicationCommandOption{}
+func (p Predict) Options() []*discordgo.ApplicationCommandOption {
+	return []*discordgo.ApplicationCommandOption{
+		{
+			Name:        "team",
+			Description: "Which team will win",
+			Type:        discordgo.ApplicationCommandOptionString,
+			Required:    true,
+			Choices: []*discordgo.ApplicationCommandOptionChoice{
+				{
+					Name:  "Team1",
+					Value: "1",
+				},
+				{
+					Name:  "Team2",
+					Value: "2",
+				},
+			},
+		},
+	}
 }
 
-func (p Cancel) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func (p Predict) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	options := i.ApplicationCommandData().Options
 	optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
 	for _, opt := range options {
 		optionMap[opt.Name] = opt
 	}
-
-	log.Debugf("%s used /cancel on channel %s", i.Member.User.ID, i.ChannelID)
+	team, err := strconv.ParseInt(optionMap["team"].StringValue(), 10, 0)
+	if err != nil {
+		return
+	}
+	log.Debugf("%s used /predict on channel with parameters: %d", i.Member.User.ID, team)
 	match, err := matchmaking.GetMatchByThreadId(i.ChannelID)
 	if err != nil {
 		log.Warningf("failed to find match by threadID %s : "+err.Error(), i.ChannelID)
@@ -45,7 +69,7 @@ func (p Cancel) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			},
 		})
 		if err != nil {
-			log.Fatal("failed to send message")
+			log.Error("failed to send message: " + err.Error())
 		}
 		return
 	}
@@ -60,12 +84,12 @@ func (p Cancel) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			inMatch = true
 		}
 	}
-	if !inMatch {
-		log.Warningf("can't cancel: user %s is not in match %s : ", i.Member.User.ID, match.ID)
+	if inMatch {
+		log.Warningf("can't predict: user %s is in match %s : ", i.Member.User.ID, match.ID)
 		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
-				Content: "You are not a player of this match.",
+				Content: "You are a player of this match.",
 				Flags:   discordgo.MessageFlagsEphemeral,
 			},
 		})
@@ -74,11 +98,25 @@ func (p Cancel) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 		return
 	}
-	if match.State == models.MatchStateVoteInProgress {
+	if time.Since(time.Unix(int64(match.Timestamp), 0)) > time.Minute {
 		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
-				Content: "A confirmation is already in progress.",
+				Content: "The match has already started for too long to predict.",
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
+		})
+		if err != nil {
+			log.Error("failed to send message: " + err.Error())
+		}
+		return
+	}
+	err = currency.AddPrediction(i.Member.User.ID, match.ID, int(team))
+	if err != nil {
+		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "You already predicted for this match.",
 				Flags:   discordgo.MessageFlagsEphemeral,
 			},
 		})
@@ -90,12 +128,10 @@ func (p Cancel) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: "Confirmation started.",
-			Flags:   discordgo.MessageFlagsEphemeral,
+			Content: fmt.Sprintf("%s predicted team%d victory.", i.Member.User.Mention(), team),
 		},
 	})
 	if err != nil {
 		log.Error("failed to send message: " + err.Error())
 	}
-	matchmaking.VoteCancelMatch(match)
 }

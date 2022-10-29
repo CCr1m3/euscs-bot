@@ -206,28 +206,36 @@ func CloseMatch(match *models.Match) error {
 	if err != nil {
 		log.Errorf("failed to update match: " + err.Error())
 	}
-	if match.State == models.MatchStateTeam1Won {
+	if match.State != models.MatchStateCanceled {
 		players := append(match.Team1, match.Team2...)
-		for _, p := range match.Team1 {
-			p.Currency += 20
+
+		if match.State == models.MatchStateTeam1Won {
+			for _, p := range match.Team1 {
+				p.Currency += 10
+			}
+		} else if match.State == models.MatchStateTeam2Won {
+			for _, p := range match.Team2 {
+				p.Currency += 10
+			}
 		}
 		for _, p := range players {
-			p.Currency += 20
+			p.Currency += 10
 			err = db.UpdatePlayer(p)
 			if err != nil {
 				log.Errorf("failed to update player %s: "+err.Error(), p.DiscordID)
 			}
 		}
-	} else if match.State == models.MatchStateTeam2Won {
-		players := append(match.Team1, match.Team2...)
-		for _, p := range match.Team2 {
-			p.Currency += 20
+		predictions, err := db.GetPlayersPredictionOnMatch(match)
+		if err != nil {
+			log.Errorf("failed to get predictions for match %s: "+err.Error(), match.ID)
 		}
-		for _, p := range players {
-			p.Currency += 20
-			err = db.UpdatePlayer(p)
-			if err != nil {
-				log.Errorf("failed to update player %s: "+err.Error(), p.DiscordID)
+		for _, pred := range predictions {
+			if match.State == models.MatchState(pred.Team) {
+				pred.Player.Currency += 10
+				err = db.UpdatePlayer(&pred.Player)
+				if err != nil {
+					log.Errorf("failed to update player %s: "+err.Error(), pred.DiscordID)
+				}
 			}
 		}
 	}
