@@ -38,7 +38,7 @@ func (p Update) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	playerID := i.Member.User.ID
 	err := rank.UpdateRankIfNeeded(playerID)
 	if err != nil {
-		log.Errorf("failed to update player %s with username %s: "+err.Error(), playerID)
+		log.Errorf("failed to update player %s rank: "+err.Error(), playerID)
 		var tooFastErr *models.RankUpdateTooFastError
 		var notLinkedErr *models.NotLinkedError
 		if errors.As(err, &tooFastErr) {

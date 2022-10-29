@@ -30,15 +30,16 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
-	err := learn(m.Content)
-	if err != nil {
-		log.Error("failed to learn message: " + err.Error())
-	}
 	r := regexp.MustCompile(s.State.User.Mention())
 	if r.MatchString(m.Content) {
 		_, err := s.ChannelMessageSend(m.ChannelID, generateRandomMessage())
 		if err != nil {
 			log.Error("failed to send message: " + err.Error())
+		}
+	} else {
+		err := learn(m.Content)
+		if err != nil {
+			log.Error("failed to learn message: " + err.Error())
 		}
 	}
 }

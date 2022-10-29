@@ -13,7 +13,7 @@ var HowToChannel *discordgo.Channel
 func initChannels() error {
 	channels, err := session.GuildChannels(GuildID)
 	if err != nil {
-		log.Errorf("failed to get guild channels")
+		log.Error("failed to get guild channels: ", err.Error())
 	}
 	for _, channel := range channels {
 		if channel.Name == "Ai.Mi" {
@@ -29,32 +29,36 @@ func initChannels() error {
 	if AiMiChannels == nil {
 		AiMiChannels, err = session.GuildChannelCreate(GuildID, "Ai.Mi", discordgo.ChannelTypeGuildCategory)
 		if err != nil {
-			log.Fatalf("failed to create channel group Ai.Mi")
+			log.Fatal("failed to create channel group Ai.Mi: ", err.Error())
 		}
 	}
 	if HowToChannel == nil {
 		HowToChannel, err = session.GuildChannelCreateComplex(GuildID, discordgo.GuildChannelCreateData{Name: "how-to", Type: discordgo.ChannelTypeGuildText, ParentID: AiMiChannels.ID})
 		if err != nil {
-			log.Fatalf("failed to create channel how-to")
+			log.Fatal("failed to create channel how-to: ", err.Error())
 		}
 		err = session.ChannelPermissionSet(HowToChannel.ID, GuildID, discordgo.PermissionOverwriteTypeRole, 0, discordgo.PermissionSendMessages)
 		if err != nil {
-			log.Fatalf("failed to lock channel matches")
+			log.Fatal("failed to lock channel matches: ", err.Error())
 		}
 	}
 	if MatchesChannel == nil {
 		MatchesChannel, err = session.GuildChannelCreateComplex(GuildID, discordgo.GuildChannelCreateData{Name: "matches", Type: discordgo.ChannelTypeGuildText, ParentID: AiMiChannels.ID})
 		if err != nil {
-			log.Fatalf("failed to create channel matches")
+			log.Fatal("failed to create channel matches: ", err.Error())
 		}
 		err = session.ChannelPermissionSet(MatchesChannel.ID, GuildID, discordgo.PermissionOverwriteTypeRole, 0, discordgo.PermissionSendMessages)
 		if err != nil {
-			log.Fatalf("failed to lock channel matches")
+			log.Fatal("failed to lock channel matches: ", err.Error())
 		}
 		err = session.ChannelPermissionSet(MatchesChannel.ID, ApplicationRole.ID, discordgo.PermissionOverwriteTypeRole, discordgo.PermissionSendMessages, 0)
 		if err != nil {
-			log.Fatalf("failed to open channel matches for bot")
+			log.Fatal("failed to open channel matches for bot: ", err.Error())
 		}
+	}
+	err = initHowTo()
+	if err != nil {
+		log.Fatal("failed to init howto channel: ", err.Error())
 	}
 	return nil
 }
