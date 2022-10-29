@@ -194,7 +194,7 @@ func updatePlayerDiscordRole(playerID string) error {
 			currentRole = discord.RoleRookie
 		}
 	}
-	if currentRole != nil && currentRole.Position > roleToAdd.Position {
+	if currentRole != nil && currentRole.Position >= roleToAdd.Position {
 		//we only update for peak elo
 		return nil
 	}
