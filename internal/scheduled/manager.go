@@ -15,6 +15,7 @@ type scheduledTaskManager struct {
 }
 
 func (g *scheduledTaskManager) Add(t Task) {
+	g.Cancel(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	key := t.ID
 	g.m.Store(key, cancel)

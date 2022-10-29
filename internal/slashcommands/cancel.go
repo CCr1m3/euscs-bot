@@ -45,7 +45,7 @@ func (p Cancel) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			},
 		})
 		if err != nil {
-			log.Fatal("failed to send message")
+			log.Error("failed to send message")
 		}
 		return
 	}

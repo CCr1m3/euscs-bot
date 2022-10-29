@@ -20,7 +20,7 @@ func initChannels() error {
 		if channel.Name == "Ai.Mi" {
 			AiMiChannels = channel
 		}
-		if channel.Name == "how-to" {
+		if channel.Name == "instructions" {
 			HowToChannel = channel
 		}
 		if channel.Name == "matches" {
@@ -37,13 +37,17 @@ func initChannels() error {
 		}
 	}
 	if HowToChannel == nil {
-		HowToChannel, err = session.GuildChannelCreateComplex(GuildID, discordgo.GuildChannelCreateData{Name: "how-to", Type: discordgo.ChannelTypeGuildText, ParentID: AiMiChannels.ID})
+		HowToChannel, err = session.GuildChannelCreateComplex(GuildID, discordgo.GuildChannelCreateData{Name: "instructions", Type: discordgo.ChannelTypeGuildText, ParentID: AiMiChannels.ID})
 		if err != nil {
 			log.Fatal("failed to create channel how-to: ", err.Error())
 		}
 		err = session.ChannelPermissionSet(HowToChannel.ID, GuildID, discordgo.PermissionOverwriteTypeRole, 0, discordgo.PermissionSendMessages)
 		if err != nil {
 			log.Fatal("failed to lock channel matches: ", err.Error())
+		}
+		err = session.ChannelPermissionSet(HowToChannel.ID, ApplicationRole.ID, discordgo.PermissionOverwriteTypeRole, discordgo.PermissionSendMessages, 0)
+		if err != nil {
+			log.Fatal("failed to open channel matches for bot: ", err.Error())
 		}
 	}
 	if MatchesChannel == nil {
@@ -65,6 +69,10 @@ func initChannels() error {
 		if err != nil {
 			log.Fatal("failed to create channel aimi-requests: ", err.Error())
 		}
+	}
+	err = initHowTo()
+	if err != nil {
+		log.Fatal("failed to init channel how-to: ", err.Error())
 	}
 	return nil
 }

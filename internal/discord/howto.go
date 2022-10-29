@@ -24,14 +24,5 @@ func initHowTo() error {
 }
 
 func howtomessage() string {
-	return fmt.Sprintf(`Hello my name is Ai.Mi and I am this discord's assitant.
-To access my features, you must first use the /link command to link your omega strikers account to your discord account. Linking to someone else account can be punished by moderators.
-If you wish to unlink for any reason, contact a mod.
-This will allow to assign your rank role and the usage of /update to manually update your role once you rank up (only peak rank is updated).
-Once linked, you can access the discord matchmaking queue using /join or leave it using /leave. The matchmaking queue will use your in game rank to ensure balanced matches.
-You are encouraged to both queue solo queue and here to find faster matches.
-Once a match has been found, you will be pinged into a thread inside the %s channel. Further instructions will be given inside the channel on how to report in game score.
-You gain currency from participating, and more by winning. You can use /currency to know how much coins you have.
-You can also /predict for a team in any running matches. It will give you some currency if you win.
-I also respond to pings, so feel free to @ me to get a funny message (or maybe not, I am bot after all). My response costs you currency.`, MatchesChannel.Mention())
+	return fmt.Sprintf("Hello my name is Ai.Mi and I am this discord's assistant. My available commands:\n\n``/link`` to link your Omega Strikers account to your discord account. I will assign you a rank based on the one you have ingame. Linking an account that does not belong to you is harshly punishable. If you wish to unlink your account for any reason contact a moderator.\n\n``/update`` for me to update your rank based on the one you have ingame.\n\n``/join`` to join my custom queue and ``/leave`` to leave it. My queue uses your ingame elo to ensure fair matches of quality. You are free to play Omega Strikers while queueing. Just join up with the rest after you finish your game when I find a match for you.\nWhen I find a match for you I will ping you in %s. I'll give you further instructions there.\n\n``/predict`` in a thread of an ongoing match to predict who will win. If you guess correctly, I'll reward you with credits!\n\n``/credits`` to check your Ai.Mi credit balance. You can get credits by winning (20) and losing (10) in my queue and correctly predicting matches (5).\n\nYou can spend 20 Ai.Mi credits by tagging me with a message, I will respond!\n\nHave fun!", MatchesChannel.Mention())
 }

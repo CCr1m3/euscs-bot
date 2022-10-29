@@ -49,10 +49,6 @@ func LinkPlayerToUsername(playerID string, username string) error {
 		}
 		err = UpdateRank(playerID, true)
 		if err != nil {
-			err2 := UnlinkPlayer(playerID)
-			if err2 != nil {
-				return err2
-			}
 			return err
 		}
 		return nil
@@ -76,7 +72,12 @@ func UnlinkPlayer(playerID string) error {
 	if err != nil {
 		return err
 	}
-	err = updatePlayerDiscordRole(playerID)
+	go func() { //update in background
+		err := updatePlayerDiscordRole(player.DiscordID)
+		if err != nil {
+			log.Errorf("failed to update discord role of user %s: "+err.Error(), player.DiscordID)
+		}
+	}()
 	return err
 }
 
@@ -129,14 +130,14 @@ func UpdateRank(playerID string, updateDiscordRole bool) error {
 		log.Errorf("failed to retrieve rank of player %s: "+err.Error(), player.DiscordID)
 		var invalidUsernameError *models.RankUpdateUsernameError
 		if errors.As(err, &invalidUsernameError) {
-			go func() {
-				log.Warningf("unlinking %s because username %s was not valid", playerID, player.OSUser)
-				err := UnlinkPlayer(playerID)
-				if err != nil {
+			log.Warningf("unlinking %s because username %s was not valid", playerID, player.OSUser)
+			if player.OSUser != "" {
+				err2 := UnlinkPlayer(playerID)
+				if err2 != nil {
 					log.Errorf("failed to unlink player %s: "+err.Error(), playerID)
 				}
-			}()
-			return err
+			}
+			return invalidUsernameError
 		}
 		return err
 	}

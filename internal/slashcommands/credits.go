@@ -8,32 +8,32 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type Currency struct{}
+type Credits struct{}
 
-func (p Currency) Name() string {
-	return "currency"
+func (p Credits) Name() string {
+	return "credits"
 }
 
-func (p Currency) Description() string {
-	return "Allow you to know how much you have."
+func (p Credits) Description() string {
+	return "Allow you to know how many credits you have."
 }
 
-func (p Currency) RequiredPerm() *int64 {
+func (p Credits) RequiredPerm() *int64 {
 	perm := int64(discordgo.PermissionViewChannel)
 	return &perm
 }
 
-func (p Currency) Options() []*discordgo.ApplicationCommandOption {
+func (p Credits) Options() []*discordgo.ApplicationCommandOption {
 	return nil
 }
 
-func (p Currency) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func (p Credits) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	var message string
 	playerID := i.Member.User.ID
 	currency, err := currency.GetPlayerCurrency(playerID)
 	if err != nil {
-		log.Errorf("failed to get player %s currency: "+err.Error(), playerID)
-		message = "Failed to get your currency."
+		log.Errorf("failed to get player %s credits: "+err.Error(), playerID)
+		message = "Failed to get your credits."
 	} else {
 		message = fmt.Sprintf("You have : %d", currency)
 	}

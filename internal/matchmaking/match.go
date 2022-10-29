@@ -36,7 +36,7 @@ func createNewMatch(team1 []*models.Player, team2 []*models.Player) error {
 	for i := range team1 {
 		mentionMessage += "<@" + team1[i].DiscordID + ">"
 	}
-	mentionMessage += " VS\n"
+	mentionMessage += " VS "
 	for i := range team2 {
 		mentionMessage += "<@" + team2[i].DiscordID + ">"
 	}
@@ -57,7 +57,7 @@ func createNewMatch(team1 []*models.Player, team2 []*models.Player) error {
 	}
 	match.ThreadID = thread.ID
 	_, err = session.ChannelMessageSendComplex(thread.ID, &discordgo.MessageSend{
-		Content: fmt.Sprintf("Lobby code : %d\nFirst user in both team was assigned goalie, you are free to discuss here to change roles.\nUse this thread to share in game name to make teams, or to chat.\nPlease report match result with /result in this thread.", matchId),
+		Content: fmt.Sprintf("Lobby code : %d\nFirst user in both team was assigned goalie, you are free to discuss here to change roles.\nUse this thread to share in game name to make teams, or to chat.\nPlease report match result with ``/result`` in this thread or cancel the match with ``/cancel`` if people are missing.", matchId),
 	})
 	if err != nil {
 		return err
