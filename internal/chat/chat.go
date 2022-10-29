@@ -27,7 +27,7 @@ func Init() {
 }
 
 func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if m.Author.ID == s.State.User.ID {
+	if m.Author.ID == s.State.User.ID || discord.GuildID != m.GuildID {
 		return
 	}
 	r := regexp.MustCompile(s.State.User.Mention())
