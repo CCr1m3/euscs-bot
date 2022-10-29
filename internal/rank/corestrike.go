@@ -12,7 +12,7 @@ import (
 )
 
 func GetRankFromUsername(username string) (int, error) {
-	url := fmt.Sprintf("https://corestrike.gg/lookup/%s?region=Europe", url.PathEscape(username))
+	url := fmt.Sprintf("https://corestrike.gg/lookup/%s", url.PathEscape(username))
 	resp, err := http.Get(url)
 	if err != nil {
 		return 0, err

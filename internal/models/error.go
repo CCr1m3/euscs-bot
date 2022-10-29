@@ -35,7 +35,7 @@ type NotLinkedError struct {
 }
 
 func (e *NotLinkedError) Error() string {
-	return fmt.Sprintf("player %s has not linked an omega strikers acount", e.UserID)
+	return fmt.Sprintf("player %s has not linked an omega strikers account", e.UserID)
 }
 
 type UserAlreadyLinkedError struct {
