@@ -64,6 +64,7 @@ var migration1 = `CREATE TABLE players (
 		elo int DEFAULT 1500 NOT NULL,
 		osuser text DEFAULT "",
 		lastrankupdate int DEFAULT 0 NOT NULL,
+		currency int DEFAULT 0 NOT NULL,
 		PRIMARY KEY (discordID)
 );
 CREATE TABLE queue (
