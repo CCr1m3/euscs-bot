@@ -48,7 +48,14 @@ func LinkPlayerToUsername(playerID string, username string) error {
 			return err
 		}
 		err = UpdateRank(playerID, true)
-		return err
+		if err != nil {
+			err2 := UnlinkPlayer(playerID)
+			if err2 != nil {
+				return err2
+			}
+			return err
+		}
+		return nil
 	} else {
 		return &models.UserAlreadyLinkedError{UserID: playerID}
 	}
@@ -63,11 +70,13 @@ func UnlinkPlayer(playerID string) error {
 		return &models.NotLinkedError{UserID: playerID}
 	}
 	player.LastRankUpdate = 0
+	player.Elo = 0
 	player.OSUser = ""
 	err = db.UpdatePlayer(player)
 	if err != nil {
 		return err
 	}
+	err = updatePlayerDiscordRole(playerID)
 	return err
 }
 
@@ -118,6 +127,17 @@ func UpdateRank(playerID string, updateDiscordRole bool) error {
 	rank, err := GetRankFromUsername(player.OSUser)
 	if err != nil {
 		log.Errorf("failed to retrieve rank of player %s: "+err.Error(), player.DiscordID)
+		var invalidUsernameError *models.RankUpdateUsernameError
+		if errors.As(err, &invalidUsernameError) {
+			go func() {
+				log.Warningf("unlinking %s because username %s was not valid", playerID, player.OSUser)
+				err := UnlinkPlayer(playerID)
+				if err != nil {
+					log.Errorf("failed to unlink player %s: "+err.Error(), playerID)
+				}
+			}()
+			return err
+		}
 		return err
 	}
 	player.Elo = rank
@@ -159,7 +179,7 @@ func updatePlayerDiscordRole(playerID string) error {
 		roleToAdd = discord.RoleSilver
 	} else if player.Elo >= 1100 {
 		roleToAdd = discord.RoleBronze
-	} else {
+	} else if player.Elo > 0 {
 		roleToAdd = discord.RoleRookie
 	}
 
@@ -194,7 +214,7 @@ func updatePlayerDiscordRole(playerID string) error {
 			currentRole = discord.RoleRookie
 		}
 	}
-	if currentRole != nil && currentRole.Position >= roleToAdd.Position {
+	if currentRole != nil && roleToAdd != nil && currentRole.Position >= roleToAdd.Position {
 		//we only update for peak elo
 		return nil
 	}
@@ -204,6 +224,8 @@ func updatePlayerDiscordRole(playerID string) error {
 			return err
 		}
 	}
-	err = session.GuildMemberRoleAdd(guildID, player.DiscordID, roleToAdd.ID)
+	if roleToAdd != nil {
+		err = session.GuildMemberRoleAdd(guildID, player.DiscordID, roleToAdd.ID)
+	}
 	return err
 }
