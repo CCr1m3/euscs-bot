@@ -9,22 +9,22 @@ func CreateMatch(m *models.Match) error {
 	if err != nil {
 		return &models.DBError{Err: err}
 	}
-	_, err = tx.NamedExec("INSERT INTO matches (matchID,threadID,messageID,timestamp) VALUES (:matchID,:threadID,:messageID,:timestamp)", m)
+	_, err = tx.NamedExec("INSERT INTO matches (matchID,threadID,messageID,votemessageID,timestamp) VALUES (:matchID,:threadID,:messageID,:votemessageID,:timestamp)", m)
 	if err != nil {
 		err2 := tx.Rollback()
 		if err2 != nil {
-			return &models.DBError{Err: err}
+			return &models.DBError{Err: err2}
 		}
-		return &models.DBError{Err: err2}
+		return &models.DBError{Err: err}
 	}
 	for _, player := range m.Team1 {
 		_, err = tx.Exec("INSERT INTO matchesplayers (matchID,playerID,team) VALUES (?,?,?)", m.ID, player.DiscordID, 1)
 		if err != nil {
 			err2 := tx.Rollback()
 			if err2 != nil {
-				return &models.DBError{Err: err}
+				return &models.DBError{Err: err2}
 			}
-			return &models.DBError{Err: err2}
+			return &models.DBError{Err: err}
 		}
 	}
 	for _, player := range m.Team2 {
@@ -32,25 +32,25 @@ func CreateMatch(m *models.Match) error {
 		if err != nil {
 			err2 := tx.Rollback()
 			if err2 != nil {
-				return &models.DBError{Err: err}
+				return &models.DBError{Err: err2}
 			}
-			return &models.DBError{Err: err2}
+			return &models.DBError{Err: err}
 		}
 	}
 	err = tx.Commit()
 	if err != nil {
 		err2 := tx.Rollback()
 		if err2 != nil {
-			return &models.DBError{Err: err}
+			return &models.DBError{Err: err2}
 		}
-		return &models.DBError{Err: err2}
+		return &models.DBError{Err: err}
 	}
 	return nil
 }
 
 func UpdateMatch(m *models.Match) error {
 	//update players in matchesplayers (probably delete and recreate)
-	_, err := db.NamedExec("UPDATE matches SET state=:state, team1score=:team1score, team2score=:team2score WHERE matchID=:matchID", m)
+	_, err := db.NamedExec("UPDATE matches SET state=:state, team1score=:team1score, team2score=:team2score,votemessageID=:votemessageID WHERE matchID=:matchID", m)
 	if err != nil {
 		return &models.DBError{Err: err}
 	}
@@ -114,9 +114,24 @@ func GetRunningMatchesOrderedByTimestamp() ([]*models.Match, error) {
 	return matches, nil
 }
 
+func GetWaitingForVotesMatches() ([]*models.Match, error) {
+	matches := []*models.Match{}
+	err := db.Select(&matches, "SELECT * FROM matches WHERE state=-1")
+	if err != nil {
+		return nil, &models.DBError{Err: err}
+	}
+	for _, match := range matches {
+		err = getTeamsInMatch(match)
+		if err != nil {
+			return nil, &models.DBError{Err: err}
+		}
+	}
+	return matches, nil
+}
+
 func IsPlayerInMatch(p *models.Player) (bool, error) {
 	var count int
-	row := db.QueryRow("SELECT COUNT(*) FROM matches JOIN matchesplayers ON matches.matchID = matchesplayers.matchID WHERE playerID=? and state=0", p.DiscordID)
+	row := db.QueryRow("SELECT COUNT(*) FROM matches JOIN matchesplayers ON matches.matchID = matchesplayers.matchID WHERE playerID=? and state<=0", p.DiscordID)
 	err := row.Scan(&count)
 	if err != nil {
 		return false, &models.DBError{Err: err}

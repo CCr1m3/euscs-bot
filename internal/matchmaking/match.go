@@ -8,9 +8,11 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/haashi/omega-strikers-bot/internal/chat"
 	"github.com/haashi/omega-strikers-bot/internal/db"
 	"github.com/haashi/omega-strikers-bot/internal/discord"
 	"github.com/haashi/omega-strikers-bot/internal/models"
+	"github.com/haashi/omega-strikers-bot/internal/scheduled"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -65,7 +67,100 @@ func createNewMatch(team1 []*models.Player, team2 []*models.Player) error {
 	return db.CreateMatch(match)
 }
 
-func CloseMatch(match *models.Match, team1Score int, team2Score int) error {
+func VoteCancelMatch(match *models.Match) {
+	var content string = "A cancel request has been sent for this match.\nPlease react to this message to confirm."
+	log.Debugf("getting players confirmation of cancellation of match %s", match.ID)
+	message, err := chat.CreateVoteMessage(match.ThreadID, content, []string{"✅", "❌"})
+	if err != nil {
+		log.Errorf("failed to create confirmation message: " + err.Error())
+		return
+	}
+	match.State = models.MatchStateVoteInProgress
+	match.Team1Score = 0
+	match.Team2Score = 0
+	match.VoteMessageID = message.ID
+	err = db.UpdateMatch(match)
+	if err != nil {
+		log.Errorf("failed to update reaction: " + err.Error())
+		return
+	}
+	scheduled.TaskManager.Add(scheduled.Task{ID: "matchvote" + match.ID, Frequency: time.Second, Run: func() { handleMatchVoteResult(match) }})
+}
+
+func handleMatchVoteResult(match *models.Match) {
+	s := discord.GetSession()
+	voteMessage, err := s.ChannelMessage(match.ThreadID, match.VoteMessageID)
+	if err != nil {
+		log.Errorf("failed to get vote message: " + err.Error())
+		return
+	}
+	allowedVoter := make([]string, 0)
+	for _, p := range match.Team1 {
+		allowedVoter = append(allowedVoter, p.DiscordID)
+	}
+	for _, p := range match.Team2 {
+		allowedVoter = append(allowedVoter, p.DiscordID)
+	}
+	reactions, err := chat.FetchVoteResults(voteMessage, []string{"✅", "❌"}, allowedVoter)
+	if err != nil {
+		log.Errorf("failed to fetch votes: " + err.Error())
+		return
+	}
+	playersOK := len(reactions[0])
+	playersNOK := len(reactions[1])
+	requiredReactions := 4
+	if os.Getenv("mode") == "dev" {
+		requiredReactions = 1
+	}
+	if playersOK > requiredReactions {
+		log.Debugf("players confirmed match %s", match.ID)
+		err = CloseMatch(match)
+		if err != nil {
+			log.Errorf("failed to cancel match %s: "+err.Error(), match.ID)
+			return
+		}
+		scheduled.TaskManager.Cancel(scheduled.Task{ID: "matchvote" + match.ID})
+		return
+	} else if playersNOK > requiredReactions {
+		log.Debugf("players refused confirmation of match %s", match.ID)
+		s := discord.GetSession()
+		err = s.ChannelMessageDelete(voteMessage.ChannelID, voteMessage.ID)
+		if err != nil {
+			log.Errorf("failed to delete message: " + err.Error())
+			return
+		}
+		match.State = models.MatchStateInProgress
+		err = db.UpdateMatch(match)
+		if err != nil {
+			log.Errorf("failed to update match: " + err.Error())
+			return
+		}
+		scheduled.TaskManager.Cancel(scheduled.Task{ID: "matchvote" + match.ID})
+		return
+	}
+}
+
+func VoteResultMatch(match *models.Match, team1Score int, team2Score int) {
+	var content string = fmt.Sprintf("Reported score : (%d-%d).\nPlease react to this message to confirm score.", team1Score, team2Score)
+	log.Debugf("getting players confirmation of score (%d-%d) of match %s", team1Score, team2Score, match.ID)
+	message, err := chat.CreateVoteMessage(match.ThreadID, content, []string{"✅", "❌"})
+	if err != nil {
+		log.Errorf("failed to create confirmation message: " + err.Error())
+		return
+	}
+	match.State = models.MatchStateVoteInProgress
+	match.Team1Score = team1Score
+	match.Team2Score = team2Score
+	match.VoteMessageID = message.ID
+	err = db.UpdateMatch(match)
+	if err != nil {
+		log.Errorf("failed to update reaction: " + err.Error())
+		return
+	}
+	scheduled.TaskManager.Add(scheduled.Task{ID: "matchvote" + match.ID, Frequency: time.Millisecond * 300, Run: func() { handleMatchVoteResult(match) }})
+}
+
+func CloseMatch(match *models.Match) error {
 	session := discord.GetSession()
 	channelId := discord.MatchesChannel.ID
 	members, _ := session.ThreadMembers(match.ThreadID)
@@ -82,11 +177,9 @@ func CloseMatch(match *models.Match, team1Score int, team2Score int) error {
 		log.Errorf("failed to lock match thread: " + err.Error())
 	}
 
-	match.Team1Score = team1Score
-	match.Team2Score = team2Score
-	if team1Score > team2Score {
+	if match.Team1Score > match.Team2Score {
 		match.State = models.MatchStateTeam1Won
-	} else if team2Score > team1Score {
+	} else if match.Team2Score > match.Team1Score {
 		match.State = models.MatchStateTeam2Won
 	} else {
 		match.State = models.MatchStateCanceled
@@ -98,50 +191,21 @@ func CloseMatch(match *models.Match, team1Score int, team2Score int) error {
 		return err
 	}
 	var editedMessage string
-	if match.State != models.MatchStateCanceled {
-		team1elo := 0
-		team2elo := 0
-		for _, p := range match.Team1 {
-			team1elo += p.Elo
-		}
-		for _, p := range match.Team2 {
-			team2elo += p.Elo
-		}
-		team1ratingChange, team2ratingChange := eloChanges(team1elo, team2elo, match.State == models.MatchStateTeam1Won)
-		for _, p := range match.Team1 {
-			p.Elo += team1ratingChange
-			err := db.UpdatePlayer(p)
-			if err != nil {
-				log.Errorf("failed to update rating of player %s: "+err.Error(), p.DiscordID)
-			}
-		}
-		for _, p := range match.Team2 {
-			p.Elo += team2ratingChange
-			err := db.UpdatePlayer(p)
-			if err != nil {
-				log.Errorf("failed to update rating of player %s: "+err.Error(), p.DiscordID)
-			}
-		}
-		editedMessage = message.Content + fmt.Sprintf("\nFinal score : %d - %d", team1Score, team2Score)
-		editedMessage += fmt.Sprintf("\nElo changes : %d vs %d", team1ratingChange, team2ratingChange)
+	if match.State == models.MatchStateCanceled {
+		editedMessage = message.Content + "\nCanceled"
 	} else {
-		editedMessage = message.Content + "\nMatch canceled."
+		editedMessage = message.Content + fmt.Sprintf("\nFinal score : %d - %d", match.Team1Score, match.Team2Score)
 	}
 	_, err = session.ChannelMessageEdit(message.ChannelID, message.ID, editedMessage)
 	if err != nil {
 		log.Errorf("failed to edit match message: " + err.Error())
 		return err
 	}
-
 	err = db.UpdateMatch(match)
 	if err != nil {
 		log.Errorf("failed to update match: " + err.Error())
 	}
 	return err
-}
-
-func CancelMatch(match *models.Match) error {
-	return CloseMatch(match, 0, 0)
 }
 
 func deleteOldMatches() {
@@ -162,9 +226,16 @@ func deleteOldMatches() {
 		if time.Since(time.Unix(int64(match.Timestamp), 0)) > cleanDelay {
 			log.Infof("cleaning match %s", match.ID)
 			if os.Getenv("mode") == "dev" {
-				err = CloseMatch(match, rand.Intn(6), rand.Intn(6))
+				r := rand.Intn(2)
+				if r == 0 {
+					match.Team1Score = 2
+				} else {
+					match.Team2Score = 2
+				}
+				err = CloseMatch(match)
 			} else {
-				err = CloseMatch(match, 0, 0)
+				match.State = models.MatchStateCanceled
+				err = CloseMatch(match)
 			}
 			if err != nil {
 				log.Errorf("failed to close match: " + err.Error())

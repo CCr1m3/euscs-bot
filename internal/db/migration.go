@@ -76,6 +76,7 @@ CREATE TABLE queue (
 var migration2 = `CREATE TABLE matches (
 	matchID text UNIQUE,
 	messageID text UNIQUE,
+	votemessageID text DEFAULT "",
 	threadID text UNIQUE,
 	timestamp int,
 	state int DEFAULT 0 NOT NULL,

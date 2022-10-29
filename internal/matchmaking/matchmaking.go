@@ -59,9 +59,19 @@ func Init() {
 		}
 		scheduled.TaskManager.Add(scheduled.Task{ID: "dummies", Run: dummiesFunc, Frequency: time.Second})
 	}
-	scheduled.TaskManager.Add(scheduled.Task{ID: "updatesession", Run: updateStatus, Frequency: time.Second * 15})
+	scheduled.TaskManager.Add(scheduled.Task{ID: "updatesession", Run: updateStatus, Frequency: time.Second * 5})
 	scheduled.TaskManager.Add(scheduled.Task{ID: "trycreatingmatch", Run: tryCreatingMatch, Frequency: time.Second * 15})
 	scheduled.TaskManager.Add(scheduled.Task{ID: "closeoldmatches", Run: deleteOldMatches, Frequency: time.Minute})
+	waitingForVoteMatches, err := db.GetWaitingForVotesMatches()
+	if err != nil {
+		log.Error("failed to get matches with a vote in progress:" + err.Error())
+	} else {
+		if len(waitingForVoteMatches) > 0 {
+			for _, match := range waitingForVoteMatches {
+				scheduled.TaskManager.Add(scheduled.Task{ID: "matchvote" + match.ID, Frequency: time.Second, Run: func() { handleMatchVoteResult(match) }})
+			}
+		}
+	}
 }
 
 func updateStatus() {
