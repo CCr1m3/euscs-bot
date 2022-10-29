@@ -173,6 +173,10 @@ func twoFlexGoaliesSample(forwards int, flex int, goalies int) [6]int {
 	if indices[1] >= indices[0] {
 		indices[1]++
 	}
+	indices[2] = utils.FastRandN(forwards+flex) + goalies
+	for indices[2] == indices[1] || indices[2] == indices[0] {
+		indices[2] = utils.FastRandN(forwards+flex) + goalies
+	}
 	indices[3] = utils.FastRandN(forwards+flex) + goalies
 	for indices[3] == indices[2] || indices[3] == indices[1] || indices[3] == indices[0] {
 		indices[3] = utils.FastRandN(forwards+flex) + goalies
