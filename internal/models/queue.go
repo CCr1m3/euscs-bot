@@ -11,5 +11,5 @@ const (
 type QueuedPlayer struct {
 	Player
 	Role      Role
-	EntryTime int
+	EntryTime int `db:"entrytime"`
 }
