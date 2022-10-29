@@ -20,7 +20,7 @@ func initChannels() error {
 		if channel.Name == "Ai.Mi" {
 			AiMiChannels = channel
 		}
-		if channel.Name == "how-to" {
+		if channel.Name == "instructions" {
 			HowToChannel = channel
 		}
 		if channel.Name == "matches" {
@@ -37,7 +37,7 @@ func initChannels() error {
 		}
 	}
 	if HowToChannel == nil {
-		HowToChannel, err = session.GuildChannelCreateComplex(GuildID, discordgo.GuildChannelCreateData{Name: "how-to", Type: discordgo.ChannelTypeGuildText, ParentID: AiMiChannels.ID})
+		HowToChannel, err = session.GuildChannelCreateComplex(GuildID, discordgo.GuildChannelCreateData{Name: "instructions", Type: discordgo.ChannelTypeGuildText, ParentID: AiMiChannels.ID})
 		if err != nil {
 			log.Fatal("failed to create channel how-to: ", err.Error())
 		}
