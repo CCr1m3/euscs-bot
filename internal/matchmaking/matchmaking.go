@@ -62,7 +62,7 @@ func Init() {
 	scheduled.TaskManager.Add(scheduled.Task{ID: "updatesession", Run: updateStatus, Frequency: time.Second * 5})
 	scheduled.TaskManager.Add(scheduled.Task{ID: "trycreatingmatch", Run: tryCreatingMatch, Frequency: time.Second * 15})
 	scheduled.TaskManager.Add(scheduled.Task{ID: "closeoldmatches", Run: deleteOldMatches, Frequency: time.Minute})
-	//scheduled.TaskManager.Add(scheduled.Task{ID: "removelongqueuers", Run: removeLongQueuers, Frequency: time.Minute})
+	scheduled.TaskManager.Add(scheduled.Task{ID: "removelongqueuers", Run: removeLongQueuers, Frequency: time.Minute})
 	waitingForVoteMatches, err := db.GetWaitingForVotesMatches()
 	if err != nil {
 		log.Error("failed to get matches with a vote in progress:" + err.Error())
@@ -88,7 +88,10 @@ func updateStatus() {
 }
 
 func tryCreatingMatch() {
-	playersInQueue, _ := db.GetPlayersInQueue()
+	playersInQueue, err := db.GetPlayersInQueue()
+	if err != nil {
+		log.Error(err)
+	}
 	goalieInQueue, err := db.GetGoaliesCountInQueue()
 	if err != nil {
 		log.Error(err)
@@ -233,7 +236,10 @@ func balanceTeams(indices *[6]int, players []*models.QueuedPlayer) ([]*models.Pl
 }
 
 func algorithm() ([]*models.Player, []*models.Player) {
-	playersInQueue, _ := db.GetPlayersInQueue()
+	playersInQueue, err := db.GetPlayersInQueue()
+	if err != nil {
+		log.Error(err)
+	}
 	forwards, flex, goalies := 0, 0, 0
 	sort.SliceStable(playersInQueue, func(i, j int) bool { //goalie -> flex -> forward priority
 		return (playersInQueue[i].Role == "goalie" && playersInQueue[j].Role != "goalie") || (playersInQueue[i].Role == "flex" && playersInQueue[j].Role == "forward")

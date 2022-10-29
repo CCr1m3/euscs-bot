@@ -61,8 +61,11 @@ func removeLongQueuers() {
 	for _, player := range playersInQueue {
 		if time.Since(time.Unix(int64(player.EntryTime), 0)) > cleanDelay {
 			db.RemovePlayerFromQueue(&player.Player)
-			discord.GetSession().ChannelMessage(discord.AimiRequestsChannel.ID, "<@playerID>, you have been removed from the queue for inactivity. Please use the /leave command next time if you didn't mean to still be in queue. If you're still here wanting to queue, /join again!")
-			log.Infof("removing player  %s from queue", player.OSUser)
+			_, err := discord.GetSession().ChannelMessageSend(discord.AimiRequestsChannel.ID, "<@"+player.DiscordID+">, you have been removed from the queue for inactivity. Please use the /leave command next time if you didn't mean to still be in queue. If you're still here wanting to queue, /join again!")
+			if err != nil {
+				log.Error(err)
+			}
+			log.Infof("removing player %s from queue", player.OSUser)
 		}
 	}
 }
