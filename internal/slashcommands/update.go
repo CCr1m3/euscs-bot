@@ -44,7 +44,7 @@ func (p Update) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		if errors.As(err, &tooFastErr) {
 			message = "You have updated your account recently. Please wait before using this command again."
 		} else if errors.As(err, &notLinkedErr) {
-			message = "You have not linked your omega strikers account. Please use '/rank link' first."
+			message = "You have not linked your omega strikers account. Please use 'link' first."
 		} else {
 			message = "Failed to update your rank."
 		}
