@@ -208,30 +208,31 @@ func CloseMatch(match *models.Match) error {
 	}
 	if match.State != models.MatchStateCanceled {
 		players := append(match.Team1, match.Team2...)
-
+		log.Debugf("paying out players for match %s", match.ID)
 		if match.State == models.MatchStateTeam1Won {
 			for _, p := range match.Team1 {
-				p.Currency += 10
+				p.Credits += 10
 			}
 		} else if match.State == models.MatchStateTeam2Won {
 			for _, p := range match.Team2 {
-				p.Currency += 10
+				p.Credits += 10
 			}
 		}
 		for _, p := range players {
-			p.Currency += 10
+			p.Credits += 10
 			err = db.UpdatePlayer(p)
 			if err != nil {
 				log.Errorf("failed to update player %s: "+err.Error(), p.DiscordID)
 			}
 		}
+		log.Debugf("paying out predictions for match %s", match.ID)
 		predictions, err := db.GetPlayersPredictionOnMatch(match)
 		if err != nil {
 			log.Errorf("failed to get predictions for match %s: "+err.Error(), match.ID)
 		}
 		for _, pred := range predictions {
 			if match.State == models.MatchState(pred.Team) {
-				pred.Player.Currency += 10
+				pred.Player.Credits += 10
 				err = db.UpdatePlayer(&pred.Player)
 				if err != nil {
 					log.Errorf("failed to update player %s: "+err.Error(), pred.DiscordID)

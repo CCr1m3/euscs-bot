@@ -20,7 +20,7 @@ func RemovePlayerFromQueue(p *models.Player) error {
 
 func GetPlayersInQueue() ([]*models.QueuedPlayer, error) {
 	players := []*models.QueuedPlayer{}
-	err := db.Select(&players, "SELECT discordID,osuser,elo,role,lastrankupdate,currency,entrytime FROM queue JOIN players ON queue.playerID = players.discordID")
+	err := db.Select(&players, "SELECT discordID,osuser,elo,role,lastrankupdate,credits,entrytime FROM queue JOIN players ON queue.playerID = players.discordID")
 	if err != nil {
 		return nil, &models.DBError{Err: err}
 	}

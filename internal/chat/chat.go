@@ -37,8 +37,8 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 			log.Error("failed to get player: " + err.Error())
 			return
 		}
-		if player.Currency >= 20 {
-			player.Currency -= 20
+		if player.Credits >= 10 {
+			player.Credits -= 10
 			_, err := s.ChannelMessageSend(m.ChannelID, generateRandomMessage())
 			if err != nil {
 				log.Error("failed to send message: " + err.Error())
