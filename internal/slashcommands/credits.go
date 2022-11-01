@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/haashi/omega-strikers-bot/internal/currency"
+	"github.com/haashi/omega-strikers-bot/internal/credits"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -30,12 +30,12 @@ func (p Credits) Options() []*discordgo.ApplicationCommandOption {
 func (p Credits) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	var message string
 	playerID := i.Member.User.ID
-	currency, err := currency.GetPlayerCurrency(playerID)
+	credits, err := credits.GetPlayerCredits(playerID)
 	if err != nil {
 		log.Errorf("failed to get player %s credits: "+err.Error(), playerID)
 		message = "Failed to get your credits."
 	} else {
-		message = fmt.Sprintf("You have : %d", currency)
+		message = fmt.Sprintf("You have : %d", credits)
 	}
 
 	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{

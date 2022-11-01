@@ -5,5 +5,5 @@ type Player struct {
 	Elo            int    `db:"elo"`
 	OSUser         string `db:"osuser"`
 	LastRankUpdate int    `db:"lastrankupdate"`
-	Currency       int    `db:"currency"`
+	Credits        int    `db:"credits"`
 }

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/haashi/omega-strikers-bot/internal/currency"
+	"github.com/haashi/omega-strikers-bot/internal/credits"
 	"github.com/haashi/omega-strikers-bot/internal/matchmaking"
 	log "github.com/sirupsen/logrus"
 )
@@ -98,7 +98,7 @@ func (p Predict) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 		return
 	}
-	if time.Since(time.Unix(int64(match.Timestamp), 0)) > time.Minute {
+	if time.Since(time.Unix(int64(match.Timestamp), 0)) > time.Minute*3 {
 		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
@@ -111,7 +111,7 @@ func (p Predict) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 		return
 	}
-	err = currency.AddPrediction(i.Member.User.ID, match.ID, int(team))
+	err = credits.AddPrediction(i.Member.User.ID, match.ID, int(team))
 	if err != nil {
 		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,

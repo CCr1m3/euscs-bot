@@ -1,4 +1,4 @@
-package currency
+package credits
 
 import (
 	"github.com/haashi/omega-strikers-bot/internal/db"
@@ -24,12 +24,12 @@ func GetPlayer(playerID string) (*models.Player, error) {
 	return getOrCreatePlayer(playerID)
 }
 
-func GetPlayerCurrency(playerID string) (int, error) {
+func GetPlayerCredits(playerID string) (int, error) {
 	p, err := getOrCreatePlayer(playerID)
 	if err != nil {
 		return -1, err
 	}
-	return p.Currency, nil
+	return p.Credits, nil
 }
 
 func AddPrediction(playerID string, matchID string, team int) error {
