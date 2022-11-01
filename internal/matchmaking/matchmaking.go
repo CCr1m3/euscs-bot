@@ -197,9 +197,10 @@ func twoFlexGoaliesSample(forwards int, flex int, goalies int) [6]int {
 	return indices
 }
 
-func evaluatePlayers(indices *[6]int, players []*models.QueuedPlayer) int {
+func evaluatePlayers(indices *[6]int, players []*models.QueuedPlayer) float64 {
 	const eloRange = 500
 	maxElo, minElo := -1, 1<<20
+	sumQueueTime := 0.0
 	for i := 0; i < 6; i++ {
 		player := players[indices[i]]
 		if player.Elo > maxElo {
@@ -208,8 +209,17 @@ func evaluatePlayers(indices *[6]int, players []*models.QueuedPlayer) int {
 		if player.Elo < minElo {
 			minElo = player.Elo
 		}
+		sumQueueTime += time.Since(time.Unix(int64(player.EntryTime), 0)).Minutes()
 	}
-	return eloRange - (maxElo - minElo)
+	softMaxElo := maxElo
+	// This is "temporary", as in for the foreseeable future. Makes all omega players eligible to play with all other omegas.
+	if softMaxElo > 3400 {
+		softMaxElo = 3400
+	}
+	if softMaxElo-minElo > 500 { // This is negative therefore match won't be accepted
+		return float64(eloRange - (maxElo - minElo))
+	}
+	return float64(eloRange-(softMaxElo-minElo)) + sumQueueTime*10.0
 }
 
 func evaluateTeams(team1 []*models.Player, team2 []*models.Player) float64 {
@@ -270,7 +280,7 @@ func algorithm() ([]*models.Player, []*models.Player) {
 	log.Debugf("relative probabilities for X flex goalies: 0: %.2f, 1: %.2f, 2: %.2f", zeroFlexGoalies, oneFlexGoalie, twoFlexGoalies)
 	var indices [6]int
 	var bestIndices [6]int
-	bestQuality := -1
+	bestQuality := -1.0
 	samplesTaken := 1000
 	if os.Getenv("mode") == "dev" {
 		samplesTaken = 100
