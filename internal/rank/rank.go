@@ -110,7 +110,7 @@ func UpdateRankIfNeeded(playerID string) error {
 		updateDelay = time.Hour * 1
 	}
 	if time.Since(time.Unix(int64(player.LastRankUpdate), 0)) > updateDelay {
-		return UpdateRank(player.DiscordID, false)
+		return UpdateRank(player.DiscordID, true)
 	} else {
 		return &models.RankUpdateTooFastError{UserID: playerID}
 	}
@@ -141,7 +141,9 @@ func UpdateRank(playerID string, updateDiscordRole bool) error {
 		}
 		return err
 	}
-	player.Elo = rank
+	if rank > player.Elo {
+		player.Elo = rank
+	}
 	player.LastRankUpdate = int(time.Now().Unix())
 	err = db.UpdatePlayer(player)
 	if err != nil {
