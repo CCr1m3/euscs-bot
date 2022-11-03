@@ -1,13 +1,16 @@
 package slashcommands
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/google/uuid"
 	"github.com/haashi/omega-strikers-bot/internal/credits"
 	"github.com/haashi/omega-strikers-bot/internal/matchmaking"
+	"github.com/haashi/omega-strikers-bot/internal/models"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -57,20 +60,48 @@ func (p Predict) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if err != nil {
 		return
 	}
-	log.Debugf("%s used /predict on channel with parameters: %d", i.Member.User.ID, team)
-	match, err := matchmaking.GetMatchByThreadId(i.ChannelID)
+	ctx := context.WithValue(context.Background(), models.UUIDKey, uuid.New())
+	log.WithFields(log.Fields{
+		string(models.UUIDKey):      ctx.Value(models.UUIDKey),
+		string(models.CallerIDKey):  i.Member.User.ID,
+		string(models.ChannelIDKey): i.ChannelID,
+		string(models.ResultKey):    team,
+	}).Info("predict slash command invoked")
+	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: "predict slash command invoked. Please wait...",
+			Flags:   discordgo.MessageFlagsEphemeral,
+		},
+	})
 	if err != nil {
-		log.Warningf("failed to find match by threadID %s : "+err.Error(), i.ChannelID)
-		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "This channel is not a match lobby.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):  ctx.Value(models.UUIDKey),
+			string(models.ErrorKey): err.Error(),
+		}).Error("failed to send message")
+		return
+	}
+	var message string
+	defer func() {
+		_, err := s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+			Content: &message,
 		})
 		if err != nil {
-			log.Error("failed to send message: " + err.Error())
+			log.WithFields(log.Fields{
+				string(models.UUIDKey):  ctx.Value(models.UUIDKey),
+				string(models.ErrorKey): err.Error(),
+			}).Error("failed to edit message")
 		}
+	}()
+
+	match, err := matchmaking.GetMatchByThreadId(i.ChannelID)
+	if err != nil {
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):      ctx.Value(models.UUIDKey),
+			string(models.ChannelIDKey): i.ChannelID,
+			string(models.ErrorKey):     err.Error(),
+		}).Warning("failed to find match")
+		message = "This channel is not a match lobby."
 		return
 	}
 	inMatch := false
@@ -85,53 +116,44 @@ func (p Predict) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 	}
 	if inMatch {
-		log.Warningf("can't predict: user %s is in match %s", i.Member.User.ID, match.ID)
-		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "You are a player of this match.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
-		if err != nil {
-			log.Error("failed to send message: " + err.Error())
-		}
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
+			string(models.CallerIDKey): i.Member.User.ID,
+			string(models.MatchIDKey):  match.ID,
+		}).Warning("can't predict, user is in match")
+		message = "You are a player of this match."
 		return
 	}
 	if time.Since(time.Unix(int64(match.Timestamp), 0)) > time.Minute*3 {
-		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "The match has already started for too long to predict.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
-		if err != nil {
-			log.Error("failed to send message: " + err.Error())
-		}
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
+			string(models.CallerIDKey): i.Member.User.ID,
+			string(models.MatchIDKey):  match.ID,
+			string(models.DurationKey): time.Since(time.Unix(int64(match.Timestamp), 0)),
+		}).Warning("can't predict, not in time")
+		message = "The match has already started for too long to predict."
 		return
 	}
 	err = credits.AddPrediction(i.Member.User.ID, match.ID, int(team))
 	if err != nil {
-		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "You already predicted for this match.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
-		if err != nil {
-			log.Error("failed to send message: " + err.Error())
-		}
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
+			string(models.CallerIDKey): i.Member.User.ID,
+			string(models.MatchIDKey):  match.ID,
+		}).Warning("can't predict, already predicted")
+		message = "You have already predicted in this match."
 		return
 	}
-	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
+	message = fmt.Sprintf("You predicted for team%d.", team)
+	defer func() {
+		_, err = s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
 			Content: fmt.Sprintf("%s predicted team%d victory.", i.Member.User.Mention(), team),
-		},
-	})
-	if err != nil {
-		log.Error("failed to send message: " + err.Error())
-	}
+		})
+		if err != nil {
+			log.WithFields(log.Fields{
+				string(models.UUIDKey):  ctx.Value(models.UUIDKey),
+				string(models.ErrorKey): err.Error(),
+			}).Error("failed to follow up message")
+		}
+	}()
 }

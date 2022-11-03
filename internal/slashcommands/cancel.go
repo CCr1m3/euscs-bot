@@ -1,7 +1,10 @@
 package slashcommands
 
 import (
+	"context"
+
 	"github.com/bwmarrin/discordgo"
+	"github.com/google/uuid"
 	"github.com/haashi/omega-strikers-bot/internal/matchmaking"
 	"github.com/haashi/omega-strikers-bot/internal/models"
 	log "github.com/sirupsen/logrus"
@@ -27,26 +30,47 @@ func (p Cancel) Options() []*discordgo.ApplicationCommandOption {
 }
 
 func (p Cancel) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	options := i.ApplicationCommandData().Options
-	optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
-	for _, opt := range options {
-		optionMap[opt.Name] = opt
-	}
-
-	log.Debugf("%s used /cancel on channel %s", i.Member.User.ID, i.ChannelID)
-	match, err := matchmaking.GetMatchByThreadId(i.ChannelID)
+	ctx := context.WithValue(context.Background(), models.UUIDKey, uuid.New())
+	log.WithFields(log.Fields{
+		string(models.UUIDKey):      ctx.Value(models.UUIDKey),
+		string(models.CallerIDKey):  i.Member.User.ID,
+		string(models.ChannelIDKey): i.ChannelID,
+	}).Info("cancel slash command invoked")
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: "Cancel slash command invoked. Please wait...",
+			Flags:   discordgo.MessageFlagsEphemeral,
+		},
+	})
 	if err != nil {
-		log.Warningf("failed to find match by threadID %s : "+err.Error(), i.ChannelID)
-		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "This channel is not a match lobby.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):  ctx.Value(models.UUIDKey),
+			string(models.ErrorKey): err.Error(),
+		}).Error("failed to send message")
+		return
+	}
+	var message string
+	defer func() {
+		_, err := s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+			Content: &message,
 		})
 		if err != nil {
-			log.Error("failed to send message")
+			log.WithFields(log.Fields{
+				string(models.UUIDKey):  ctx.Value(models.UUIDKey),
+				string(models.ErrorKey): err.Error(),
+			}).Error("failed to edit message")
 		}
+	}()
+
+	match, err := matchmaking.GetMatchByThreadId(i.ChannelID)
+	if err != nil {
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):      ctx.Value(models.UUIDKey),
+			string(models.ChannelIDKey): i.ChannelID,
+			string(models.ErrorKey):     err.Error(),
+		}).Warning("failed to find match")
+		message = "This channel is not a match lobby."
 		return
 	}
 	inMatch := false
@@ -61,41 +85,31 @@ func (p Cancel) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 	}
 	if !inMatch {
-		log.Warningf("can't cancel: user %s is not in match %s : ", i.Member.User.ID, match.ID)
-		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "You are not a player of this match.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
-		if err != nil {
-			log.Error("failed to send message: " + err.Error())
-		}
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
+			string(models.CallerIDKey): i.Member.User.ID,
+			string(models.MatchIDKey):  match.ID,
+		}).Warning("can't cancel, user not in match")
+		message = "You are not a player of this match."
 		return
 	}
 	if match.State == models.MatchStateVoteInProgress {
-		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "A confirmation is already in progress.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
-		if err != nil {
-			log.Error("failed to send message: " + err.Error())
-		}
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):    ctx.Value(models.UUIDKey),
+			string(models.MatchIDKey): match.ID,
+		}).Warning("can't cancel, match vote already in progress")
+		message = "A confirmation is already in progress."
 		return
 	}
-	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: "Confirmation started.",
-			Flags:   discordgo.MessageFlagsEphemeral,
-		},
-	})
-	if err != nil {
-		log.Error("failed to send message: " + err.Error())
+	if match.State != models.MatchStateInProgress {
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):      ctx.Value(models.UUIDKey),
+			string(models.ChannelIDKey): i.ChannelID,
+			string(models.ErrorKey):     err.Error(),
+		}).Warning("can't result, match is over")
+		message = "The match is already over."
+		return
 	}
+	message = "Confirmation vote started."
 	matchmaking.VoteCancelMatch(match)
 }

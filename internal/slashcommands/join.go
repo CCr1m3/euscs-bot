@@ -1,10 +1,12 @@
 package slashcommands
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/google/uuid"
 	"github.com/haashi/omega-strikers-bot/internal/matchmaking"
 	"github.com/haashi/omega-strikers-bot/internal/models"
 	log "github.com/sirupsen/logrus"
@@ -51,49 +53,97 @@ func (p Join) Options() []*discordgo.ApplicationCommandOption {
 }
 
 func (p Join) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	ctx := context.WithValue(context.Background(), models.UUIDKey, uuid.New())
 	options := i.ApplicationCommandData().Options
 	optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
 	for _, opt := range options {
 		optionMap[opt.Name] = opt
 	}
-	var message string
 	playerID := i.Member.User.ID
-
-	isInQueue, err := matchmaking.IsPlayerInQueue(playerID)
-	if err != nil {
-		log.Errorf("failed to check if player is in queue: " + err.Error())
-	}
-	isInMatch, err := matchmaking.IsPlayerInMatch(playerID)
-	if err != nil {
-		log.Errorf("failed to check if player is in match: " + err.Error())
-	}
-	if isInMatch {
-		message = "You are already in a match !"
-	} else if isInQueue {
-		message = "You are already in the queue !"
-	} else {
-		err = matchmaking.AddPlayerToQueue(playerID, models.Role(optionMap["role"].StringValue()))
-		if err != nil {
-			log.Errorf("%s failed to queue: "+err.Error(), playerID)
-			var notLinkedError *models.NotLinkedError
-			if errors.As(err, &notLinkedError) {
-				message = "You have not linked your omega strikers account. Please use '/rank link' first."
-			} else {
-				message = "Failed to put you in the queue."
-			}
-		} else {
-			message = fmt.Sprintf("You joined the queue as a %s !", optionMap["role"].StringValue())
-		}
-	}
-
-	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+	role := optionMap["role"].StringValue()
+	log.WithFields(log.Fields{
+		string(models.UUIDKey):      ctx.Value(models.UUIDKey),
+		string(models.CallerIDKey):  i.Member.User.ID,
+		string(models.QueueRoleKey): role,
+	}).Info("join slash command invoked")
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: message,
+			Content: "Join slash command invoked. Please wait...",
 			Flags:   discordgo.MessageFlagsEphemeral,
 		},
 	})
 	if err != nil {
-		log.Errorf("failed to send message: " + err.Error())
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):  ctx.Value(models.UUIDKey),
+			string(models.ErrorKey): err.Error(),
+		}).Error("failed to send message")
+		return
 	}
+	var message string
+	defer func() {
+		_, err := s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+			Content: &message,
+		})
+		if err != nil {
+			log.WithFields(log.Fields{
+				string(models.UUIDKey):  ctx.Value(models.UUIDKey),
+				string(models.ErrorKey): err.Error(),
+			}).Error("failed to edit message")
+		}
+	}()
+
+	isInQueue, err := matchmaking.IsPlayerInQueue(playerID)
+	if err != nil {
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
+			string(models.CallerIDKey): i.Member.User.ID,
+			string(models.ErrorKey):    err.Error(),
+		}).Error("failed to check if player is in queue")
+		message = "Failed to put you in queue."
+		return
+	}
+	isInMatch, err := matchmaking.IsPlayerInMatch(playerID)
+	if err != nil {
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
+			string(models.CallerIDKey): i.Member.User.ID,
+			string(models.ErrorKey):    err.Error(),
+		}).Error("failed to check if player is in match")
+		message = "Failed to put you in queue."
+		return
+	}
+	if isInMatch {
+		message = "You are already in a match !"
+		return
+	}
+	if isInQueue {
+		message = "You are already in the queue !"
+		return
+	}
+	err = matchmaking.AddPlayerToQueue(playerID, models.Role(role))
+	if err != nil {
+		var notLinkedError *models.NotLinkedError
+		if errors.As(err, &notLinkedError) {
+			log.WithFields(log.Fields{
+				string(models.UUIDKey):     ctx.Value(models.UUIDKey),
+				string(models.CallerIDKey): i.Member.User.ID,
+			}).Warning("player is not yet linked")
+			message = "You have not linked your omega strikers account. Please use '/link' first."
+		} else {
+			log.WithFields(log.Fields{
+				string(models.UUIDKey):     ctx.Value(models.UUIDKey),
+				string(models.CallerIDKey): i.Member.User.ID,
+				string(models.ErrorKey):    err.Error(),
+			}).Error("failed to put player in the queue")
+			message = "Failed to put you in the queue."
+		}
+		return
+	}
+	log.WithFields(log.Fields{
+		string(models.UUIDKey):      ctx.Value(models.UUIDKey),
+		string(models.CallerIDKey):  i.Member.User.ID,
+		string(models.QueueRoleKey): role,
+	}).Info("player joined the queue")
+	message = fmt.Sprintf("You joined the queue as a %s !", role)
 }

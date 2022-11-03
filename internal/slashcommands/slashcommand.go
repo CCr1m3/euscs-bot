@@ -15,7 +15,7 @@ type SlashCommand interface {
 }
 
 var registeredCommands []*discordgo.ApplicationCommand
-var commands = []SlashCommand{Ping{}, Join{}, Leave{}, Result{}, Who{}, Link{}, Unlink{}, Update{}, Result{}, Cancel{}, Credits{}, Predict{}}
+var commands = []SlashCommand{Join{}, Leave{}, Result{}, Who{}, Link{}, Unlink{}, Update{}, Result{}, Cancel{}, Credits{}, Predict{}}
 
 func Init() {
 	session := discord.GetSession()

@@ -30,6 +30,7 @@ func main() {
 	logLevel := os.Getenv("loglevel")
 	if logLevel == "debug" {
 		log.SetLevel(log.DebugLevel)
+		log.SetReportCaller(true)
 	} else {
 		log.SetLevel(log.InfoLevel)
 	}

@@ -1,10 +1,13 @@
 package slashcommands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/google/uuid"
 	"github.com/haashi/omega-strikers-bot/internal/credits"
+	"github.com/haashi/omega-strikers-bot/internal/models"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -28,24 +31,48 @@ func (p Credits) Options() []*discordgo.ApplicationCommandOption {
 }
 
 func (p Credits) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	var message string
 	playerID := i.Member.User.ID
-	credits, err := credits.GetPlayerCredits(playerID)
-	if err != nil {
-		log.Errorf("failed to get player %s credits: "+err.Error(), playerID)
-		message = "Failed to get your credits."
-	} else {
-		message = fmt.Sprintf("You have : %d", credits)
-	}
-
-	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+	ctx := context.WithValue(context.Background(), models.UUIDKey, uuid.New())
+	log.WithFields(log.Fields{
+		string(models.UUIDKey):     ctx.Value(models.UUIDKey),
+		string(models.CallerIDKey): playerID,
+	}).Info("credits slash command invoked")
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: message,
+			Content: "Credits slash command invoked. Please wait...",
 			Flags:   discordgo.MessageFlagsEphemeral,
 		},
 	})
 	if err != nil {
-		log.Errorf("failed to send message: " + err.Error())
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):  ctx.Value(models.UUIDKey),
+			string(models.ErrorKey): err.Error(),
+		}).Error("failed to send message")
+		return
 	}
+	var message string
+	defer func() {
+		_, err := s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+			Content: &message,
+		})
+		if err != nil {
+			log.WithFields(log.Fields{
+				string(models.UUIDKey):  ctx.Value(models.UUIDKey),
+				string(models.ErrorKey): err.Error(),
+			}).Error("failed to edit message")
+		}
+	}()
+
+	credits, err := credits.GetPlayerCredits(playerID)
+	if err != nil {
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
+			string(models.CallerIDKey): i.Member.User.ID,
+			string(models.ErrorKey):    err.Error(),
+		}).Error("failed to get player credits")
+		message = "Failed to get your credits."
+		return
+	}
+	message = fmt.Sprintf("You have : %d", credits)
 }
