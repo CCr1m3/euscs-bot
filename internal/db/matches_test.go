@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"testing"
 
 	"github.com/haashi/omega-strikers-bot/internal/models"
@@ -9,19 +10,20 @@ import (
 func Test_db_CreateMatch(t *testing.T) {
 	clearDB()
 	Init()
-	err := CreatePlayer("12345")
+	ctx := context.TODO()
+	err := CreatePlayer(ctx, "12345")
 	if err != nil {
 		t.Errorf("failed to create player: " + err.Error())
 	}
-	p1, err := GetPlayerById("12345")
+	p1, err := GetPlayerById(ctx, "12345")
 	if err != nil {
 		t.Errorf("failed to get player: " + err.Error())
 	}
-	err = CreatePlayer("12346")
+	err = CreatePlayer(ctx, "12346")
 	if err != nil {
 		t.Errorf("failed to create player: " + err.Error())
 	}
-	p2, err := GetPlayerById("12346")
+	p2, err := GetPlayerById(ctx, "12346")
 	if err != nil {
 		t.Errorf("failed to get player: " + err.Error())
 	}
@@ -33,40 +35,40 @@ func Test_db_CreateMatch(t *testing.T) {
 		MessageID: "messageid",
 		ID:        "id",
 	}
-	err = CreateMatch(&match)
+	err = CreateMatch(ctx, &match)
 	if err != nil {
 		t.Errorf("failed to create match: " + err.Error())
 	}
-	err = CreateMatch(&match)
+	err = CreateMatch(ctx, &match)
 	if err == nil {
 		t.Errorf("duplicate match created")
 	}
 
-	m, err := GetMatchByID("id")
+	m, err := GetMatchByID(ctx, "id")
 	if err != nil || m == nil {
 		t.Errorf("failed to get match")
 	}
-	m2, err := GetMatchByThreadID("threadid")
+	m2, err := GetMatchByThreadID(ctx, "threadid")
 	if err != nil || m2 == nil {
 		t.Errorf("failed to get match")
 	}
 	if m.ThreadID != m2.ThreadID {
 		t.Errorf("mismatching threadID : %v != %v", m.ThreadID, m2.ThreadID)
 	}
-	inMatch, err := IsPlayerInMatch(p1)
+	inMatch, err := IsPlayerInMatch(ctx, p1)
 	if err != nil || !inMatch {
 		t.Errorf("error or player not in match")
 	}
-	matches, err := GetRunningMatchesOrderedByTimestamp()
+	matches, err := GetRunningMatchesOrderedByTimestamp(ctx)
 	if err != nil || len(matches) == 0 {
 		t.Errorf("error or no running matches found")
 	}
 	m.State = models.MatchStateCanceled
-	err = UpdateMatch(m)
+	err = UpdateMatch(ctx, m)
 	if err != nil {
 		t.Errorf("failed to update match")
 	}
-	m, err = GetMatchByID("id")
+	m, err = GetMatchByID(ctx, "id")
 	if err != nil || m == nil {
 		t.Errorf("failed to get match")
 	}
@@ -74,11 +76,11 @@ func Test_db_CreateMatch(t *testing.T) {
 		t.Errorf("match did not get canceled")
 	}
 
-	inMatch, err = IsPlayerInMatch(p1)
+	inMatch, err = IsPlayerInMatch(ctx, p1)
 	if err != nil || inMatch {
 		t.Errorf("error or player in match after cancel")
 	}
-	matches, err = GetRunningMatchesOrderedByTimestamp()
+	matches, err = GetRunningMatchesOrderedByTimestamp(ctx)
 	if err != nil || len(matches) != 0 {
 		t.Errorf("error or running matches found")
 	}

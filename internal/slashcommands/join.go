@@ -93,7 +93,7 @@ func (p Join) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 	}()
 
-	isInQueue, err := matchmaking.IsPlayerInQueue(playerID)
+	isInQueue, err := matchmaking.IsPlayerInQueue(ctx, playerID)
 	if err != nil {
 		log.WithFields(log.Fields{
 			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
@@ -103,7 +103,7 @@ func (p Join) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		message = "Failed to put you in queue."
 		return
 	}
-	isInMatch, err := matchmaking.IsPlayerInMatch(playerID)
+	isInMatch, err := matchmaking.IsPlayerInMatch(ctx, playerID)
 	if err != nil {
 		log.WithFields(log.Fields{
 			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
@@ -121,7 +121,7 @@ func (p Join) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		message = "You are already in the queue !"
 		return
 	}
-	err = matchmaking.AddPlayerToQueue(playerID, models.Role(role))
+	err = matchmaking.AddPlayerToQueue(ctx, playerID, models.Role(role))
 	if err != nil {
 		var notLinkedError *models.NotLinkedError
 		if errors.As(err, &notLinkedError) {

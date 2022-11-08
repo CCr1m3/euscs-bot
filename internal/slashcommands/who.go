@@ -48,13 +48,19 @@ func (p Who) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	for _, opt := range options {
 		optionMap[opt.Name] = opt
 	}
-	user := optionMap["discorduser"].UserValue(s)
-	username := optionMap["username"].StringValue()
+	var userID string
+	var username string
+	if val, ok := optionMap["discorduser"]; ok {
+		userID = val.UserValue(s).ID
+	}
+	if val, ok := optionMap["username"]; ok {
+		username = val.StringValue()
+	}
 	log.WithFields(log.Fields{
 		string(models.UUIDKey):     ctx.Value(models.UUIDKey),
 		string(models.CallerIDKey): i.Member.User.ID,
-		string(models.UsernameKey): user,
-		string(models.PlayerIDKey): user.ID,
+		string(models.UsernameKey): username,
+		string(models.PlayerIDKey): userID,
 	}).Info("who slash command invoked")
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -83,7 +89,7 @@ func (p Who) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 	}()
 
-	if user != nil && username != "" {
+	if userID != "" && username != "" {
 		message = "Please enter only one of the argument."
 		log.WithFields(log.Fields{
 			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
@@ -91,12 +97,12 @@ func (p Who) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}).Warning("who failed, no arguments")
 		return
 	}
-	if user != nil {
-		username, err := rank.GetLinkedUsername(user.ID)
+	if userID != "" {
+		username, err := rank.GetLinkedUsername(ctx, userID)
 		if err != nil {
 			log.WithFields(log.Fields{
 				string(models.UUIDKey):     ctx.Value(models.UUIDKey),
-				string(models.PlayerIDKey): user.ID,
+				string(models.PlayerIDKey): userID,
 				string(models.ErrorKey):    err.Error(),
 			}).Error("failed to lookup user")
 			message = "Failed to lookup user."
@@ -105,16 +111,16 @@ func (p Who) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		if username == "" {
 			log.WithFields(log.Fields{
 				string(models.UUIDKey):     ctx.Value(models.UUIDKey),
-				string(models.PlayerIDKey): user.ID,
+				string(models.PlayerIDKey): userID,
 			}).Warning("player is not linked")
-			message = fmt.Sprintf("%s has not linked his omega strikers account.", "<@"+user.ID+">")
+			message = fmt.Sprintf("%s has not linked his omega strikers account.", "<@"+userID+">")
 			return
 		}
-		message = fmt.Sprintf("%s is %s in omega strikers.", "<@"+user.ID+">", username)
+		message = fmt.Sprintf("%s is %s in omega strikers.", "<@"+userID+">", username)
 		return
 	}
 	if username != "" {
-		userID, err := rank.GetLinkedUser(username)
+		userID, err := rank.GetLinkedUser(ctx, username)
 		if err != nil {
 			log.WithFields(log.Fields{
 				string(models.UUIDKey):     ctx.Value(models.UUIDKey),

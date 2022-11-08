@@ -64,7 +64,7 @@ func (p Credits) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 	}()
 
-	credits, err := credits.GetPlayerCredits(playerID)
+	credits, err := credits.GetPlayerCredits(ctx, playerID)
 	if err != nil {
 		log.WithFields(log.Fields{
 			string(models.UUIDKey):     ctx.Value(models.UUIDKey),

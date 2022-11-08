@@ -1,10 +1,12 @@
 package db
 
 import (
+	"context"
+
 	"github.com/haashi/omega-strikers-bot/internal/models"
 )
 
-func CreateMatch(m *models.Match) error {
+func CreateMatch(ctx context.Context, m *models.Match) error {
 	tx, err := db.Beginx()
 	if err != nil {
 		return &models.DBError{Err: err}
@@ -48,7 +50,7 @@ func CreateMatch(m *models.Match) error {
 	return nil
 }
 
-func UpdateMatch(m *models.Match) error {
+func UpdateMatch(ctx context.Context, m *models.Match) error {
 	//update players in matchesplayers (probably delete and recreate)
 	_, err := db.NamedExec("UPDATE matches SET state=:state, team1score=:team1score, team2score=:team2score,votemessageID=:votemessageID WHERE matchID=:matchID", m)
 	if err != nil {
@@ -57,7 +59,7 @@ func UpdateMatch(m *models.Match) error {
 	return nil
 }
 
-func getTeamsInMatch(match *models.Match) error {
+func getTeamsInMatch(ctx context.Context, match *models.Match) error {
 	team1 := []*models.Player{}
 	err := db.Select(&team1, "SELECT elo,discordID,osuser,lastrankupdate,credits FROM players JOIN matchesplayers ON matchesplayers.playerID == players.discordID WHERE matchID=? AND team=1", match.ID)
 	if err != nil {
@@ -73,40 +75,40 @@ func getTeamsInMatch(match *models.Match) error {
 	return nil
 }
 
-func GetMatchByThreadID(threadID string) (*models.Match, error) {
+func GetMatchByThreadID(ctx context.Context, threadID string) (*models.Match, error) {
 	var match models.Match
 	err := db.Get(&match, "SELECT * FROM matches WHERE threadID=?", threadID)
 	if err != nil {
 		return nil, &models.DBError{Err: err}
 	}
-	err = getTeamsInMatch(&match)
+	err = getTeamsInMatch(ctx, &match)
 	if err != nil {
 		return nil, &models.DBError{Err: err}
 	}
 	return &match, nil
 }
 
-func GetMatchByID(matchID string) (*models.Match, error) {
+func GetMatchByID(ctx context.Context, matchID string) (*models.Match, error) {
 	var match models.Match
 	err := db.Get(&match, "SELECT * FROM matches WHERE matchID=?", matchID)
 	if err != nil {
 		return nil, &models.DBError{Err: err}
 	}
-	err = getTeamsInMatch(&match)
+	err = getTeamsInMatch(ctx, &match)
 	if err != nil {
 		return nil, &models.DBError{Err: err}
 	}
 	return &match, nil
 }
 
-func GetRunningMatchesOrderedByTimestamp() ([]*models.Match, error) {
+func GetRunningMatchesOrderedByTimestamp(ctx context.Context) ([]*models.Match, error) {
 	matches := []*models.Match{}
 	err := db.Select(&matches, "SELECT * FROM matches WHERE state=0 ORDER BY timestamp ASC LIMIT 50")
 	if err != nil {
 		return nil, &models.DBError{Err: err}
 	}
 	for _, match := range matches {
-		err = getTeamsInMatch(match)
+		err = getTeamsInMatch(ctx, match)
 		if err != nil {
 			return nil, &models.DBError{Err: err}
 		}
@@ -114,14 +116,14 @@ func GetRunningMatchesOrderedByTimestamp() ([]*models.Match, error) {
 	return matches, nil
 }
 
-func GetWaitingForVotesMatches() ([]*models.Match, error) {
+func GetWaitingForVotesMatches(ctx context.Context) ([]*models.Match, error) {
 	matches := []*models.Match{}
 	err := db.Select(&matches, "SELECT * FROM matches WHERE state=-1")
 	if err != nil {
 		return nil, &models.DBError{Err: err}
 	}
 	for _, match := range matches {
-		err = getTeamsInMatch(match)
+		err = getTeamsInMatch(ctx, match)
 		if err != nil {
 			return nil, &models.DBError{Err: err}
 		}
@@ -129,7 +131,7 @@ func GetWaitingForVotesMatches() ([]*models.Match, error) {
 	return matches, nil
 }
 
-func IsPlayerInMatch(p *models.Player) (bool, error) {
+func IsPlayerInMatch(ctx context.Context, p *models.Player) (bool, error) {
 	var count int
 	row := db.QueryRow("SELECT COUNT(*) FROM matches JOIN matchesplayers ON matches.matchID = matchesplayers.matchID WHERE playerID=? and state<=0", p.DiscordID)
 	err := row.Scan(&count)

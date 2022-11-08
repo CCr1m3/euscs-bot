@@ -80,7 +80,7 @@ func (p Link) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 	}()
 
-	err = rank.LinkPlayerToUsername(playerID, username)
+	err = rank.LinkPlayerToUsername(ctx, playerID, username)
 	if err != nil {
 		log.Errorf("failed to link player %s with username %s: "+err.Error(), playerID, username)
 		var badUsernameErr *models.RankUpdateUsernameError

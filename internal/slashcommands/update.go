@@ -64,7 +64,7 @@ func (p Update) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 	}()
 
-	err = rank.UpdateRankIfNeeded(playerID)
+	err = rank.UpdateRankIfNeeded(ctx, playerID)
 	if err != nil {
 		var tooFastErr *models.RankUpdateTooFastError
 		var notLinkedErr *models.NotLinkedError

@@ -94,7 +94,7 @@ func (p Predict) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 	}()
 
-	match, err := matchmaking.GetMatchByThreadId(i.ChannelID)
+	match, err := matchmaking.GetMatchByThreadId(ctx, i.ChannelID)
 	if err != nil {
 		log.WithFields(log.Fields{
 			string(models.UUIDKey):      ctx.Value(models.UUIDKey),
@@ -134,7 +134,7 @@ func (p Predict) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		message = "The match has already started for too long to predict."
 		return
 	}
-	err = credits.AddPrediction(i.Member.User.ID, match.ID, int(team))
+	err = credits.AddPrediction(ctx, i.Member.User.ID, match.ID, int(team))
 	if err != nil {
 		log.WithFields(log.Fields{
 			string(models.UUIDKey):     ctx.Value(models.UUIDKey),

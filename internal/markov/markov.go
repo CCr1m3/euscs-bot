@@ -1,14 +1,14 @@
-package chat
+package markov
 
 import (
+	"context"
 	"flag"
 	"math/rand"
-	"regexp"
 	"strings"
 
-	"github.com/bwmarrin/discordgo"
 	"github.com/haashi/omega-strikers-bot/internal/db"
 	"github.com/haashi/omega-strikers-bot/internal/discord"
+	"github.com/haashi/omega-strikers-bot/internal/models"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -16,50 +16,44 @@ var reset = flag.Bool("resetmarkov", false, "")
 
 func Init() {
 	if *reset {
+		ctx := context.Background()
 		log.Info("fetching all messages from discord server")
-		fetchAllMessages()
+		fetchAllMessages(ctx)
 		log.Info("loading all messages into db")
-		loadMarkovFromFile()
+		loadMarkovFromFile(ctx)
 		log.Info("done loading messages into db")
 	}
 	session := discord.GetSession()
 	session.AddHandler(messageHandler)
 }
 
-func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if m.Author.ID == s.State.User.ID || discord.GuildID != m.GuildID {
-		return
-	}
-	r := regexp.MustCompile(s.State.User.Mention())
-	if r.MatchString(m.Content) {
-		player, err := db.GetPlayerById(m.Author.ID)
-		if err != nil {
-			log.Error("failed to get player: " + err.Error())
-			return
-		}
-		if player.Credits >= 10 {
-			player.Credits -= 10
-			_, err := s.ChannelMessageSend(m.ChannelID, generateRandomMessage())
-			if err != nil {
-				log.Error("failed to send message: " + err.Error())
-				return
-			}
-			err = db.UpdatePlayer(player)
-			if err != nil {
-				log.Error("failed to update player: " + err.Error())
-				return
-			}
-		}
-	} else {
-		err := learn(m.Content)
-		if err != nil {
-			log.Error("failed to learn message: " + err.Error())
-		}
-	}
+func parse(message string) []string {
+	words := strings.Fields(message)
+	return words
 }
 
-func getNextWord(word1 string, word2 string) string {
-	occurences, err := db.GetMarkovOccurencesAndTotal(word1, word2)
+func learn(ctx context.Context, message string) error {
+	words := parse(message)
+	ms := make([]*models.Markov, 0)
+	if len(words) > 1 {
+		ms = append(ms, &models.Markov{Word1: "__start__", Word2: words[0], Word3: words[1]})
+		for i := range words {
+			if i == len(words)-2 {
+				ms = append(ms, &models.Markov{Word1: words[i], Word2: words[i+1], Word3: "__end__"})
+				break
+			} else {
+				ms = append(ms, &models.Markov{Word1: words[i], Word2: words[i+1], Word3: words[i+2]})
+			}
+		}
+	}
+	if len(words) == 1 {
+		ms = append(ms, &models.Markov{Word1: "__start__", Word2: words[0], Word3: "__end__"})
+	}
+	return db.AddMarkovOccurences(ctx, ms)
+}
+
+func getNextWord(ctx context.Context, word1 string, word2 string) string {
+	occurences, err := db.GetMarkovOccurencesAndTotal(ctx, word1, word2)
 	if err != nil {
 		log.Error("error getting occurences: " + err.Error())
 	}
@@ -75,8 +69,8 @@ func getNextWord(word1 string, word2 string) string {
 	return "__end__"
 }
 
-func getRandomStartingWord() string {
-	occurences, err := db.GetStartingMarkovOccurences()
+func getRandomStartingWord(ctx context.Context) string {
+	occurences, err := db.GetStartingMarkovOccurences(ctx)
 	if err != nil {
 		log.Error("error getting occurences: " + err.Error())
 	}
@@ -92,14 +86,14 @@ func getRandomStartingWord() string {
 	return "__end__"
 }
 
-func generateRandomMessage() string {
+func GenerateRandomMessage(ctx context.Context) string {
 	words := make([]string, 0)
 	lastWord := "__start__"
-	word := getRandomStartingWord()
+	word := getRandomStartingWord(ctx)
 	words = append(words, word)
 	i := 0
 	for word != "__end__" {
-		nextWord := getNextWord(lastWord, word)
+		nextWord := getNextWord(ctx, lastWord, word)
 		if nextWord == "__end__" || i > 12 {
 			break
 		}

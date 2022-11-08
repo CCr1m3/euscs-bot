@@ -83,7 +83,7 @@ func (p Unlink) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		message = "You do not have the permission to unlink."
 		return
 	}
-	err = rank.UnlinkPlayer(user.ID)
+	err = rank.UnlinkPlayer(ctx, user.ID)
 	if err != nil {
 		var notLinkedErr *models.NotLinkedError
 		if errors.As(err, &notLinkedErr) {

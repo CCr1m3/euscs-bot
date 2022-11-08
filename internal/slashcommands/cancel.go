@@ -63,7 +63,7 @@ func (p Cancel) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 	}()
 
-	match, err := matchmaking.GetMatchByThreadId(i.ChannelID)
+	match, err := matchmaking.GetMatchByThreadId(ctx, i.ChannelID)
 	if err != nil {
 		log.WithFields(log.Fields{
 			string(models.UUIDKey):      ctx.Value(models.UUIDKey),
@@ -111,5 +111,5 @@ func (p Cancel) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 	message = "Confirmation vote started."
-	matchmaking.VoteCancelMatch(match)
+	matchmaking.VoteCancelMatch(ctx, match)
 }

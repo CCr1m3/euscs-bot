@@ -1,8 +1,12 @@
 package db
 
-import "github.com/haashi/omega-strikers-bot/internal/models"
+import (
+	"context"
 
-func AddPlayerToQueue(p *models.Player, role models.Role, entryTime int) error {
+	"github.com/haashi/omega-strikers-bot/internal/models"
+)
+
+func AddPlayerToQueue(ctx context.Context, p *models.Player, role models.Role, entryTime int) error {
 	_, err := db.Exec("INSERT INTO queue (playerID,role,entryTime) VALUES (?,?,?)", p.DiscordID, role, entryTime)
 	if err != nil {
 		return &models.DBError{Err: err}
@@ -10,7 +14,7 @@ func AddPlayerToQueue(p *models.Player, role models.Role, entryTime int) error {
 	return nil
 }
 
-func RemovePlayerFromQueue(p *models.Player) error {
+func RemovePlayerFromQueue(ctx context.Context, p *models.Player) error {
 	_, err := db.NamedExec("DELETE FROM queue WHERE playerID=:discordID", p)
 	if err != nil {
 		return &models.DBError{Err: err}
@@ -18,7 +22,7 @@ func RemovePlayerFromQueue(p *models.Player) error {
 	return nil
 }
 
-func GetPlayersInQueue() ([]*models.QueuedPlayer, error) {
+func GetPlayersInQueue(ctx context.Context) ([]*models.QueuedPlayer, error) {
 	players := []*models.QueuedPlayer{}
 	err := db.Select(&players, "SELECT discordID,osuser,elo,role,lastrankupdate,credits,entrytime FROM queue JOIN players ON queue.playerID = players.discordID")
 	if err != nil {
@@ -27,7 +31,7 @@ func GetPlayersInQueue() ([]*models.QueuedPlayer, error) {
 	return players, nil
 }
 
-func IsPlayerInQueue(p *models.Player) (bool, error) {
+func IsPlayerInQueue(ctx context.Context, p *models.Player) (bool, error) {
 	var count int
 	row := db.QueryRow("SELECT COUNT(*) FROM queue WHERE playerID=?", p.DiscordID)
 	err := row.Scan(&count)
@@ -37,7 +41,7 @@ func IsPlayerInQueue(p *models.Player) (bool, error) {
 	return count > 0, nil
 }
 
-func GetGoaliesCountInQueue() (int, error) {
+func GetGoaliesCountInQueue(ctx context.Context) (int, error) {
 	var count int
 	row := db.QueryRow("SELECT COUNT(*) FROM queue WHERE role='goalie' OR role='flex'")
 	err := row.Scan(&count)
@@ -47,7 +51,7 @@ func GetGoaliesCountInQueue() (int, error) {
 	return count, nil
 }
 
-func GetForwardsCountInQueue() (int, error) {
+func GetForwardsCountInQueue(ctx context.Context) (int, error) {
 	var count int
 	row := db.QueryRow("SELECT COUNT(*) FROM queue WHERE role='forward' OR role='flex'")
 	err := row.Scan(&count)

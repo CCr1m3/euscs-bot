@@ -63,7 +63,7 @@ func (p Leave) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 	}()
 
-	isInQueue, err := matchmaking.IsPlayerInQueue(playerID)
+	isInQueue, err := matchmaking.IsPlayerInQueue(ctx, playerID)
 	if err != nil {
 		log.WithFields(log.Fields{
 			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
@@ -77,7 +77,7 @@ func (p Leave) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		message = "You are not in the queue !"
 		return
 	}
-	err = matchmaking.RemovePlayerFromQueue(playerID)
+	err = matchmaking.RemovePlayerFromQueue(ctx, playerID)
 	if err != nil {
 		log.WithFields(log.Fields{
 			string(models.UUIDKey):     ctx.Value(models.UUIDKey),

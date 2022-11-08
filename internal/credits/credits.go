@@ -1,43 +1,25 @@
 package credits
 
 import (
+	"context"
+
 	"github.com/haashi/omega-strikers-bot/internal/db"
-	"github.com/haashi/omega-strikers-bot/internal/models"
 )
 
-func getOrCreatePlayer(playerID string) (*models.Player, error) {
-	p, err := db.GetPlayerById(playerID)
-	if err != nil {
-		err = db.CreatePlayer(playerID)
-		if err != nil {
-			return nil, err
-		}
-		p, err = db.GetPlayerById(playerID)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return p, nil
-}
-
-func GetPlayer(playerID string) (*models.Player, error) {
-	return getOrCreatePlayer(playerID)
-}
-
-func GetPlayerCredits(playerID string) (int, error) {
-	p, err := getOrCreatePlayer(playerID)
+func GetPlayerCredits(ctx context.Context, playerID string) (int, error) {
+	p, err := db.GetOrCreatePlayerById(ctx, playerID)
 	if err != nil {
 		return -1, err
 	}
 	return p.Credits, nil
 }
 
-func AddPrediction(playerID string, matchID string, team int) error {
-	_, err := getOrCreatePlayer(playerID)
+func AddPrediction(ctx context.Context, playerID string, matchID string, team int) error {
+	_, err := db.GetOrCreatePlayerById(ctx, playerID)
 	if err != nil {
 		return err
 	}
-	err = db.CreatePrediction(playerID, matchID, team)
+	err = db.CreatePrediction(ctx, playerID, matchID, team)
 	if err != nil {
 		return err
 	}
