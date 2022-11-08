@@ -56,7 +56,6 @@ func (p Unlink) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Content: "Unlink slash command invoked. Please wait...",
-			Flags:   discordgo.MessageFlagsEphemeral,
 		},
 	})
 	if err != nil {
@@ -104,5 +103,5 @@ func (p Unlink) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 		return
 	}
-	message = fmt.Sprintf("Successfully unlink %s.", user.Mention())
+	message = fmt.Sprintf("Successfully unlinked %s.", user.Mention())
 }
