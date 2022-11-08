@@ -1,6 +1,7 @@
 package matchmaking
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"math/rand"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/google/uuid"
 	"github.com/haashi/omega-strikers-bot/internal/db"
 	"github.com/haashi/omega-strikers-bot/internal/discord"
 	"github.com/haashi/omega-strikers-bot/internal/models"
@@ -21,26 +23,28 @@ import (
 func Init() {
 	log.Info("starting matchmaking service")
 	if os.Getenv("mode") == "dev" {
+		ctx := context.TODO()
 		log.Debug("starting dummy players")
 		dummies := make([]string, 0)
 		dummiesUsername := [30]string{"BaluGoalie", "Haaashi", "Piols", "Balu", "Lynx_", "Connax", "Masus", "Kolashiu", "Buntaoo", "Ballgrabber", "Jimray3", "IamTrusty", "Kidpan", "MathieuCalip", "Goku", "czem", "HHaie KuKi", "KeeperofLolis", "Madoushy", "LDC", "Yatta", "Immaculator", "goalkeeper diff", "Funii", "kirby", "mascha", "Thezs", "Cognity", "Sm1le", "Yuume"}
 		r := rand.New(rand.NewSource(2))
 		for i := 0; i < 30; i++ {
 			playerID := fmt.Sprintf("%d", r.Intn(math.MaxInt64))
-			player, err := getOrCreatePlayer(playerID)
+			player, err := db.GetOrCreatePlayerById(ctx, playerID)
 			if err != nil {
 				log.Error(err)
 			}
 			player.OSUser = strings.ToLower(dummiesUsername[i])
-			err = db.UpdatePlayer(player)
+			err = db.UpdatePlayer(ctx, player)
 			if err != nil {
 				log.Error(err)
 			}
 			dummies = append(dummies, playerID)
 		}
 		dummiesFunc := func() {
+			ctx := context.WithValue(context.Background(), models.UUIDKey, uuid.New())
 			playerID := dummies[rand.Intn(len(dummies))]
-			player, _ := getOrCreatePlayer(playerID)
+			player, _ := db.GetOrCreatePlayerById(ctx, playerID)
 			roles := make([]models.Role, 0)
 			roles = append(roles,
 				models.RoleGoalie,
@@ -48,10 +52,10 @@ func Init() {
 				models.RoleForward,
 				models.RoleForward,
 				models.RoleForward)
-			inMatch, _ := IsPlayerInMatch(player.DiscordID)
-			inQueue, _ := IsPlayerInQueue(player.DiscordID)
+			inMatch, _ := IsPlayerInMatch(ctx, player.DiscordID)
+			inQueue, _ := IsPlayerInQueue(ctx, player.DiscordID)
 			if !inQueue && !inMatch {
-				err := AddPlayerToQueue(player.DiscordID, roles[rand.Intn(len(roles))])
+				err := AddPlayerToQueue(ctx, player.DiscordID, roles[rand.Intn(len(roles))])
 				if err != nil {
 					log.Error(err)
 				}
@@ -64,7 +68,8 @@ func Init() {
 	scheduled.TaskManager.Add(scheduled.Task{ID: "closeoldmatches", Run: deleteOldMatches, Frequency: time.Minute})
 	scheduled.TaskManager.Add(scheduled.Task{ID: "removelongqueuers", Run: removeLongQueuers, Frequency: time.Minute})
 	scheduled.TaskManager.Add(scheduled.Task{ID: "threadcleanup", Run: threadCleanUp, Frequency: time.Hour})
-	waitingForVoteMatches, err := db.GetWaitingForVotesMatches()
+	ctx := context.WithValue(context.Background(), models.UUIDKey, uuid.New())
+	waitingForVoteMatches, err := db.GetWaitingForVotesMatches(ctx)
 	if err != nil {
 		log.Error("failed to get matches with a vote in progress:" + err.Error())
 	} else {
@@ -77,8 +82,9 @@ func Init() {
 }
 
 func updateStatus() {
+	ctx := context.WithValue(context.Background(), models.UUIDKey, uuid.New())
 	session := discord.GetSession()
-	playersInQueue, _ := db.GetPlayersInQueue()
+	playersInQueue, _ := db.GetPlayersInQueue(ctx)
 	queueSize := len(playersInQueue)
 	var act []*discordgo.Activity
 	act = append(act, &discordgo.Activity{Name: fmt.Sprintf("%d people queuing", queueSize), Type: discordgo.ActivityTypeWatching})
@@ -89,31 +95,32 @@ func updateStatus() {
 }
 
 func tryCreatingMatch() {
-	playersInQueue, err := db.GetPlayersInQueue()
+	ctx := context.WithValue(context.Background(), models.UUIDKey, uuid.New())
+	playersInQueue, err := db.GetPlayersInQueue(ctx)
 	if err != nil {
 		log.Error(err)
 	}
-	goalieInQueue, err := db.GetGoaliesCountInQueue()
+	goalieInQueue, err := db.GetGoaliesCountInQueue(ctx)
 	if err != nil {
 		log.Error(err)
 	}
-	forwardInQueue, err := db.GetForwardsCountInQueue()
+	forwardInQueue, err := db.GetForwardsCountInQueue(ctx)
 	if err != nil {
 		log.Error(err)
 	}
 	if len(playersInQueue) >= 6 && goalieInQueue >= 2 && forwardInQueue >= 4 {
-		team1, team2 := algorithm()
+		team1, team2 := algorithm(ctx)
 		if len(team1) == 0 {
 			log.Debug("match not created, algorithm deemed no match of quality")
 			return
 		}
-		err := createNewMatch(team1, team2)
+		err := createNewMatch(ctx, team1, team2)
 		if err != nil {
 			log.Error("could not create new match: ", err)
 		} else {
 			players := append(team1, team2...)
 			for _, player := range players {
-				err := RemovePlayerFromQueue(player.DiscordID)
+				err := RemovePlayerFromQueue(ctx, player.DiscordID)
 				if err != nil {
 					log.Error("could not make player leave queue: ", err)
 				}
@@ -246,8 +253,8 @@ func balanceTeams(indices *[6]int, players []*models.QueuedPlayer) ([]*models.Pl
 	return team1, team2
 }
 
-func algorithm() ([]*models.Player, []*models.Player) {
-	playersInQueue, err := db.GetPlayersInQueue()
+func algorithm(ctx context.Context) ([]*models.Player, []*models.Player) {
+	playersInQueue, err := db.GetPlayersInQueue(ctx)
 	if err != nil {
 		log.Error(err)
 	}

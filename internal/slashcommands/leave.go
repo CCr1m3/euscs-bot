@@ -1,8 +1,12 @@
 package slashcommands
 
 import (
+	"context"
+
 	"github.com/bwmarrin/discordgo"
+	"github.com/google/uuid"
 	"github.com/haashi/omega-strikers-bot/internal/matchmaking"
+	"github.com/haashi/omega-strikers-bot/internal/models"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -26,31 +30,62 @@ func (p Leave) Options() []*discordgo.ApplicationCommandOption {
 }
 
 func (p Leave) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	var message string
+	ctx := context.WithValue(context.Background(), models.UUIDKey, uuid.New())
 	playerID := i.Member.User.ID
-
-	isInQueue, err := matchmaking.IsPlayerInQueue(playerID)
-	if err != nil {
-		log.Errorf("failed to check if player is in queue: " + err.Error())
-	}
-	if !isInQueue {
-		message = "You are not in the queue !"
-	} else {
-		err = matchmaking.RemovePlayerFromQueue(playerID)
-		if err != nil {
-			log.Errorf("%s failed to leave the queue: "+err.Error(), playerID)
-			return
-		}
-		message = "You left the queue !"
-	}
-	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+	log.WithFields(log.Fields{
+		string(models.UUIDKey):     ctx.Value(models.UUIDKey),
+		string(models.CallerIDKey): i.Member.User.ID,
+	}).Info("leave slash command invoked")
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: message,
+			Content: "Leave slash command invoked. Please wait...",
 			Flags:   discordgo.MessageFlagsEphemeral,
 		},
 	})
 	if err != nil {
-		log.Errorf("failed to send message: " + err.Error())
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):  ctx.Value(models.UUIDKey),
+			string(models.ErrorKey): err.Error(),
+		}).Error("failed to send message")
+		return
 	}
+	var message string
+	defer func() {
+		_, err := s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+			Content: &message,
+		})
+		if err != nil {
+			log.WithFields(log.Fields{
+				string(models.UUIDKey):  ctx.Value(models.UUIDKey),
+				string(models.ErrorKey): err.Error(),
+			}).Error("failed to edit message")
+		}
+	}()
+
+	isInQueue, err := matchmaking.IsPlayerInQueue(ctx, playerID)
+	if err != nil {
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
+			string(models.CallerIDKey): i.Member.User.ID,
+			string(models.ErrorKey):    err.Error(),
+		}).Error("failed to check if player is in queue")
+		message = "Failed to make you leave the queue."
+		return
+	}
+	if !isInQueue {
+		message = "You are not in the queue !"
+		return
+	}
+	err = matchmaking.RemovePlayerFromQueue(ctx, playerID)
+	if err != nil {
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
+			string(models.CallerIDKey): i.Member.User.ID,
+			string(models.ErrorKey):    err.Error(),
+		}).Error("failed to check if player is in queue")
+		message = "Failed to make you leave the queue."
+		return
+	}
+	message = "You left the queue !"
 }

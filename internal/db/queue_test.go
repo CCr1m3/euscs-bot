@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"testing"
 
 	"github.com/haashi/omega-strikers-bot/internal/models"
@@ -9,25 +10,26 @@ import (
 func Test_db_AddPlayerToQueue(t *testing.T) {
 	clearDB()
 	Init()
-	err := CreatePlayer("12345")
+	ctx := context.TODO()
+	err := CreatePlayer(ctx, "12345")
 	if err != nil {
 		t.Errorf("failed to create player: " + err.Error())
 	}
-	p, err := GetPlayerById("12345")
+	p, err := GetPlayerById(ctx, "12345")
 	if err != nil {
 		t.Errorf("failed to get player: " + err.Error())
 	}
 
-	if err := AddPlayerToQueue(p, models.RoleFlex, 0); err != nil {
+	if err := AddPlayerToQueue(ctx, p, models.RoleFlex, 0); err != nil {
 		t.Errorf("AddPlayerToQueue() error: " + err.Error())
 	}
-	if inQueue, err := IsPlayerInQueue(p); err != nil || !inQueue {
+	if inQueue, err := IsPlayerInQueue(ctx, p); err != nil || !inQueue {
 		t.Errorf("AddPlayerToQueue() error: player is not in queue" + err.Error())
 	}
-	if err := AddPlayerToQueue(p, models.RoleFlex, 0); err == nil {
+	if err := AddPlayerToQueue(ctx, p, models.RoleFlex, 0); err == nil {
 		t.Errorf("AddPlayerToQueue() should be in error: player is already in queue")
 	}
-	ps, err := GetPlayersInQueue()
+	ps, err := GetPlayersInQueue(ctx)
 	if err != nil {
 		t.Errorf("failed to fetch players in queue: " + err.Error())
 	}
@@ -42,22 +44,23 @@ func Test_db_AddPlayerToQueue(t *testing.T) {
 func Test_db_RemovePlayerFromQueue(t *testing.T) {
 	clearDB()
 	Init()
-	err := CreatePlayer("12345")
+	ctx := context.TODO()
+	err := CreatePlayer(ctx, "12345")
 	if err != nil {
 		t.Errorf("failed to create player: " + err.Error())
 	}
-	p, err := GetPlayerById("12345")
+	p, err := GetPlayerById(ctx, "12345")
 	if err != nil {
 		t.Errorf("failed to get player: " + err.Error())
 	}
 
-	if err := AddPlayerToQueue(p, models.RoleFlex, 0); err != nil {
+	if err := AddPlayerToQueue(ctx, p, models.RoleFlex, 0); err != nil {
 		t.Errorf("AddPlayerToQueue() error: " + err.Error())
 	}
-	if err := RemovePlayerFromQueue(p); err != nil {
+	if err := RemovePlayerFromQueue(ctx, p); err != nil {
 		t.Errorf("RemovePlayerFromQueue() error: ")
 	}
-	if inQueue, err := IsPlayerInQueue(p); err != nil || inQueue {
+	if inQueue, err := IsPlayerInQueue(ctx, p); err != nil || inQueue {
 		t.Errorf("RemovePlayerFromQueue() error: player is in queue" + err.Error())
 	}
 
@@ -66,7 +69,8 @@ func Test_db_RemovePlayerFromQueue(t *testing.T) {
 func Test_db_GetGoaliesCountInQueue(t *testing.T) {
 	clearDB()
 	Init()
-	got, err := GetGoaliesCountInQueue()
+	ctx := context.TODO()
+	got, err := GetGoaliesCountInQueue(ctx)
 	if err != nil {
 		t.Errorf("GetGoaliesCountInQueue() error: " + err.Error())
 		return
@@ -74,32 +78,32 @@ func Test_db_GetGoaliesCountInQueue(t *testing.T) {
 	if got != 0 {
 		t.Errorf("GetGoaliesCountInQueue() = %v, but nobody is in queue yet", got)
 	}
-	err = CreatePlayer("12345")
+	err = CreatePlayer(ctx, "12345")
 	if err != nil {
 		t.Errorf("failed to create player: " + err.Error())
 	}
-	p, err := GetPlayerById("12345")
+	p, err := GetPlayerById(ctx, "12345")
 	if err != nil {
 		t.Errorf("failed to get player: " + err.Error())
 	}
 
-	if err := AddPlayerToQueue(p, models.RoleFlex, 0); err != nil {
+	if err := AddPlayerToQueue(ctx, p, models.RoleFlex, 0); err != nil {
 		t.Errorf("AddPlayerToQueue() error: " + err.Error())
 	}
-	err = CreatePlayer("12346")
+	err = CreatePlayer(ctx, "12346")
 	if err != nil {
 		t.Errorf("failed to create player: " + err.Error())
 	}
-	p2, err := GetPlayerById("12346")
+	p2, err := GetPlayerById(ctx, "12346")
 	if err != nil {
 		t.Errorf("failed to get player: " + err.Error())
 	}
 
-	if err := AddPlayerToQueue(p2, models.RoleGoalie, 0); err != nil {
+	if err := AddPlayerToQueue(ctx, p2, models.RoleGoalie, 0); err != nil {
 		t.Errorf("AddPlayerToQueue() error: " + err.Error())
 	}
 
-	got, err = GetGoaliesCountInQueue()
+	got, err = GetGoaliesCountInQueue(ctx)
 	if err != nil {
 		t.Errorf("GetGoaliesCountInQueue() error: " + err.Error())
 		return
@@ -112,7 +116,8 @@ func Test_db_GetGoaliesCountInQueue(t *testing.T) {
 func Test_db_GetForwardsCountInQueue(t *testing.T) {
 	clearDB()
 	Init()
-	got, err := GetForwardsCountInQueue()
+	ctx := context.TODO()
+	got, err := GetForwardsCountInQueue(ctx)
 	if err != nil {
 		t.Errorf("GetForwardsCountInQueue() error: " + err.Error())
 		return
@@ -120,20 +125,20 @@ func Test_db_GetForwardsCountInQueue(t *testing.T) {
 	if got != 0 {
 		t.Errorf("GetForwardsCountInQueue() = %v, but nobody is in queue yet", got)
 	}
-	err = CreatePlayer("12345")
+	err = CreatePlayer(ctx, "12345")
 	if err != nil {
 		t.Errorf("failed to create player: " + err.Error())
 	}
-	p, err := GetPlayerById("12345")
+	p, err := GetPlayerById(ctx, "12345")
 	if err != nil {
 		t.Errorf("failed to get player: " + err.Error())
 	}
 
-	if err := AddPlayerToQueue(p, models.RoleForward, 0); err != nil {
+	if err := AddPlayerToQueue(ctx, p, models.RoleForward, 0); err != nil {
 		t.Errorf("AddPlayerToQueue() error: " + err.Error())
 	}
 
-	got, err = GetForwardsCountInQueue()
+	got, err = GetForwardsCountInQueue(ctx)
 	if err != nil {
 		t.Errorf("GetForwardsCountInQueue() error: " + err.Error())
 		return

@@ -1,10 +1,12 @@
 package db
 
 import (
+	"context"
+
 	"github.com/haashi/omega-strikers-bot/internal/models"
 )
 
-func CreatePlayer(discordID string) error {
+func CreatePlayer(ctx context.Context, discordID string) error {
 	_, err := db.Exec("INSERT INTO players (discordID) VALUES (?)", discordID)
 	if err != nil {
 		return &models.DBError{Err: err}
@@ -12,7 +14,7 @@ func CreatePlayer(discordID string) error {
 	return nil
 }
 
-func GetPlayerById(discordID string) (*models.Player, error) {
+func GetPlayerById(ctx context.Context, discordID string) (*models.Player, error) {
 	var player models.Player
 	err := db.Get(&player, "SELECT * FROM players WHERE discordID=?", discordID)
 	if err != nil {
@@ -21,7 +23,22 @@ func GetPlayerById(discordID string) (*models.Player, error) {
 	return &player, nil
 }
 
-func GetPlayerByUsername(username string) (*models.Player, error) {
+func GetOrCreatePlayerById(ctx context.Context, discordID string) (*models.Player, error) {
+	p, err := GetPlayerById(ctx, discordID)
+	if err != nil {
+		err = CreatePlayer(ctx, discordID)
+		if err != nil {
+			return nil, err
+		}
+		p, err = GetPlayerById(ctx, discordID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return p, nil
+}
+
+func GetPlayerByUsername(ctx context.Context, username string) (*models.Player, error) {
 	var player models.Player
 	err := db.Get(&player, "SELECT * FROM players WHERE osuser=?", username)
 	if err != nil {
@@ -30,7 +47,7 @@ func GetPlayerByUsername(username string) (*models.Player, error) {
 	return &player, nil
 }
 
-func UpdatePlayer(p *models.Player) error {
+func UpdatePlayer(ctx context.Context, p *models.Player) error {
 	_, err := db.NamedExec("UPDATE players SET elo=:elo,osuser=:osuser,lastrankupdate=:lastrankupdate,credits=:credits WHERE discordID=:discordID", p)
 	if err != nil {
 		return &models.DBError{Err: err}

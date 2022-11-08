@@ -1,13 +1,12 @@
-package chat
+package discord
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"github.com/haashi/omega-strikers-bot/internal/discord"
 	log "github.com/sirupsen/logrus"
 )
 
 func CreateVoteMessage(channelID string, content string, choices []string) (*discordgo.Message, error) {
-	s := discord.GetSession()
+	s := GetSession()
 	discMessage, err := s.ChannelMessageSend(channelID, content)
 	if err != nil {
 		log.Error("failed to send message: " + err.Error())
@@ -25,7 +24,7 @@ func CreateVoteMessage(channelID string, content string, choices []string) (*dis
 
 func FetchVoteResults(message *discordgo.Message, choices []string, allowedVoters []string) ([][]*discordgo.User, error) {
 	log.Debugf("fetching vote results for message %s with choices %v", message.ID, choices)
-	s := discord.GetSession()
+	s := GetSession()
 	alreadyVoted := make(map[string]bool)
 	voteReactions := make([][]*discordgo.User, 0)
 	for _, choice := range choices {
