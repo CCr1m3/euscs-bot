@@ -66,7 +66,6 @@ func (p Who) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Content: "Who slash command invoked. Please wait...",
-			Flags:   discordgo.MessageFlagsEphemeral,
 		},
 	})
 	if err != nil {

@@ -41,7 +41,6 @@ func (p Update) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Content: "Update slash command invoked. Please wait...",
-			Flags:   discordgo.MessageFlagsEphemeral,
 		},
 	})
 	if err != nil {
@@ -91,5 +90,4 @@ func (p Update) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 	message = "Successfully updated your rank."
-
 }

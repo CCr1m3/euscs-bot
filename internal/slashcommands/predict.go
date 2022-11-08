@@ -71,7 +71,6 @@ func (p Predict) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Content: "predict slash command invoked. Please wait...",
-			Flags:   discordgo.MessageFlagsEphemeral,
 		},
 	})
 	if err != nil {
@@ -144,16 +143,5 @@ func (p Predict) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		message = "You have already predicted in this match."
 		return
 	}
-	message = fmt.Sprintf("You predicted for team%d.", team)
-	defer func() {
-		_, err = s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
-			Content: fmt.Sprintf("%s predicted team%d victory.", i.Member.User.Mention(), team),
-		})
-		if err != nil {
-			log.WithFields(log.Fields{
-				string(models.UUIDKey):  ctx.Value(models.UUIDKey),
-				string(models.ErrorKey): err.Error(),
-			}).Error("failed to follow up message")
-		}
-	}()
+	message = fmt.Sprintf("%s predicted team%d victory.", i.Member.User.Mention(), team)
 }
