@@ -110,7 +110,6 @@ func (p Result) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		log.WithFields(log.Fields{
 			string(models.UUIDKey):      ctx.Value(models.UUIDKey),
 			string(models.ChannelIDKey): i.ChannelID,
-			string(models.ErrorKey):     err.Error(),
 		}).Warning("can't result, user not in match")
 		message = "You are not a player of this match."
 		return
@@ -119,7 +118,6 @@ func (p Result) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		log.WithFields(log.Fields{
 			string(models.UUIDKey):      ctx.Value(models.UUIDKey),
 			string(models.ChannelIDKey): i.ChannelID,
-			string(models.ErrorKey):     err.Error(),
 		}).Warning("can't result, confirmation already in progress")
 		message = "A confirmation is already in progress."
 		return
@@ -128,7 +126,6 @@ func (p Result) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		log.WithFields(log.Fields{
 			string(models.UUIDKey):      ctx.Value(models.UUIDKey),
 			string(models.ChannelIDKey): i.ChannelID,
-			string(models.ErrorKey):     err.Error(),
 		}).Warning("can't result, match is over")
 		message = "The match is already over."
 		return
