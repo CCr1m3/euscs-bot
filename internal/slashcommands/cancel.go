@@ -104,7 +104,6 @@ func (p Cancel) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		log.WithFields(log.Fields{
 			string(models.UUIDKey):      ctx.Value(models.UUIDKey),
 			string(models.ChannelIDKey): i.ChannelID,
-			string(models.ErrorKey):     err.Error(),
 		}).Warning("can't result, match is over")
 		message = "The match is already over."
 		return

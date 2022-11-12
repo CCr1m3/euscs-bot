@@ -294,6 +294,8 @@ func deleteOldMatches() {
 				err = CloseMatch(ctx, match)
 			} else {
 				match.State = models.MatchStateCanceled
+				match.Team1Score = 0
+				match.Team2Score = 0
 				err = CloseMatch(ctx, match)
 			}
 			if err != nil {
