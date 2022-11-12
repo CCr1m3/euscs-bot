@@ -10,6 +10,7 @@ var MatchesChannel *discordgo.Channel
 var AiMiChannels *discordgo.Channel
 var HowToChannel *discordgo.Channel
 var AimiRequestsChannel *discordgo.Channel
+var LeaderboardChannel *discordgo.Channel
 
 func initChannels() error {
 	channels, err := session.GuildChannels(GuildID)
@@ -28,6 +29,9 @@ func initChannels() error {
 		}
 		if channel.Name == "aimi-requests" {
 			AimiRequestsChannel = channel
+		}
+		if channel.Name == "credits-leaderboard" {
+			LeaderboardChannel = channel
 		}
 	}
 	if AiMiChannels == nil {
@@ -68,6 +72,20 @@ func initChannels() error {
 		AimiRequestsChannel, err = session.GuildChannelCreateComplex(GuildID, discordgo.GuildChannelCreateData{Name: "aimi-requests", Type: discordgo.ChannelTypeGuildText, ParentID: AiMiChannels.ID})
 		if err != nil {
 			log.Fatal("failed to create channel aimi-requests: ", err.Error())
+		}
+	}
+	if LeaderboardChannel == nil {
+		LeaderboardChannel, err = session.GuildChannelCreateComplex(GuildID, discordgo.GuildChannelCreateData{Name: "credits-leaderboard", Type: discordgo.ChannelTypeGuildText, ParentID: AiMiChannels.ID})
+		if err != nil {
+			log.Fatal("failed to create channel credits-leaderboard: ", err.Error())
+		}
+		err = session.ChannelPermissionSet(LeaderboardChannel.ID, GuildID, discordgo.PermissionOverwriteTypeRole, 0, discordgo.PermissionSendMessages)
+		if err != nil {
+			log.Fatal("failed to lock channel credits-leaderboard: ", err.Error())
+		}
+		err = session.ChannelPermissionSet(LeaderboardChannel.ID, ApplicationRole.ID, discordgo.PermissionOverwriteTypeRole, discordgo.PermissionSendMessages, 0)
+		if err != nil {
+			log.Fatal("failed to open channel credits-leaderboard for bot: ", err.Error())
 		}
 	}
 	err = initHowTo()
