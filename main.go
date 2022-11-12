@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/haashi/omega-strikers-bot/internal/credits"
 	"github.com/haashi/omega-strikers-bot/internal/db"
 	"github.com/haashi/omega-strikers-bot/internal/discord"
 	"github.com/haashi/omega-strikers-bot/internal/markov"
@@ -37,6 +38,7 @@ func main() {
 	db.Init()
 	discord.Init()
 	markov.Init()
+	credits.Init()
 	slashcommands.Init()
 	matchmaking.Init()
 	stop := make(chan os.Signal, 1)

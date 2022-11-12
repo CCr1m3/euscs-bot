@@ -54,3 +54,12 @@ func UpdatePlayer(ctx context.Context, p *models.Player) error {
 	}
 	return nil
 }
+
+func GetPlayersOrderedByCredits(ctx context.Context) ([]*models.Player, error) {
+	predictions := []*models.Player{}
+	err := db.Select(&predictions, "SELECT * FROM players ORDER BY credits DESC")
+	if err != nil {
+		return nil, &models.DBError{Err: err}
+	}
+	return predictions, nil
+}
