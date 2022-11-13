@@ -26,7 +26,8 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 			return
 		}
 		if player.Credits >= 10 {
-			player.Credits -= 10
+			r := rand.Intn(20) - 10
+			player.Credits += r
 			_, err := s.ChannelMessageSend(m.ChannelID, GenerateRandomMessage(ctx))
 			if err != nil {
 				log.Error("failed to send message: " + err.Error())
