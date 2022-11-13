@@ -27,7 +27,7 @@ func updateLeaderboard() {
 		}).Error("failed to get players ordered by credits")
 		return
 	}
-	nbMessagesNeeded := len(players)/10 + 1
+	nbMessagesNeeded := (len(players)-1)/10 + 1
 	session := discord.GetSession()
 	messages, err := session.ChannelMessages(discord.LeaderboardChannel.ID, 100, "", "", "")
 	if err != nil {
@@ -57,7 +57,7 @@ func updateLeaderboard() {
 	}
 	contents := make([]string, nbMessagesNeeded)
 	for i, player := range players {
-		contents[i/10] += fmt.Sprintf("%d: %s (%d credits)\n", i, "<@"+player.DiscordID+">", player.Credits)
+		contents[i/10] += fmt.Sprintf("%d: %s (%d credits)\n", i+1, "<@"+player.DiscordID+">", player.Credits)
 	}
 	for i := 0; i < nbMessagesNeeded; i++ {
 		_, err := session.ChannelMessageEdit(discord.LeaderboardChannel.ID, messages[i].ID, contents[nbMessagesNeeded-i-1])
