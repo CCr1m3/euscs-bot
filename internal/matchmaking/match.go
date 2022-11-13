@@ -165,19 +165,6 @@ func VoteResultMatch(ctx context.Context, match *models.Match, team1Score int, t
 func CloseMatch(ctx context.Context, match *models.Match) error {
 	session := discord.GetSession()
 	channelId := discord.MatchesChannel.ID
-	members, _ := session.ThreadMembers(match.ThreadID)
-	for _, member := range members {
-		err := session.ThreadMemberRemove(member.ID, member.UserID)
-		if err != nil {
-			log.Errorf("failed to kick players from match thread: " + err.Error())
-		}
-	}
-	archive := true
-	lock := true
-	_, err := session.ChannelEdit(match.ThreadID, &discordgo.ChannelEdit{Archived: &archive, Locked: &lock})
-	if err != nil {
-		log.Errorf("failed to lock match thread: " + err.Error())
-	}
 
 	if match.Team1Score > match.Team2Score {
 		match.State = models.MatchStateTeam1Won
@@ -232,17 +219,56 @@ func CloseMatch(ctx context.Context, match *models.Match) error {
 		if err != nil {
 			log.Errorf("failed to get predictions for match %s: "+err.Error(), match.ID)
 		}
+		total := 0
+		totalWinningTeam := 0
+		for _, pred := range predictions {
+			total += pred.Amount
+			if match.State == models.MatchState(pred.Team) {
+				totalWinningTeam += pred.Amount
+			}
+		}
 		for _, pred := range predictions {
 			if match.State == models.MatchState(pred.Team) {
-				pred.Player.Credits += 10
+				perc := float64(pred.Amount) / float64(totalWinningTeam)
+				pred.Player.Credits += int(float64(total) * perc)
 				err = db.UpdatePlayer(ctx, &pred.Player)
 				if err != nil {
 					log.Errorf("failed to update player %s: "+err.Error(), pred.DiscordID)
 				}
+				session := discord.GetSession()
+				_, err := session.ChannelMessageSend(match.ThreadID, fmt.Sprintf("%s won %d credits from predicting.", "<@"+pred.Player.DiscordID+">", int(float64(total)*perc)))
+				if err != nil {
+					log.Errorf("failed to send message: " + err.Error())
+				}
+			}
+		}
+	} else {
+		log.Debugf("giving back credits predictions for match %s", match.ID)
+		predictions, err := db.GetPlayersPredictionOnMatch(ctx, match)
+		if err != nil {
+			log.Errorf("failed to get predictions for match %s: "+err.Error(), match.ID)
+		}
+		for _, pred := range predictions {
+			pred.Player.Credits += pred.Amount
+			err = db.UpdatePlayer(ctx, &pred.Player)
+			if err != nil {
+				log.Errorf("failed to update player %s: "+err.Error(), pred.DiscordID)
 			}
 		}
 	}
-
+	members, _ := session.ThreadMembers(match.ThreadID)
+	for _, member := range members {
+		err := session.ThreadMemberRemove(member.ID, member.UserID)
+		if err != nil {
+			log.Errorf("failed to kick players from match thread: " + err.Error())
+		}
+	}
+	archive := true
+	lock := true
+	_, err = session.ChannelEdit(match.ThreadID, &discordgo.ChannelEdit{Archived: &archive, Locked: &lock})
+	if err != nil {
+		log.Errorf("failed to lock match thread: " + err.Error())
+	}
 	return err
 }
 

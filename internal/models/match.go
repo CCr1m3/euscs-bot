@@ -25,5 +25,6 @@ const (
 
 type Prediction struct {
 	Player
-	Team int `db:"team"`
+	Team   int `db:"team"`
+	Amount int `db:"amount"`
 }

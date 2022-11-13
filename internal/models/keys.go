@@ -12,6 +12,9 @@ const (
 	QueueRoleKey  Key = "queuerole"
 	UsernameKey   Key = "username"
 	ResultKey     Key = "result"
+	TeamKey       Key = "team"
 	PredictionKey Key = "prediction"
 	DurationKey   Key = "duration"
+	AmountKey     Key = "amount"
+	CreditsKey    Key = "credits"
 )

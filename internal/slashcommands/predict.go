@@ -3,12 +3,12 @@ package slashcommands
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/google/uuid"
 	"github.com/haashi/omega-strikers-bot/internal/credits"
+	"github.com/haashi/omega-strikers-bot/internal/db"
 	"github.com/haashi/omega-strikers-bot/internal/matchmaking"
 	"github.com/haashi/omega-strikers-bot/internal/models"
 	log "github.com/sirupsen/logrus"
@@ -34,18 +34,24 @@ func (p Predict) Options() []*discordgo.ApplicationCommandOption {
 		{
 			Name:        "team",
 			Description: "Which team will win",
-			Type:        discordgo.ApplicationCommandOptionString,
+			Type:        discordgo.ApplicationCommandOptionInteger,
 			Required:    true,
 			Choices: []*discordgo.ApplicationCommandOptionChoice{
 				{
 					Name:  "Team1",
-					Value: "1",
+					Value: 1,
 				},
 				{
 					Name:  "Team2",
-					Value: "2",
+					Value: 2,
 				},
 			},
+		},
+		{
+			Name:        "amount",
+			Description: "How much are you betting",
+			Type:        discordgo.ApplicationCommandOptionInteger,
+			Required:    true,
 		},
 	}
 }
@@ -56,18 +62,17 @@ func (p Predict) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	for _, opt := range options {
 		optionMap[opt.Name] = opt
 	}
-	team, err := strconv.ParseInt(optionMap["team"].StringValue(), 10, 0)
-	if err != nil {
-		return
-	}
+	team := int(optionMap["team"].IntValue())
+	amount := int(optionMap["amount"].IntValue())
 	ctx := context.WithValue(context.Background(), models.UUIDKey, uuid.New())
 	log.WithFields(log.Fields{
 		string(models.UUIDKey):      ctx.Value(models.UUIDKey),
 		string(models.CallerIDKey):  i.Member.User.ID,
 		string(models.ChannelIDKey): i.ChannelID,
-		string(models.ResultKey):    team,
+		string(models.TeamKey):      team,
+		string(models.AmountKey):    amount,
 	}).Info("predict slash command invoked")
-	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Content: "predict slash command invoked. Please wait...",
@@ -103,15 +108,38 @@ func (p Predict) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		message = "This channel is not a match lobby."
 		return
 	}
-	inMatch := false
-	for _, p := range match.Team1 {
-		if p.DiscordID == i.Member.User.ID {
-			inMatch = true
-		}
+	player, err := db.GetOrCreatePlayerById(ctx, i.Member.User.ID)
+	if err != nil {
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
+			string(models.ErrorKey):    err.Error(),
+			string(models.PlayerIDKey): i.Member.User.ID,
+		}).Error("failed to get or create player")
+		return
 	}
-	for _, p := range match.Team2 {
-		if p.DiscordID == i.Member.User.ID {
-			inMatch = true
+	if player.Credits < amount {
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):      ctx.Value(models.UUIDKey),
+			string(models.CallerIDKey):  i.Member.User.ID,
+			string(models.ChannelIDKey): i.ChannelID,
+			string(models.CreditsKey):   player.Credits,
+			string(models.AmountKey):    amount,
+		}).Warning("user has not enough credits")
+		message = "You don't have that much credits."
+		return
+	}
+	inMatch := false
+	if team == 2 {
+		for _, p := range match.Team1 {
+			if p.DiscordID == i.Member.User.ID {
+				inMatch = true
+			}
+		}
+	} else {
+		for _, p := range match.Team2 {
+			if p.DiscordID == i.Member.User.ID {
+				inMatch = true
+			}
 		}
 	}
 	if inMatch {
@@ -120,7 +148,7 @@ func (p Predict) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			string(models.CallerIDKey): i.Member.User.ID,
 			string(models.MatchIDKey):  match.ID,
 		}).Warning("can't predict, user is in match")
-		message = "You are a player of this match."
+		message = "You are a player of this match. You can only bet on your win."
 		return
 	}
 	if time.Since(time.Unix(int64(match.Timestamp), 0)) > time.Minute*3 {
@@ -133,7 +161,7 @@ func (p Predict) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		message = "The match has already started for too long to predict."
 		return
 	}
-	err = credits.AddPrediction(ctx, i.Member.User.ID, match.ID, int(team))
+	err = credits.AddPrediction(ctx, i.Member.User.ID, match.ID, team, amount)
 	if err != nil {
 		log.WithFields(log.Fields{
 			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
@@ -143,5 +171,12 @@ func (p Predict) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		message = "You have already predicted in this match."
 		return
 	}
-	message = fmt.Sprintf("%s predicted team%d victory.", i.Member.User.Mention(), team)
+	ratioTeam1, ratioTeam2, err := credits.GetReturnRatiosForMatch(ctx, match.ID)
+	if err != nil {
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):    ctx.Value(models.UUIDKey),
+			string(models.MatchIDKey): match.ID,
+		}).Error("failed to get return ratios for match")
+	}
+	message = fmt.Sprintf("%s predicted team%d victory with %d credits.\nCurrent return ratio Team1:%.2f | Team2:%.2f", i.Member.User.Mention(), team, amount, ratioTeam1, ratioTeam2)
 }
