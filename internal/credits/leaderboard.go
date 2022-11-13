@@ -47,6 +47,16 @@ func updateLeaderboard() {
 			return
 		}
 	}
+	for i := 0; i < (len(messages) - nbMessagesNeeded); i++ {
+		err := session.ChannelMessageDelete(discord.LeaderboardChannel.ID, messages[i].ID)
+		if err != nil {
+			log.WithFields(log.Fields{
+				string(models.UUIDKey):  ctx.Value(models.UUIDKey),
+				string(models.ErrorKey): err.Error(),
+			}).Error("failed to delete messages in leaderboard channel")
+			return
+		}
+	}
 	messages, err = session.ChannelMessages(discord.LeaderboardChannel.ID, 100, "", "", "")
 	if err != nil {
 		log.WithFields(log.Fields{
