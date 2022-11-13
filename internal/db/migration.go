@@ -13,6 +13,7 @@ var migrations = []string{
 	migration1,
 	migration2,
 	migration3,
+	migration4,
 }
 
 func migrate() error {
@@ -111,3 +112,5 @@ var migration3 = `CREATE TABLE markov (
 	PRIMARY KEY (word1,word2,word3)
 );
 `
+
+var migration4 = `ALTER TABLE predictions ADD amount int`
