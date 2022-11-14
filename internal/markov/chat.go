@@ -27,15 +27,20 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		if player.Credits >= 10 {
 			player.Credits -= 10
-			mes, err := s.ChannelMessageSend(m.ChannelID, "placeholder")
+			messageText := GenerateRandomMessage(ctx)
+			rgx := regexp.MustCompile(`<@\d+>`)
+			var sanitizedMessageText = rgx.ReplaceAllString(messageText, "@someone")
+			mes, err := s.ChannelMessageSend(m.ChannelID, sanitizedMessageText)
 			if err != nil {
 				log.Error("failed to send message: " + err.Error())
 				return
 			}
-			mes, err = s.ChannelMessageEdit(m.ChannelID, mes.ID, GenerateRandomMessage(ctx))
-			if err != nil {
-				log.Error("failed to edit message: " + err.Error())
-				return
+			if messageText != sanitizedMessageText {
+				_, err = s.ChannelMessageEdit(m.ChannelID, mes.ID, messageText)
+				if err != nil {
+					log.Error("failed to edit message: " + err.Error())
+					return
+				}
 			}
 			err = db.UpdatePlayer(ctx, player)
 			if err != nil {
