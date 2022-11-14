@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"os"
 	"time"
 
@@ -29,7 +30,7 @@ func LinkPlayerToUsername(ctx context.Context, playerID string, username string)
 		if err != nil {
 			return err
 		}
-		err = UpdateRank(ctx, playerID, true)
+		err = UpdateRank(ctx, playerID)
 		if err != nil {
 			return err
 		}
@@ -92,13 +93,13 @@ func UpdateRankIfNeeded(ctx context.Context, playerID string) error {
 		updateDelay = time.Hour * 1
 	}
 	if time.Since(time.Unix(int64(player.LastRankUpdate), 0)) > updateDelay {
-		return UpdateRank(ctx, player.DiscordID, true)
+		return UpdateRank(ctx, player.DiscordID)
 	} else {
 		return &models.RankUpdateTooFastError{UserID: playerID}
 	}
 }
 
-func UpdateRank(ctx context.Context, playerID string, updateDiscordRole bool) error {
+func UpdateRank(ctx context.Context, playerID string) error {
 	player, err := db.GetOrCreatePlayerById(ctx, playerID)
 	if err != nil {
 		return err
@@ -131,14 +132,12 @@ func UpdateRank(ctx context.Context, playerID string, updateDiscordRole bool) er
 	if err != nil {
 		log.Errorf("failed to update player %s: "+err.Error(), player.DiscordID)
 	}
-	if updateDiscordRole {
-		go func() { //update in background
-			err := updatePlayerDiscordRole(ctx, player.DiscordID)
-			if err != nil {
-				log.Errorf("failed to update discord role of user %s: "+err.Error(), player.DiscordID)
-			}
-		}()
-	}
+	go func() { //update in background
+		err := updatePlayerDiscordRole(ctx, player.DiscordID)
+		if err != nil {
+			log.Errorf("failed to update discord role of user %s: "+err.Error(), player.DiscordID)
+		}
+	}()
 	return err
 }
 
@@ -211,6 +210,13 @@ func updatePlayerDiscordRole(ctx context.Context, playerID string) error {
 	}
 	if roleToAdd != nil {
 		err = session.GuildMemberRoleAdd(guildID, player.DiscordID, roleToAdd.ID)
+		if err != nil {
+			return err
+		}
+		_, err = session.ChannelMessageSend(discord.RankUpChannel.ID, fmt.Sprintf("%s just got promoted to %s !", "<@"+player.DiscordID+">", roleToAdd.Name))
+		if err != nil {
+			return err
+		}
 	}
 	return err
 }
