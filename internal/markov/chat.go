@@ -34,10 +34,12 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 				log.Error("failed to send message: " + err.Error())
 				return
 			}
-			mes, err = s.ChannelMessageEdit(m.ChannelID, mes.ID, messageText)
-			if err != nil {
-				log.Error("failed to edit message: " + err.Error())
-				return
+			if messageText != sanitizedMessageText {
+				mes, err = s.ChannelMessageEdit(m.ChannelID, mes.ID, messageText)
+				if err != nil {
+					log.Error("failed to edit message: " + err.Error())
+					return
+				}
 			}
 			err = db.UpdatePlayer(ctx, player)
 			if err != nil {
