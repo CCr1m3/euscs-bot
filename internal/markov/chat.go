@@ -2,15 +2,14 @@ package markov
 
 import (
 	"context"
-	"math/rand"
-	"regexp"
-
 	"github.com/bwmarrin/discordgo"
 	"github.com/google/uuid"
 	"github.com/haashi/omega-strikers-bot/internal/db"
 	"github.com/haashi/omega-strikers-bot/internal/discord"
 	"github.com/haashi/omega-strikers-bot/internal/models"
 	log "github.com/sirupsen/logrus"
+	"math/rand"
+	"regexp"
 )
 
 func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -27,12 +26,15 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		if player.Credits >= 10 {
 			player.Credits -= 10
-			mes, err := s.ChannelMessageSend(m.ChannelID, "placeholder")
+			messageText := GenerateRandomMessage(ctx)
+			rgx := regexp.MustCompile("<@\\d+>")
+			var sanitizedMessageText = rgx.ReplaceAllString(messageText, "@someone")
+			mes, err := s.ChannelMessageSend(m.ChannelID, sanitizedMessageText)
 			if err != nil {
 				log.Error("failed to send message: " + err.Error())
 				return
 			}
-			mes, err = s.ChannelMessageEdit(m.ChannelID, mes.ID, GenerateRandomMessage(ctx))
+			mes, err = s.ChannelMessageEdit(m.ChannelID, mes.ID, messageText)
 			if err != nil {
 				log.Error("failed to edit message: " + err.Error())
 				return
