@@ -117,6 +117,17 @@ func (p Predict) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}).Error("failed to get or create player")
 		return
 	}
+	if amount <= 0 {
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):      ctx.Value(models.UUIDKey),
+			string(models.CallerIDKey):  i.Member.User.ID,
+			string(models.ChannelIDKey): i.ChannelID,
+			string(models.CreditsKey):   player.Credits,
+			string(models.AmountKey):    amount,
+		}).Warning("user entered negative amount")
+		message = "Please enter a strictly positive amount."
+		return
+	}
 	if player.Credits < amount {
 		log.WithFields(log.Fields{
 			string(models.UUIDKey):      ctx.Value(models.UUIDKey),
@@ -167,11 +178,22 @@ func (p Predict) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
 			string(models.CallerIDKey): i.Member.User.ID,
 			string(models.MatchIDKey):  match.ID,
-		}).Warning("can't predict, already predicted")
-		message = "You have already predicted in this match."
+			string(models.ErrorKey):    err.Error(),
+		}).Error("failed to add prediction")
+		message = "Failed to add your prediction."
 		return
 	}
-	ratioTeam1, ratioTeam2, err := credits.GetReturnRatiosForMatch(ctx, match.ID)
+	totalTeam1, totalTeam2, err := db.GetPredictionsTotalOnMatch(ctx, match.ID)
+	ratioTeam1 := float64(totalTeam2) / float64(totalTeam1)
+	ratioTeam2 := 1 / ratioTeam1
+	ratioTeam1++
+	ratioTeam2++
+	if ratioTeam1 > 3 {
+		ratioTeam1 = 3
+	}
+	if ratioTeam2 > 3 {
+		ratioTeam2 = 3
+	}
 	if err != nil {
 		log.WithFields(log.Fields{
 			string(models.UUIDKey):    ctx.Value(models.UUIDKey),

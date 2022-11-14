@@ -23,6 +23,7 @@ func AddMarkovOccurences(ctx context.Context, ms []*models.Markov) error {
 				string(models.UUIDKey):  ctx.Value(models.UUIDKey),
 				string(models.ErrorKey): err.Error(),
 			}).Error("failed to update markov occurence")
+			tx.Rollback()
 			return err
 		}
 		rowsAffected, err := res.RowsAffected()
@@ -31,6 +32,7 @@ func AddMarkovOccurences(ctx context.Context, ms []*models.Markov) error {
 				string(models.UUIDKey):  ctx.Value(models.UUIDKey),
 				string(models.ErrorKey): err.Error(),
 			}).Error("failed to get affected rows")
+			tx.Rollback()
 			return err
 		}
 		if rowsAffected == 0 {
@@ -40,9 +42,9 @@ func AddMarkovOccurences(ctx context.Context, ms []*models.Markov) error {
 					string(models.UUIDKey):  ctx.Value(models.UUIDKey),
 					string(models.ErrorKey): err.Error(),
 				}).Error("failed to insert markov occurence")
+				tx.Rollback()
 				return err
 			}
-
 		}
 	}
 	return tx.Commit()

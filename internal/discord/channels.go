@@ -11,6 +11,7 @@ var AiMiChannels *discordgo.Channel
 var HowToChannel *discordgo.Channel
 var AimiRequestsChannel *discordgo.Channel
 var LeaderboardChannel *discordgo.Channel
+var RankUpChannel *discordgo.Channel
 
 func initChannels() error {
 	channels, err := session.GuildChannels(GuildID)
@@ -32,6 +33,9 @@ func initChannels() error {
 		}
 		if channel.Name == "credits-leaderboard" {
 			LeaderboardChannel = channel
+		}
+		if channel.Name == "rank-up" {
+			RankUpChannel = channel
 		}
 	}
 	if AiMiChannels == nil {
@@ -86,6 +90,20 @@ func initChannels() error {
 		err = session.ChannelPermissionSet(LeaderboardChannel.ID, ApplicationRole.ID, discordgo.PermissionOverwriteTypeRole, discordgo.PermissionSendMessages, 0)
 		if err != nil {
 			log.Fatal("failed to open channel credits-leaderboard for bot: ", err.Error())
+		}
+	}
+	if RankUpChannel == nil {
+		RankUpChannel, err = session.GuildChannelCreateComplex(GuildID, discordgo.GuildChannelCreateData{Name: "rank-up", Type: discordgo.ChannelTypeGuildText, ParentID: AiMiChannels.ID})
+		if err != nil {
+			log.Fatal("failed to create channel rank-up: ", err.Error())
+		}
+		err = session.ChannelPermissionSet(RankUpChannel.ID, GuildID, discordgo.PermissionOverwriteTypeRole, 0, discordgo.PermissionSendMessages)
+		if err != nil {
+			log.Fatal("failed to lock channel rank-up: ", err.Error())
+		}
+		err = session.ChannelPermissionSet(RankUpChannel.ID, ApplicationRole.ID, discordgo.PermissionOverwriteTypeRole, discordgo.PermissionSendMessages, 0)
+		if err != nil {
+			log.Fatal("failed to open channel rank-up for bot: ", err.Error())
 		}
 	}
 	err = initHowTo()
