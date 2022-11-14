@@ -219,34 +219,54 @@ func CloseMatch(ctx context.Context, match *models.Match) error {
 		if err != nil {
 			log.Errorf("failed to get predictions for match %s: "+err.Error(), match.ID)
 		}
-		total := 0
-		totalWinningTeam := 0
-		for _, pred := range predictions {
-			total += pred.Amount
-			if match.State == models.MatchState(pred.Team) {
-				totalWinningTeam += pred.Amount
-			}
+		totalTeam1, totalTeam2, err := db.GetPredictionsTotalOnMatch(ctx, match.ID)
+		if err != nil {
+			log.Errorf("failed to get predictions for match %s: "+err.Error(), match.ID)
+		}
+		total := float64(totalTeam1 + totalTeam2)
+		totalLoosingTeam := 0
+		var ratio float64
+		if match.State == models.MatchStateTeam1Won {
+			totalLoosingTeam = totalTeam2
+			ratio = float64(totalTeam2)/float64(totalTeam1) + 1
+		} else {
+			totalLoosingTeam = totalTeam1
+			ratio = float64(totalTeam1)/float64(totalTeam2) + 1
+		}
+		if ratio > 3 { //max return ratio is 3
+			ratio = 3
 		}
 		for _, pred := range predictions {
-			if total != totalWinningTeam && totalWinningTeam != 0 {
-				if match.State == models.MatchState(pred.Team) {
-					perc := float64(pred.Amount) / float64(totalWinningTeam)
-					pred.Player.Credits += int(float64(total) * perc)
+			if match.State == models.MatchState(pred.Team) {
+				gains := float64(pred.Amount) * ratio
+				pred.Player.Credits += int(gains)
+				total -= gains
+				err = db.UpdatePlayer(ctx, &pred.Player)
+				if err != nil {
+					log.Errorf("failed to update player %s: "+err.Error(), pred.DiscordID)
+				}
+				session := discord.GetSession()
+				_, err := session.ChannelMessageSend(match.ThreadID, fmt.Sprintf("%s won %d credits from predicting.", "<@"+pred.Player.DiscordID+">", int(gains)))
+				if err != nil {
+					log.Errorf("failed to send message: " + err.Error())
+				}
+			}
+		}
+		total -= 50 * ratio
+		if total > 0 {
+			for _, pred := range predictions {
+				if match.State != models.MatchState(pred.Team) {
+					gains := total * (float64(pred.Amount) / float64(totalLoosingTeam))
+					pred.Player.Credits += int(gains)
 					err = db.UpdatePlayer(ctx, &pred.Player)
 					if err != nil {
 						log.Errorf("failed to update player %s: "+err.Error(), pred.DiscordID)
 					}
 					session := discord.GetSession()
-					_, err := session.ChannelMessageSend(match.ThreadID, fmt.Sprintf("%s won %d credits from predicting.", "<@"+pred.Player.DiscordID+">", int(float64(total)*perc)))
+					_, err := session.ChannelMessageSend(match.ThreadID, fmt.Sprintf("Reimbursed %s %d credits from prediction leftovers.", "<@"+pred.Player.DiscordID+">", int(gains)))
 					if err != nil {
 						log.Errorf("failed to send message: " + err.Error())
 					}
-				}
-			} else {
-				pred.Player.Credits += pred.Amount
-				err = db.UpdatePlayer(ctx, &pred.Player)
-				if err != nil {
-					log.Errorf("failed to update player %s: "+err.Error(), pred.DiscordID)
 				}
 			}
 		}
@@ -264,6 +284,7 @@ func CloseMatch(ctx context.Context, match *models.Match) error {
 			}
 		}
 	}
+	time.Sleep(time.Minute)
 	members, _ := session.ThreadMembers(match.ThreadID)
 	for _, member := range members {
 		err := session.ThreadMemberRemove(member.ID, member.UserID)
