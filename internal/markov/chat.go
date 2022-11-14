@@ -27,9 +27,14 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		if player.Credits >= 10 {
 			player.Credits -= 10
-			_, err := s.ChannelMessageSend(m.ChannelID, GenerateRandomMessage(ctx))
+			mes, err := s.ChannelMessageSend(m.ChannelID, "placeholder")
 			if err != nil {
 				log.Error("failed to send message: " + err.Error())
+				return
+			}
+			mes, err = s.ChannelMessageEdit(m.ChannelID, mes.ID, GenerateRandomMessage(ctx))
+			if err != nil {
+				log.Error("failed to edit message: " + err.Error())
 				return
 			}
 			err = db.UpdatePlayer(ctx, player)
