@@ -34,8 +34,7 @@ func AddPlayerToQueue(ctx context.Context, playerID string, role models.Role) er
 				string(models.UUIDKey):     ctx.Value(models.UUIDKey),
 				string(models.PlayerIDKey): playerID,
 				string(models.ErrorKey):    err.Error(),
-			}).Error("failed to update player rank")
-			return err
+			}).Error("failed to update player rank before joining queue")
 		}
 	}
 

@@ -88,9 +88,9 @@ func UpdateRankIfNeeded(ctx context.Context, playerID string) error {
 	if player.OSUser == "" {
 		return &models.NotLinkedError{UserID: playerID}
 	}
-	updateDelay := time.Hour * 24
+	updateDelay := time.Hour * 1
 	if os.Getenv("mode") == "dev" {
-		updateDelay = time.Hour * 1
+		updateDelay = time.Minute * 5
 	}
 	if time.Since(time.Unix(int64(player.LastRankUpdate), 0)) > updateDelay {
 		return UpdateRank(ctx, player.DiscordID)
