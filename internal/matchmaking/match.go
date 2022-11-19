@@ -333,7 +333,7 @@ func deleteOldMatches() {
 			log.Errorf("failed to fetch running matches by timestamp: " + err.Error())
 			return
 		}
-		cleanDelay := time.Minute * 15
+		cleanDelay := time.Minute * 30
 		if os.Getenv("mode") == "dev" {
 			cleanDelay = time.Minute
 		}

@@ -87,13 +87,20 @@ func (p Who) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			}).Error("failed to edit message")
 		}
 	}()
-
+	if userID == "" && username == "" {
+		message = "Please enter at least one of the argument."
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
+			string(models.CallerIDKey): i.Member.User.ID,
+		}).Warning("who failed, no arguments")
+		return
+	}
 	if userID != "" && username != "" {
 		message = "Please enter only one of the argument."
 		log.WithFields(log.Fields{
 			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
 			string(models.CallerIDKey): i.Member.User.ID,
-		}).Warning("who failed, no arguments")
+		}).Warning("who failed, two arguments")
 		return
 	}
 	if userID != "" {
