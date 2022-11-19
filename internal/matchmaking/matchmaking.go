@@ -85,10 +85,26 @@ func updateStatus() {
 	ctx := context.WithValue(context.Background(), models.UUIDKey, uuid.New())
 	session := discord.GetSession()
 	playersInQueue, _ := db.GetPlayersInQueue(ctx)
+	goaliesCount, err := db.GetGoaliesCountInQueue(ctx)
+	if err != nil {
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):  ctx.Value(models.UUIDKey),
+			string(models.ErrorKey): err.Error(),
+		}).Error("failed to get goalies count")
+		return
+	}
+	forwardsCount, err := db.GetForwardsCountInQueue(ctx)
+	if err != nil {
+		log.WithFields(log.Fields{
+			string(models.UUIDKey):  ctx.Value(models.UUIDKey),
+			string(models.ErrorKey): err.Error(),
+		}).Error("failed to get forwards count")
+		return
+	}
 	queueSize := len(playersInQueue)
 	var act []*discordgo.Activity
-	act = append(act, &discordgo.Activity{Name: fmt.Sprintf("%d people queuing", queueSize), Type: discordgo.ActivityTypeWatching})
-	err := session.UpdateStatusComplex(discordgo.UpdateStatusData{Activities: act})
+	act = append(act, &discordgo.Activity{Name: fmt.Sprintf("%d people queuing (%d goalies, %d forwards)", queueSize, goaliesCount, forwardsCount), Type: discordgo.ActivityTypeWatching})
+	err = session.UpdateStatusComplex(discordgo.UpdateStatusData{Activities: act})
 	if err != nil {
 		log.Error(err)
 	}
