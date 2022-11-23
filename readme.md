@@ -9,5 +9,19 @@
 - better prod tools (restarting, log access)
 
 # bot permissions on discord dev portal
-![image.png](image.png)
+![perms.png](screens/perms.png)
 url : https://discord.com/api/oauth2/authorize?client_id={clientid}&permissions=397552987216&scope=applications.commands%20bot
+
+# features
+
+- Chat response using markov chains
+
+![chat.png](screens/chat.png)
+
+- matchmaking (supporting predictions)
+
+![matches.png](screens/matches.png)
+
+- discord role based on in game rank
+
+![rankup.png](screens/rankup.png)
