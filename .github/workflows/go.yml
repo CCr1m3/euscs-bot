@@ -10,17 +10,21 @@ jobs:
     env:
       mode: dev
       db: mysql
-      dbpath: osuser:${{ secrets.DB_PASSWORD }}@tcp(localhost:3306)/euos?multiStatements=true
       DB_DATABASE: euos
       DB_USER: osuser
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      dbpath: osuser:${{ secrets.DB_PASSWORD }}@tcp(localhost:3306)/euos?multiStatements=true
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up MySQL
-        run: |
-          sudo /etc/init.d/mysql start
-          mysql -e 'CREATE DATABASE ${{ env.DB_DATABASE }};' -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }}
+      - name: Stop builtin MySQL
+        run: sudo service mysql stop
+
+      - uses: mirromutth/mysql-action@v1.1
+        with:
+          mysql database: ${{ env.DB_DATABASE }} # Optional, default value is "test". The specified database which will be create
+          mysql user: ${{ env.DB_USER }} # Required if "mysql root password" is empty, default is empty. The superuser for the specified database. Can use secrets, too
+          mysql password: ${{ secrets.DB_PASSWORD }} # Required if "mysql user" exists. The password for the "mysql user"
 
       - name: Set up Go
         uses: actions/setup-go@v3
