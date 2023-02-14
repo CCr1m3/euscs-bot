@@ -19,7 +19,7 @@ var migrations = []string{
 func migrate() error {
 	var start int
 	_, err := db.Exec(migrations[0])
-	if err != nil && !strings.Contains(err.Error(), "UNIQUE") {
+	if err != nil && !strings.Contains(err.Error(), "UNIQUE") && !strings.Contains(err.Error(), "1062") {
 		return &models.DBError{Err: err}
 	}
 	start, err = getLatestMigration()
@@ -53,64 +53,59 @@ func getLatestMigration() (int, error) {
 	return ver, err
 }
 
-var migration0 = `CREATE TABLE IF NOT EXISTS migrations (
-	version int,
-	PRIMARY KEY (version)
-);
-INSERT INTO migrations (version) VALUES (0);
-`
+var migration0 = `CREATE TABLE IF NOT EXISTS migrations (version INTEGER,PRIMARY KEY (version));
+INSERT INTO migrations (version) VALUES (0);`
 
 var migration1 = `CREATE TABLE players (
-    discordID text UNIQUE,
-		elo int DEFAULT 1500 NOT NULL,
-		osuser text DEFAULT "",
-		lastrankupdate int DEFAULT 0 NOT NULL,
-		credits int DEFAULT 0 NOT NULL,
+    discordID VARCHAR(100) UNIQUE NOT NULL,
+		elo INTEGER DEFAULT 1500 NOT NULL,
+		osuser VARCHAR(100) DEFAULT "" NOT NULL,
+		lastrankupdate INTEGER DEFAULT 0 NOT NULL,
+		credits INTEGER DEFAULT 0 NOT NULL,
 		PRIMARY KEY (discordID)
 );
 CREATE TABLE queue (
-	playerID text UNIQUE,
-	role text DEFAULT "" NOT NULL,
-	entrytime int NOT NULL,
+	playerID VARCHAR(100) UNIQUE NOT NULL,
+	role VARCHAR(100) DEFAULT "" NOT NULL,
+	entrytime INTEGER NOT NULL,
 	PRIMARY KEY (playerID),
 	FOREIGN KEY (playerID) REFERENCES players(discordID)
 );`
 
 var migration2 = `CREATE TABLE matches (
-	matchID text UNIQUE,
-	messageID text UNIQUE,
-	votemessageID text DEFAULT "",
-	threadID text UNIQUE,
-	timestamp int,
-	state int DEFAULT 0 NOT NULL,
-	team1score int DEFAULT 0 NOT NULL,
-	team2score int DEFAULT 0 NOT NULL,
+	matchID VARCHAR(100) UNIQUE NOT NULL,
+	messageID VARCHAR(100) UNIQUE,
+	votemessageID VARCHAR(100),
+	threadID VARCHAR(100) UNIQUE,
+	timestamp INTEGER NOT NULL,
+	state INTEGER DEFAULT 0 NOT NULL,
+	team1score INTEGER DEFAULT 0 NOT NULL,
+	team2score INTEGER DEFAULT 0 NOT NULL,
 	PRIMARY KEY(matchID)
 );
 CREATE TABLE matchesplayers (
-	matchID text,
-	team int,
-	playerID text,
+	matchID VARCHAR(100) NOT NULL,
+	team INTEGER NOT NULL,
+	playerID VARCHAR(100) NOT NULL,
 	FOREIGN KEY (playerID) REFERENCES players(discordID),
 	FOREIGN KEY (matchID) REFERENCES matches(matchID),
 	PRIMARY KEY (playerID,matchID)
 );
 CREATE TABLE predictions (
-	matchID text,
-	team int,
-	playerID text,
+	matchID VARCHAR(100) NOT NULL,
+	team INTEGER NOT NULL,
+	playerID VARCHAR(100) NOT NULL,
 	FOREIGN KEY (playerID) REFERENCES players(discordID),
 	FOREIGN KEY (matchID) REFERENCES matches(matchID),
 	PRIMARY KEY (playerID,matchID)
-)
-`
-var migration3 = `CREATE TABLE markov (
-	word1 text,
-	word2	text,
-	word3	text,
-	count int,
-	PRIMARY KEY (word1,word2,word3)
-);
-`
+);`
 
-var migration4 = `ALTER TABLE predictions ADD amount int`
+var migration3 = `CREATE TABLE markov (
+	word1 VARCHAR(100) NOT NULL,
+	word2	VARCHAR(100) NOT NULL,
+	word3	VARCHAR(100) NOT NULL,
+	count INTEGER NOT NULL,
+	PRIMARY KEY (word1,word2,word3)
+);`
+
+var migration4 = `ALTER TABLE predictions ADD amount INTEGER NOT NULL;`
