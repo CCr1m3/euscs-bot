@@ -9,10 +9,18 @@ jobs:
     runs-on: ubuntu-latest
     env:
       mode: dev
-      db: sqlite
-      dbpath: omega-strikers-bot.db
+      db: mysql
+      dbpath: osuser:${{ secrets.DB_PASSWORD }}@tcp(localhost:3306)/euos?multiStatements=true
+      DB_DATABASE: euos
+      DB_USER: osuser
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
     steps:
       - uses: actions/checkout@v3
+
+      - name: Set up MySQL
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE ${{ env.DB_DATABASE }};' -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }}
 
       - name: Set up Go
         uses: actions/setup-go@v3
