@@ -1,8 +1,11 @@
 module github.com/haashi/omega-strikers-bot
 
-go 1.19
+go 1.20
 
-require github.com/sirupsen/logrus v1.9.0
+require (
+	github.com/go-sql-driver/mysql v1.6.0
+	github.com/sirupsen/logrus v1.9.0
+)
 
 require (
 	github.com/bwmarrin/discordgo v0.26.1

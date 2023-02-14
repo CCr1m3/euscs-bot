@@ -9,7 +9,7 @@ import (
 
 func GetPlayersPredictionOnMatch(ctx context.Context, match *models.Match) ([]*models.Prediction, error) {
 	predictions := []*models.Prediction{}
-	err := db.Select(&predictions, "SELECT elo,discordID,osuser,lastrankupdate,team,credits,amount FROM players JOIN predictions ON predictions.playerID == players.discordID WHERE matchID=? ", match.ID)
+	err := db.Select(&predictions, "SELECT elo,discordID,osuser,lastrankupdate,team,credits,amount FROM players JOIN predictions ON predictions.playerID = players.discordID WHERE matchID=? ", match.ID)
 	if err != nil {
 		return nil, &models.DBError{Err: err}
 	}
