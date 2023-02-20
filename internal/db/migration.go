@@ -14,6 +14,7 @@ var migrations = []string{
 	migration2,
 	migration3,
 	migration4,
+	migration5,
 }
 
 func migrate() error {
@@ -109,3 +110,17 @@ var migration3 = `CREATE TABLE markov (
 );`
 
 var migration4 = `ALTER TABLE predictions ADD amount INTEGER NOT NULL;`
+
+var migration5 = `CREATE TABLE teams (
+	name VARCHAR(100) UNIQUE NOT NULL,
+	ownerplayerID VARCHAR(100) UNIQUE NOT NULL,
+	FOREIGN KEY (ownerplayerID) REFERENCES players(discordID)
+	PRIMARY KEY(name)
+);
+CREATE TABLE teamsplayers (
+	playerID VARCHAR(100) NOT NULL UNIQUE,
+	team VARCHAR(100) NOT NULL,
+	FOREIGN KEY (playerID) REFERENCES players(discordID),
+	FOREIGN KEY (team) REFERENCES teams(name),
+	PRIMARY KEY (playerID,team)
+);`
