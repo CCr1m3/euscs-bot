@@ -70,7 +70,7 @@ func Init() {
 	}
 	spa := spaHandler{staticFS: web.StaticFiles, staticPath: "dist", indexPath: "index.html"}
 	r.PathPrefix("/").Handler(spa)
-	err = http.ListenAndServe(":9000", r)
+	err = http.ListenAndServe("localhost:9000", r)
 	if err != nil {
 		log.Fatal("failed to launch web service")
 	}
