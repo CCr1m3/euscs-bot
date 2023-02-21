@@ -7,6 +7,8 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 )
 
+require github.com/gorilla/mux v1.8.0 // indirect
+
 require (
 	github.com/bwmarrin/discordgo v0.26.1
 	github.com/google/uuid v1.3.0

@@ -14,6 +14,7 @@ import (
 	"github.com/haashi/omega-strikers-bot/internal/markov"
 	"github.com/haashi/omega-strikers-bot/internal/matchmaking"
 	"github.com/haashi/omega-strikers-bot/internal/slashcommands"
+	"github.com/haashi/omega-strikers-bot/internal/webserver"
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
 )
@@ -41,6 +42,7 @@ func main() {
 	credits.Init()
 	slashcommands.Init()
 	matchmaking.Init()
+	webserver.Init()
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	log.Info("initialization done")
