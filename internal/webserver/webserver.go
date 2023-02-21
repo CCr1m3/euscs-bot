@@ -2,7 +2,6 @@ package webserver
 
 import (
 	"embed"
-	"fmt"
 	"io/fs"
 	"net/http"
 	"os"
@@ -61,16 +60,9 @@ func Init() {
 	r := mux.NewRouter()
 	s := r.PathPrefix("/api").Subrouter()
 	api.Init(s)
-	fs, err := web.StaticFiles.ReadDir("")
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	for _, file := range fs {
-		fmt.Println(file.Name())
-	}
 	spa := spaHandler{staticFS: web.StaticFiles, staticPath: "dist", indexPath: "index.html"}
 	r.PathPrefix("/").Handler(spa)
-	err = http.ListenAndServe("localhost:9000", r)
+	err := http.ListenAndServe(":9000", r)
 	if err != nil {
 		log.Fatal("failed to launch web service")
 	}

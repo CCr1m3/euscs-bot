@@ -140,10 +140,5 @@ func (p Join) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 		return
 	}
-	log.WithFields(log.Fields{
-		string(models.UUIDKey):      ctx.Value(models.UUIDKey),
-		string(models.CallerIDKey):  i.Member.User.ID,
-		string(models.QueueRoleKey): role,
-	}).Info("player joined the queue")
 	message = fmt.Sprintf("You joined the queue as a %s !", role)
 }

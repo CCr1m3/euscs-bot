@@ -114,11 +114,11 @@ var migration4 = `ALTER TABLE predictions ADD amount INTEGER NOT NULL;`
 var migration5 = `CREATE TABLE teams (
 	name VARCHAR(100) UNIQUE NOT NULL,
 	ownerplayerID VARCHAR(100) UNIQUE NOT NULL,
-	FOREIGN KEY (ownerplayerID) REFERENCES players(discordID)
+	FOREIGN KEY (ownerplayerID) REFERENCES players(discordID),
 	PRIMARY KEY(name)
 );
 CREATE TABLE teamsplayers (
-	playerID VARCHAR(100) NOT NULL UNIQUE,
+	playerID VARCHAR(100) UNIQUE NOT NULL,
 	team VARCHAR(100) NOT NULL,
 	FOREIGN KEY (playerID) REFERENCES players(discordID),
 	FOREIGN KEY (team) REFERENCES teams(name),
