@@ -65,6 +65,9 @@ func Init() {
 	api.Init(sapi)
 	sauth := r.PathPrefix("/auth").Subrouter()
 	initAuth(sauth)
+	stwitchauth := r.PathPrefix("/twitch").Subrouter()
+	stwitchauth.Use(newAuthHandler)
+	initTwitchAuth(stwitchauth)
 	spa := spaHandler{staticFS: web.StaticFiles, staticPath: "dist", indexPath: "index.html"}
 	r.PathPrefix("/").Handler(spa)
 	err := http.ListenAndServe(":9000", r)

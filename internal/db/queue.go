@@ -24,7 +24,7 @@ func RemovePlayerFromQueue(ctx context.Context, p *models.Player) error {
 
 func GetPlayersInQueue(ctx context.Context) ([]*models.QueuedPlayer, error) {
 	players := []*models.QueuedPlayer{}
-	err := db.Select(&players, "SELECT discordID,osuser,elo,role,lastrankupdate,credits,entrytime FROM queue JOIN players ON queue.playerID = players.discordID")
+	err := db.Select(&players, "SELECT discordID,osuser,elo,role,lastrankupdate,credits,entrytime,twitchID FROM queue JOIN players ON queue.playerID = players.discordID")
 	if err != nil {
 		return nil, &models.DBError{Err: err}
 	}

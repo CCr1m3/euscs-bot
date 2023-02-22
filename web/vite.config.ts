@@ -8,6 +8,7 @@ export default defineConfig({
     proxy: {
       "/api": "http://localhost:9000",
       "/auth": "http://localhost:9000",
+      "/twitch": "http://localhost:9000",
     },
   },
 });

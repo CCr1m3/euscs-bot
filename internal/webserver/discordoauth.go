@@ -7,20 +7,22 @@ import (
 	"os"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/haashi/omega-strikers-bot/internal/db"
+	"github.com/haashi/omega-strikers-bot/internal/models"
 	"golang.org/x/oauth2"
 )
 
-var conf oauth2.Config
+var discordoauth2 oauth2.Config
 
 var state = "random" //to-do, generate state values at login
 
 func initAuth(s *mux.Router) {
-	conf = oauth2.Config{
-		RedirectURL: os.Getenv("oauth2redirectURL"),
-		// This next 2 lines must be edited before running this.
-		ClientID:     os.Getenv("oauth2id"),
-		ClientSecret: os.Getenv("oauth2secret"),
+	discordoauth2 = oauth2.Config{
+		RedirectURL:  os.Getenv("discordoauth2redirectURL"),
+		ClientID:     os.Getenv("discordoauth2id"),
+		ClientSecret: os.Getenv("discordoauth2secret"),
 		Scopes:       []string{"identify"},
 		Endpoint: oauth2.Endpoint{
 			AuthURL:   "https://discord.com/api/oauth2/authorize",
@@ -29,7 +31,7 @@ func initAuth(s *mux.Router) {
 		},
 	}
 	gob.Register(oauth2.Token{})
-	s.HandleFunc("", authHandler)
+	s.HandleFunc("/login", authHandler)
 	s.HandleFunc("/redirect", redirectHandler)
 	s.HandleFunc("/logout", logoutHandler)
 }
@@ -44,7 +46,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	if ok {
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 	} else {
-		http.Redirect(w, r, conf.AuthCodeURL(state), http.StatusTemporaryRedirect)
+		http.Redirect(w, r, discordoauth2.AuthCodeURL(state), http.StatusTemporaryRedirect)
 	}
 }
 
@@ -64,6 +66,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func redirectHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := context.WithValue(context.Background(), models.UUIDKey, uuid.New())
 	session, err := store.Get(r, "sessionid")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -74,7 +77,7 @@ func redirectHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("State does not match."))
 		return
 	}
-	token, err := conf.Exchange(context.Background(), r.FormValue("code"))
+	token, err := discordoauth2.Exchange(context.Background(), r.FormValue("code"))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -93,6 +96,7 @@ func redirectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	session.Values["discordID"] = user.ID
+	db.CreatePlayer(ctx, user.ID)
 	err = session.Save(r, w)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

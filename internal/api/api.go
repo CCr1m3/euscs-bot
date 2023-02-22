@@ -5,8 +5,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/haashi/omega-strikers-bot/internal/db"
 	"github.com/haashi/omega-strikers-bot/internal/models"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 func Init(s *mux.Router) {
@@ -14,8 +15,14 @@ func Init(s *mux.Router) {
 }
 
 func apiHandler(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value(models.CallerIDKey)
-	respondWithJSON(w, http.StatusOK, map[string]string{"message": "Hello from API: " + userID.(string)})
+	userID := r.Context().Value(models.CallerIDKey).(string)
+	player, err := db.GetPlayerById(r.Context(), userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	respondWithJSON(w, http.StatusOK, map[string]string{"message": "Hello from API: ", "userID": userID, "twitchID": player.TwitchID})
 }
 
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
@@ -24,6 +31,6 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.WriteHeader(code)
 	_, err := w.Write(response)
 	if err != nil {
-		logrus.Error(err)
+		log.Error(err)
 	}
 }

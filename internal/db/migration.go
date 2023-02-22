@@ -15,6 +15,7 @@ var migrations = []string{
 	migration3,
 	migration4,
 	migration5,
+	migration6,
 }
 
 func migrate() error {
@@ -124,3 +125,5 @@ CREATE TABLE teamsplayers (
 	FOREIGN KEY (team) REFERENCES teams(name),
 	PRIMARY KEY (playerID,team)
 );`
+
+var migration6 = `ALTER TABLE players ADD twitchID VARCHAR(100) default ""`

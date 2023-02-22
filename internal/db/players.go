@@ -48,7 +48,7 @@ func GetPlayerByUsername(ctx context.Context, username string) (*models.Player, 
 }
 
 func UpdatePlayer(ctx context.Context, p *models.Player) error {
-	_, err := db.NamedExec("UPDATE players SET elo=:elo,osuser=:osuser,lastrankupdate=:lastrankupdate,credits=:credits WHERE discordID=:discordID", p)
+	_, err := db.NamedExec("UPDATE players SET twitchID=:twitchID,elo=:elo,osuser=:osuser,lastrankupdate=:lastrankupdate,credits=:credits WHERE discordID=:discordID", p)
 	if err != nil {
 		return &models.DBError{Err: err}
 	}

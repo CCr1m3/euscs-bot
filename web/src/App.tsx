@@ -9,11 +9,11 @@ function App() {
   const callApi = () => {
     fetch(window.location.origin + "/api")
       .then((res) => res.json())
-      .then((val) => alert(val.message));
+      .then((val) => alert(JSON.stringify(val)));
   };
   const [cookies, setCookie, removeCookie] = useCookies(["sessionid"]);
   if (!cookies.sessionid) {
-    window.location.href = window.location.origin + "/auth";
+    window.location.href = window.location.origin + "/auth/login";
     return null;
   }
   return (

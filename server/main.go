@@ -40,7 +40,7 @@ func main() {
 	discord.Init()
 	markov.Init()
 	credits.Init()
-	slashcommands.Init()
+	//slashcommands.Init()
 	matchmaking.Init()
 	webserver.Init()
 	stop := make(chan os.Signal, 1)
