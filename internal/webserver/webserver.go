@@ -8,6 +8,7 @@ import (
 	"path"
 
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"github.com/haashi/omega-strikers-bot/internal/api"
 	"github.com/haashi/omega-strikers-bot/web"
 	log "github.com/sirupsen/logrus"
@@ -18,6 +19,8 @@ type spaHandler struct {
 	staticPath string
 	indexPath  string
 }
+
+var store = sessions.NewCookieStore([]byte(os.Getenv("session_key")))
 
 func (h spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// get the absolute path to prevent directory traversal
@@ -48,7 +51,6 @@ func (h spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	// get the subdirectory of the static dir
 	statics, _ := fs.Sub(h.staticFS, h.staticPath)
 	// otherwise, use http.FileServer to serve the static dir
@@ -58,8 +60,10 @@ func (h spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func Init() {
 	log.Info("starting web service")
 	r := mux.NewRouter()
-	s := r.PathPrefix("/api").Subrouter()
-	api.Init(s)
+	sapi := r.PathPrefix("/api").Subrouter()
+	api.Init(sapi)
+	sauth := r.PathPrefix("/auth").Subrouter()
+	initAuth(sauth)
 	spa := spaHandler{staticFS: web.StaticFiles, staticPath: "dist", indexPath: "index.html"}
 	r.PathPrefix("/").Handler(spa)
 	err := http.ListenAndServe(":9000", r)
