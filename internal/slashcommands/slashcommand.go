@@ -1,6 +1,8 @@
 package slashcommands
 
 import (
+	"os"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/haashi/omega-strikers-bot/internal/discord"
 	log "github.com/sirupsen/logrus"
@@ -19,18 +21,14 @@ var commands = []SlashCommand{Join{}, Leave{}, Result{}, Who{}, Link{}, Unlink{}
 
 // This doesn't perfectly compare options, but I can't be bothered deep checking literally everything.
 func compareApplicationCommandOption(o1 *discordgo.ApplicationCommandOption, o2 *discordgo.ApplicationCommandOption) bool {
-	if o1.Type == o2.Type &&
+	return o1.Type == o2.Type &&
 		o1.Name == o2.Name &&
 		o1.Description == o2.Description &&
-		o1.Required == o2.Required {
-		return true
-	}
-	return false
+		o1.Required == o2.Required
 }
 
 func compareApplicationCommandOptions(o1 []*discordgo.ApplicationCommandOption, o2 []*discordgo.ApplicationCommandOption) bool {
 	if len(o1) != len(o2) {
-		log.Debugf("Different lengths.")
 		return false
 	}
 	for i := range o1 {
@@ -42,13 +40,10 @@ func compareApplicationCommandOptions(o1 []*discordgo.ApplicationCommandOption, 
 }
 
 func compareCommands(slashcommand SlashCommand, appcommand *discordgo.ApplicationCommand) bool {
-	if appcommand.Name == slashcommand.Name() &&
+	return appcommand.Name == slashcommand.Name() &&
 		appcommand.Description == slashcommand.Description() &&
 		compareApplicationCommandOptions(appcommand.Options, slashcommand.Options()) &&
-		*appcommand.DefaultMemberPermissions == *slashcommand.RequiredPerm() {
-		return true
-	}
-	return false
+		*appcommand.DefaultMemberPermissions == *slashcommand.RequiredPerm()
 }
 
 func Init() {
@@ -72,7 +67,7 @@ func Init() {
 		// I don't care about O(n^2) complexity, we won't have that many commands.
 		skip := false
 		for _, prevCommand := range previouslyRegisteredCommands {
-			if compareCommands(command, prevCommand) {
+			if compareCommands(command, prevCommand) && os.Getenv("mode") != "prod" {
 				registeredCommands[i] = prevCommand
 				skip = true
 				break
