@@ -61,6 +61,7 @@ func Init() {
 	log.Info("starting web service")
 	r := mux.NewRouter()
 	sapi := r.PathPrefix("/api").Subrouter()
+	sapi.Use(newAuthHandler)
 	api.Init(sapi)
 	sauth := r.PathPrefix("/auth").Subrouter()
 	initAuth(sauth)

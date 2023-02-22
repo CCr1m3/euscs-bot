@@ -3,10 +3,10 @@ package webserver
 import (
 	"context"
 	"encoding/gob"
-	"fmt"
 	"net/http"
 	"os"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/gorilla/mux"
 	"golang.org/x/oauth2"
 )
@@ -35,15 +35,13 @@ func initAuth(s *mux.Router) {
 }
 
 func authHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(os.Stderr, "auth")
 	session, err := store.Get(r, "sessionid")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	token, ok := session.Values["token"]
+	_, ok := session.Values["discordID"]
 	if ok {
-		fmt.Println(token)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 	} else {
 		http.Redirect(w, r, conf.AuthCodeURL(state), http.StatusTemporaryRedirect)
@@ -51,7 +49,6 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(os.Stderr, "logout")
 	session, err := store.Get(r, "sessionid")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -67,7 +64,6 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func redirectHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(os.Stderr, "redirect")
 	session, err := store.Get(r, "sessionid")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -84,7 +80,19 @@ func redirectHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
-	session.Values["token"] = token
+	discordSession, err := discordgo.New(token.TokenType + " " + token.AccessToken)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	user, err := discordSession.User("@me")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	session.Values["discordID"] = user.ID
 	err = session.Save(r, w)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

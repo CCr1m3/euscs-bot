@@ -1,6 +1,8 @@
 import { useState } from "react";
 import reactLogo from "./assets/react.svg";
 import "./App.css";
+import { useCookies } from "react-cookie";
+import { redirect, useNavigate } from "react-router-dom";
 
 function App() {
   const [count, setCount] = useState(0);
@@ -9,6 +11,11 @@ function App() {
       .then((res) => res.json())
       .then((val) => alert(val.message));
   };
+  const [cookies, setCookie, removeCookie] = useCookies(["sessionid"]);
+  if (!cookies.sessionid) {
+    window.location.href = window.location.origin + "/auth";
+    return null;
+  }
   return (
     <div className="App">
       <div>

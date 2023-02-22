@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/haashi/omega-strikers-bot/internal/models"
 	"github.com/sirupsen/logrus"
 )
 
@@ -13,7 +14,8 @@ func Init(s *mux.Router) {
 }
 
 func apiHandler(w http.ResponseWriter, r *http.Request) {
-	respondWithJSON(w, http.StatusOK, map[string]string{"message": "Hello from API"})
+	userID := r.Context().Value(models.CallerIDKey)
+	respondWithJSON(w, http.StatusOK, map[string]string{"message": "Hello from API: " + userID.(string)})
 }
 
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
