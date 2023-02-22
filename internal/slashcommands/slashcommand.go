@@ -48,9 +48,6 @@ func compareCommands(slashcommand SlashCommand, appcommand *discordgo.Applicatio
 		*appcommand.DefaultMemberPermissions == *slashcommand.RequiredPerm() {
 		return true
 	}
-	if appcommand.Name == slashcommand.Name() {
-		log.Debugf("Compare failed for %s", appcommand.Name)
-	}
 	return false
 }
 
@@ -69,7 +66,7 @@ func Init() {
 	registeredCommands = make([]*discordgo.ApplicationCommand, len(commands))
 	previouslyRegisteredCommands, err := session.ApplicationCommands(session.State.User.ID, discord.GuildID)
 	if err != nil {
-		log.Errorf("Cannot get previously registered commands.")
+		log.Errorf("cannot get previously registered commands.")
 	}
 	for i, command := range commands {
 		// I don't care about O(n^2) complexity, we won't have that many commands.
@@ -82,7 +79,7 @@ func Init() {
 			}
 		}
 		if skip {
-			log.Debugf("Skipped registering command %s, as it was a duplicate of a previously declared one.", command.Name())
+			log.Debugf("skipped registering command %s, as it was a duplicate of a previously declared one.", command.Name())
 			continue
 		}
 		appCommand := &discordgo.ApplicationCommand{
