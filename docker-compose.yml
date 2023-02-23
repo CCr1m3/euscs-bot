@@ -18,7 +18,7 @@ services:
   ai-mi:
     container_name: ai-mi
     restart: always
-    image: haashi/omega-strikers-bot
+    image: euscs/euscs-bot
     ports:
       - "9000:9000"
     volumes:
