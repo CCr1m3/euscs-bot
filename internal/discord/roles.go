@@ -1,8 +1,6 @@
 package discord
 
 import (
-	"strings"
-
 	"github.com/bwmarrin/discordgo"
 	log "github.com/sirupsen/logrus"
 )
@@ -15,7 +13,6 @@ var RoleGold *discordgo.Role
 var RoleSilver *discordgo.Role
 var RoleBronze *discordgo.Role
 var RoleRookie *discordgo.Role
-var ApplicationRole *discordgo.Role
 
 var RankRoles []*discordgo.Role
 
@@ -25,9 +22,6 @@ func initRoles() error {
 		return err
 	}
 	for _, role := range roles {
-		if strings.Contains(role.Name, "eu-omega-strikers") {
-			ApplicationRole = role
-		}
 		if role.Name == "Omega" {
 			RoleOmega = role
 		}

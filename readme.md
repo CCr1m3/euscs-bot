@@ -10,7 +10,7 @@
 
 # bot permissions on discord dev portal
 ![perms.png](screens/perms.png)
-url : https://discord.com/api/oauth2/authorize?client_id={clientid}&permissions=397552987216&scope=applications.commands%20bot
+url : https://discord.com/api/oauth2/authorize?client_id={clientid}&permissions=397552920592&scope=applications.commands%20bot
 
 # features
 

@@ -51,11 +51,11 @@ func initChannels() error {
 		}
 		err = session.ChannelPermissionSet(HowToChannel.ID, GuildID, discordgo.PermissionOverwriteTypeRole, 0, discordgo.PermissionSendMessages)
 		if err != nil {
-			log.Fatal("failed to lock channel matches: ", err.Error())
+			log.Fatal("failed to lock channel how-to: ", err.Error())
 		}
-		err = session.ChannelPermissionSet(HowToChannel.ID, ApplicationRole.ID, discordgo.PermissionOverwriteTypeRole, discordgo.PermissionSendMessages, 0)
+		err = session.ChannelPermissionSet(HowToChannel.ID, session.State.User.ID, discordgo.PermissionOverwriteTypeMember, discordgo.PermissionSendMessages, 0)
 		if err != nil {
-			log.Fatal("failed to open channel matches for bot: ", err.Error())
+			log.Fatal("failed to open channel how-to for bot: ", err.Error())
 		}
 	}
 	if MatchesChannel == nil {
@@ -67,7 +67,7 @@ func initChannels() error {
 		if err != nil {
 			log.Fatal("failed to lock channel matches: ", err.Error())
 		}
-		err = session.ChannelPermissionSet(MatchesChannel.ID, ApplicationRole.ID, discordgo.PermissionOverwriteTypeRole, discordgo.PermissionSendMessages, 0)
+		err = session.ChannelPermissionSet(MatchesChannel.ID, session.State.User.ID, discordgo.PermissionOverwriteTypeMember, discordgo.PermissionSendMessages, 0)
 		if err != nil {
 			log.Fatal("failed to open channel matches for bot: ", err.Error())
 		}
@@ -87,7 +87,7 @@ func initChannels() error {
 		if err != nil {
 			log.Fatal("failed to lock channel credits-leaderboard: ", err.Error())
 		}
-		err = session.ChannelPermissionSet(LeaderboardChannel.ID, ApplicationRole.ID, discordgo.PermissionOverwriteTypeRole, discordgo.PermissionSendMessages, 0)
+		err = session.ChannelPermissionSet(LeaderboardChannel.ID, session.State.User.ID, discordgo.PermissionOverwriteTypeMember, discordgo.PermissionSendMessages, 0)
 		if err != nil {
 			log.Fatal("failed to open channel credits-leaderboard for bot: ", err.Error())
 		}
@@ -101,7 +101,7 @@ func initChannels() error {
 		if err != nil {
 			log.Fatal("failed to lock channel rank-up: ", err.Error())
 		}
-		err = session.ChannelPermissionSet(RankUpChannel.ID, ApplicationRole.ID, discordgo.PermissionOverwriteTypeRole, discordgo.PermissionSendMessages, 0)
+		err = session.ChannelPermissionSet(RankUpChannel.ID, session.State.User.ID, discordgo.PermissionOverwriteTypeMember, discordgo.PermissionSendMessages, 0)
 		if err != nil {
 			log.Fatal("failed to open channel rank-up for bot: ", err.Error())
 		}
