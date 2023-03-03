@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/haashi/omega-strikers-bot/internal/db"
 	"github.com/haashi/omega-strikers-bot/internal/models"
@@ -45,13 +46,36 @@ func twitchAuthHandler(w http.ResponseWriter, r *http.Request) {
 	if player.TwitchID != "" {
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 	} else {
+		session, err := store.Get(r, "session")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		var sessionID string
+		sessionIDraw, ok := session.Values["ID"]
+		if ok {
+			sessionID = sessionIDraw.(string)
+		}
+		state := uuid.New().String()
+		authorizedStates[state] = sessionID
 		http.Redirect(w, r, twitchoauth2.AuthCodeURL(state), http.StatusTemporaryRedirect)
 	}
 }
 
 func twitchRedirectHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	if r.FormValue("state") != state {
+	session, err := store.Get(r, "session")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	var sessionID string
+	sessionIDraw, ok := session.Values["ID"]
+	if ok {
+		sessionID = sessionIDraw.(string)
+	}
+	state := r.FormValue("state")
+	if authorizedStates[state] != sessionID {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("State does not match."))
 		return

@@ -11,8 +11,8 @@ function App() {
       .then((res) => res.json())
       .then((val) => alert(JSON.stringify(val)));
   };
-  const [cookies, setCookie, removeCookie] = useCookies(["sessionid"]);
-  if (!cookies.sessionid) {
+  const [cookies, setCookie, removeCookie] = useCookies(["session"]);
+  if (!cookies.session) {
     window.location.href = window.location.origin + "/auth/login";
     return null;
   }
