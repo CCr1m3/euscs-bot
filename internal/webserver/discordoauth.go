@@ -5,18 +5,20 @@ import (
 	"encoding/gob"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/haashi/omega-strikers-bot/internal/db"
 	"github.com/haashi/omega-strikers-bot/internal/models"
+	"github.com/haashi/omega-strikers-bot/internal/scheduled"
 	"golang.org/x/oauth2"
 )
 
 var discordoauth2 oauth2.Config
 
-var state = "random" //to-do, generate state values at login
+var authorizedStates map[string]string
 
 func initAuth(s *mux.Router) {
 	discordoauth2 = oauth2.Config{
@@ -30,14 +32,20 @@ func initAuth(s *mux.Router) {
 			AuthStyle: oauth2.AuthStyleInParams,
 		},
 	}
+	authorizedStates = make(map[string]string)
 	gob.Register(oauth2.Token{})
 	s.HandleFunc("/login", authHandler)
 	s.HandleFunc("/redirect", redirectHandler)
 	s.HandleFunc("/logout", logoutHandler)
+	scheduled.TaskManager.Add(scheduled.Task{ID: "clearAuthorizedStates", Run: clearAuthorizedStates, Frequency: time.Hour})
+}
+
+func clearAuthorizedStates() {
+	authorizedStates = make(map[string]string)
 }
 
 func authHandler(w http.ResponseWriter, r *http.Request) {
-	session, err := store.Get(r, "sessionid")
+	session, err := store.Get(r, "session")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -46,12 +54,17 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	if ok {
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 	} else {
+		sessionID := uuid.New().String()
+		state := uuid.New().String()
+		session.Values["ID"] = sessionID
+		authorizedStates[state] = sessionID
+		session.Save(r, w)
 		http.Redirect(w, r, discordoauth2.AuthCodeURL(state), http.StatusTemporaryRedirect)
 	}
 }
 
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
-	session, err := store.Get(r, "sessionid")
+	session, err := store.Get(r, "session")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -67,12 +80,18 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 
 func redirectHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := context.WithValue(context.Background(), models.UUIDKey, uuid.New())
-	session, err := store.Get(r, "sessionid")
+	session, err := store.Get(r, "session")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	if r.FormValue("state") != state {
+	var sessionID string
+	sessionIDraw, ok := session.Values["ID"]
+	if ok {
+		sessionID = sessionIDraw.(string)
+	}
+	state := r.FormValue("state")
+	if authorizedStates[state] != sessionID {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("State does not match."))
 		return
