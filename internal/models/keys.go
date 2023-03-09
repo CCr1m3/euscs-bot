@@ -6,6 +6,7 @@ const (
 	UUIDKey       Key = "uuid"
 	ChannelIDKey  Key = "channelID"
 	PlayerIDKey   Key = "playerID"
+	TeamNameKey   Key = "teamname"
 	CallerIDKey   Key = "callerID"
 	ErrorKey      Key = "error"
 	MatchIDKey    Key = "matchID"

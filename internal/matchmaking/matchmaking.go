@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	"os"
 	"sort"
 	"strings"
 	"time"
@@ -14,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/haashi/omega-strikers-bot/internal/db"
 	"github.com/haashi/omega-strikers-bot/internal/discord"
+	"github.com/haashi/omega-strikers-bot/internal/env"
 	"github.com/haashi/omega-strikers-bot/internal/models"
 	"github.com/haashi/omega-strikers-bot/internal/scheduled"
 	"github.com/haashi/omega-strikers-bot/internal/utils"
@@ -22,7 +22,7 @@ import (
 
 func Init() {
 	log.Info("starting matchmaking service")
-	if os.Getenv("mode") == "dev" {
+	if env.Mode == env.DEV {
 		ctx := context.TODO()
 		log.Debug("starting dummy players")
 		dummies := make([]string, 0)
@@ -305,7 +305,7 @@ func algorithm(ctx context.Context) ([]*models.Player, []*models.Player) {
 	var bestIndices [6]int
 	bestQuality := -1.0
 	samplesTaken := 1000
-	if os.Getenv("mode") == "dev" {
+	if env.Mode == env.DEV {
 		samplesTaken = 100
 	}
 	for i := 0; i < samplesTaken; i++ {

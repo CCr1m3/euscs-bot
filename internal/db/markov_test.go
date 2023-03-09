@@ -7,7 +7,7 @@ import (
 	"github.com/haashi/omega-strikers-bot/internal/models"
 )
 
-func Test_db_AddMarkovOccurences(t *testing.T) {
+func Test_db_Markov(t *testing.T) {
 	clearDB()
 	Init()
 	ctx := context.TODO()
@@ -55,6 +55,6 @@ func Test_db_AddMarkovOccurences(t *testing.T) {
 
 	err = DeleteAllMarkov()
 	if err != nil {
-		t.Errorf("failed to get markov occurences: " + err.Error())
+		t.Errorf("failed to delete markov occurences: " + err.Error())
 	}
 }

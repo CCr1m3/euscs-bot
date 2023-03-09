@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/haashi/omega-strikers-bot/internal/api"
+	"github.com/haashi/omega-strikers-bot/internal/env"
 	"github.com/haashi/omega-strikers-bot/web"
 	log "github.com/sirupsen/logrus"
 )
@@ -20,7 +21,7 @@ type spaHandler struct {
 	indexPath  string
 }
 
-var store = sessions.NewCookieStore([]byte(os.Getenv("session_key")))
+var store = sessions.NewCookieStore([]byte(env.SessionKey))
 
 func (h spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// get the absolute path to prevent directory traversal
@@ -70,8 +71,10 @@ func Init() {
 	initTwitchAuth(stwitchauth)
 	spa := spaHandler{staticFS: web.StaticFiles, staticPath: "dist", indexPath: "index.html"}
 	r.PathPrefix("/").Handler(spa)
-	err := http.ListenAndServe(":9000", r)
-	if err != nil {
-		log.Fatal("failed to launch web service")
-	}
+	go func() {
+		err := http.ListenAndServe(":9000", r)
+		if err != nil {
+			log.Fatal("failed to launch web service")
+		}
+	}()
 }

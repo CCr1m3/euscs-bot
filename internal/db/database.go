@@ -1,10 +1,10 @@
 package db
 
 import (
-	"os"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/haashi/omega-strikers-bot/internal/env"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	log "github.com/sirupsen/logrus"
@@ -15,14 +15,14 @@ var db *sqlx.DB
 func getInstance() *sqlx.DB {
 	if db == nil {
 		var err error
-		if os.Getenv("db") == "sqlite" {
-			db, err = sqlx.Open("sqlite3", os.Getenv("dbpath"))
+		if env.DB.Type == env.SQLITE {
+			db, err = sqlx.Open("sqlite3", env.DB.Path)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
-		if os.Getenv("db") == "mysql" {
-			db, err = sqlx.Open("mysql", os.Getenv("dbpath"))
+		if env.DB.Type == env.MYSQL {
+			db, err = sqlx.Open("mysql", env.DB.Path)
 			if err != nil {
 				log.Fatal(err)
 			}

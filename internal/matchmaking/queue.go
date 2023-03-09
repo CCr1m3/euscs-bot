@@ -3,11 +3,11 @@ package matchmaking
 import (
 	"context"
 	"errors"
-	"os"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/haashi/omega-strikers-bot/internal/discord"
+	"github.com/haashi/omega-strikers-bot/internal/env"
 
 	"github.com/haashi/omega-strikers-bot/internal/db"
 	"github.com/haashi/omega-strikers-bot/internal/models"
@@ -103,7 +103,7 @@ func removeLongQueuers() {
 		return
 	}
 	cleanDelay := time.Hour
-	if os.Getenv("mode") == "dev" {
+	if env.Mode == env.DEV {
 		cleanDelay = time.Minute
 	}
 	for _, player := range playersInQueue {

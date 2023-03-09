@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	"os"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/google/uuid"
 	"github.com/haashi/omega-strikers-bot/internal/db"
 	"github.com/haashi/omega-strikers-bot/internal/discord"
+	"github.com/haashi/omega-strikers-bot/internal/env"
 	"github.com/haashi/omega-strikers-bot/internal/models"
 	"github.com/haashi/omega-strikers-bot/internal/scheduled"
 	log "github.com/sirupsen/logrus"
@@ -111,7 +111,7 @@ func handleMatchVoteResult(match *models.Match) {
 	playersOK := len(reactions[0])
 	playersNOK := len(reactions[1])
 	requiredReactions := 4
-	if os.Getenv("mode") == "dev" {
+	if env.Mode == env.DEV {
 		requiredReactions = 1
 	}
 	if playersOK > requiredReactions {
@@ -305,7 +305,7 @@ func threadCleanUp() {
 	session := discord.GetSession()
 	channelID := discord.MatchesChannel.ID
 	archivedSince := time.Now().Add(-time.Hour * 4)
-	if os.Getenv("mode") == "dev" {
+	if env.Mode == env.DEV {
 		archivedSince = time.Now().Add(-time.Minute * 10)
 	}
 	threads, err := session.ThreadsArchived(channelID, &archivedSince, 100)
@@ -334,12 +334,12 @@ func deleteOldMatches() {
 			return
 		}
 		cleanDelay := time.Minute * 30
-		if os.Getenv("mode") == "dev" {
+		if env.Mode == env.DEV {
 			cleanDelay = time.Minute
 		}
 		if time.Since(time.Unix(int64(match.Timestamp), 0)) > cleanDelay {
 			log.Infof("cleaning match %s", match.ID)
-			if os.Getenv("mode") == "dev" {
+			if env.Mode == env.DEV {
 				r := rand.Intn(2)
 				if r == 0 {
 					match.Team1Score = 2

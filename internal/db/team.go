@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/haashi/omega-strikers-bot/internal/models"
 )
@@ -84,7 +85,7 @@ func UpdateTeam(ctx context.Context, t *models.Team) error {
 
 func GetTeamByName(ctx context.Context, name string) (*models.Team, error) {
 	var team models.Team
-	err := db.Get(&team, "SELECT * FROM teams WHERE name=?", name)
+	err := db.Get(&team, "SELECT name,ownerplayerID FROM teams WHERE name=?", name)
 	if err != nil {
 		return nil, &models.DBError{Err: err}
 	}
@@ -93,6 +94,37 @@ func GetTeamByName(ctx context.Context, name string) (*models.Team, error) {
 		return nil, &models.DBError{Err: err}
 	}
 	return &team, nil
+}
+
+func GetTeamByPlayerID(ctx context.Context, playerID string) (*models.Team, error) {
+	var team models.Team
+	err := db.Get(&team, "SELECT name,ownerplayerID FROM teams JOIN teamsplayers ON teamsplayers.team = teams.name WHERE teamsplayers.playerID=?", playerID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &models.DBNotFoundError{}
+		}
+		return nil, &models.DBError{Err: err}
+	}
+	err = getPlayersInTeam(ctx, &team)
+	if err != nil {
+		return nil, &models.DBError{Err: err}
+	}
+	return &team, nil
+}
+
+func GetTeams(ctx context.Context) ([]*models.Team, error) {
+	teams := []*models.Team{}
+	err := db.Select(&teams, "SELECT name,ownerplayerID FROM teams")
+	if err != nil {
+		return nil, &models.DBError{Err: err}
+	}
+	for i := range teams {
+		err = getPlayersInTeam(ctx, teams[i])
+		if err != nil {
+			return nil, &models.DBError{Err: err}
+		}
+	}
+	return teams, nil
 }
 
 func getPlayersInTeam(ctx context.Context, team *models.Team) error {

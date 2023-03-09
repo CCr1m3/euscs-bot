@@ -8,11 +8,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/haashi/omega-strikers-bot/internal/credits"
 	"github.com/haashi/omega-strikers-bot/internal/db"
 	"github.com/haashi/omega-strikers-bot/internal/discord"
+	"github.com/haashi/omega-strikers-bot/internal/env"
 	"github.com/haashi/omega-strikers-bot/internal/markov"
-	"github.com/haashi/omega-strikers-bot/internal/matchmaking"
 	"github.com/haashi/omega-strikers-bot/internal/slashcommands"
 	"github.com/haashi/omega-strikers-bot/internal/webserver"
 	"github.com/joho/godotenv"
@@ -29,8 +28,8 @@ func main() {
 	if err != nil {
 		log.Warning("error loading .env file: " + err.Error())
 	}
-	logLevel := os.Getenv("loglevel")
-	if logLevel == "debug" {
+	env.Init()
+	if env.LogLevel == env.DEBUG {
 		log.SetLevel(log.DebugLevel)
 		log.SetReportCaller(true)
 	} else {
@@ -39,9 +38,9 @@ func main() {
 	db.Init()
 	discord.Init()
 	markov.Init()
-	credits.Init()
+	//credits.Init()
 	slashcommands.Init()
-	matchmaking.Init()
+	//matchmaking.Init()
 	webserver.Init()
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)

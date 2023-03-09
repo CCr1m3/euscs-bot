@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/gob"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/haashi/omega-strikers-bot/internal/db"
+	"github.com/haashi/omega-strikers-bot/internal/env"
 	"github.com/haashi/omega-strikers-bot/internal/models"
 	"github.com/haashi/omega-strikers-bot/internal/scheduled"
 	"golang.org/x/oauth2"
@@ -22,9 +22,9 @@ var authorizedStates map[string]string
 
 func initAuth(s *mux.Router) {
 	discordoauth2 = oauth2.Config{
-		RedirectURL:  os.Getenv("discordoauth2redirectURL"),
-		ClientID:     os.Getenv("discordoauth2id"),
-		ClientSecret: os.Getenv("discordoauth2secret"),
+		RedirectURL:  env.Discord.OAuth2RedirectURL,
+		ClientID:     env.Discord.OAuth2ID,
+		ClientSecret: env.Discord.OAuth2Secret,
 		Scopes:       []string{"identify"},
 		Endpoint: oauth2.Endpoint{
 			AuthURL:   "https://discord.com/api/oauth2/authorize",

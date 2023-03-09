@@ -36,6 +36,14 @@ func Test_db_CreateTeam(t *testing.T) {
 		t.Errorf("failed to get player: " + err.Error())
 	}
 
+	teams, err := GetTeams(ctx)
+	if err != nil {
+		t.Errorf("failed to get teams: " + err.Error())
+	}
+	if len(teams) != 0 {
+		t.Errorf("teams is not empty")
+	}
+
 	team := &models.Team{
 		Players: []*models.Player{p1, p2},
 		Name:    "teamname",
@@ -96,5 +104,26 @@ func Test_db_CreateTeam(t *testing.T) {
 	err = UpdateTeam(ctx, team2)
 	if err == nil {
 		t.Errorf("able to add player with team on a new team")
+	}
+
+	teams, err = GetTeams(ctx)
+	if err != nil {
+		t.Errorf("failed to get teams: " + err.Error())
+	}
+	if len(teams) != 2 {
+		t.Errorf("there should be 2 teams")
+	}
+
+	team, err = GetTeamByPlayerID(ctx, "12345")
+	if err != nil {
+		t.Errorf("failed to get team by playerID: " + err.Error())
+	}
+	if team.Name != "teamname" {
+		t.Errorf("got wrong team for player1")
+	}
+
+	_, err = GetTeamByPlayerID(ctx, "1234567")
+	if err == nil {
+		t.Errorf("got a team with wrong playerID: ")
 	}
 }

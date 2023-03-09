@@ -5,12 +5,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/haashi/omega-strikers-bot/internal/db"
 	"github.com/haashi/omega-strikers-bot/internal/discord"
+	"github.com/haashi/omega-strikers-bot/internal/env"
 	"github.com/haashi/omega-strikers-bot/internal/models"
 	log "github.com/sirupsen/logrus"
 )
@@ -89,7 +89,7 @@ func UpdateRankIfNeeded(ctx context.Context, playerID string) error {
 		return &models.NotLinkedError{UserID: playerID}
 	}
 	updateDelay := time.Hour * 1
-	if os.Getenv("mode") == "dev" {
+	if env.Mode == env.DEV {
 		updateDelay = time.Minute * 5
 	}
 	if time.Since(time.Unix(int64(player.LastRankUpdate), 0)) > updateDelay {

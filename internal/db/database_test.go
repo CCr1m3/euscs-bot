@@ -1,37 +1,39 @@
 package db
 
 import (
+	"io/ioutil"
 	"os"
 	"testing"
 
+	"github.com/haashi/omega-strikers-bot/internal/env"
 	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
 func init() {
 	err := godotenv.Load("../../.env")
+	env.Init()
 	if err != nil {
 		log.Warning("error loading .env file: " + err.Error())
 	}
-	logrus.SetLevel(log.DebugLevel)
+	log.SetOutput(ioutil.Discard)
 }
 
 func clearDB() {
 	getInstance()
 	if db != nil {
-		if os.Getenv("db") == "sqlite" {
+		if env.DB.Type == env.SQLITE {
 			err := db.Close()
 			if err != nil {
 				log.Error("failed to close db: " + err.Error())
 			}
-			err = os.Remove(os.Getenv("dbpath"))
+			err = os.Remove(env.DB.Path)
 			if err != nil {
 				log.Error("error removing file: " + err.Error())
 			}
 		}
-		if os.Getenv("db") == "mysql" {
+		if env.DB.Type == env.MYSQL {
 			tx, err := db.Beginx()
 			if err != nil {
 				log.Error("error starting transaction:" + err.Error())

@@ -53,3 +53,10 @@ type UsernameAlreadyLinkedError struct {
 func (e *UsernameAlreadyLinkedError) Error() string {
 	return fmt.Sprintf("Username %s is already linked", e.Username)
 }
+
+type DBNotFoundError struct {
+}
+
+func (e *DBNotFoundError) Error() string {
+	return fmt.Sprintf("Not found in db")
+}

@@ -1,9 +1,8 @@
 package discord
 
 import (
-	"os"
-
 	"github.com/bwmarrin/discordgo"
+	"github.com/haashi/omega-strikers-bot/internal/env"
 	"github.com/haashi/omega-strikers-bot/internal/scheduled"
 	log "github.com/sirupsen/logrus"
 )
@@ -17,8 +16,8 @@ func GetSession() *discordgo.Session {
 
 func Init() {
 	log.Info("starting discord service")
-	GuildID = os.Getenv("guildid")
-	botToken := os.Getenv("token")
+	GuildID = env.Discord.GuildID
+	botToken := env.Discord.Token
 	var err error
 	session, err = discordgo.New("Bot " + botToken)
 	if err != nil {

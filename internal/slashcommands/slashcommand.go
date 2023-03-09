@@ -1,10 +1,9 @@
 package slashcommands
 
 import (
-	"os"
-
 	"github.com/bwmarrin/discordgo"
 	"github.com/haashi/omega-strikers-bot/internal/discord"
+	"github.com/haashi/omega-strikers-bot/internal/env"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -17,7 +16,7 @@ type SlashCommand interface {
 }
 
 var registeredCommands []*discordgo.ApplicationCommand
-var commands = []SlashCommand{Join{}, Leave{}, Result{}, Who{}, Link{}, Unlink{}, Update{}, Cancel{}, Credits{}, Predict{}}
+var commands = []SlashCommand{Join{}, Leave{}, Result{}, Who{}, Link{}, Unlink{}, Update{}, Cancel{}, Credits{}, Predict{}, Createteam{}, Invite{}}
 
 // This doesn't perfectly compare options, but I can't be bothered deep checking literally everything.
 func compareApplicationCommandOption(o1 *discordgo.ApplicationCommandOption, o2 *discordgo.ApplicationCommandOption) bool {
@@ -54,9 +53,17 @@ func Init() {
 		commandHandlers[command.Name()] = command.Run
 	}
 	session.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
-			h(s, i)
+		switch i.Type {
+		case discordgo.InteractionApplicationCommand:
+			if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
+				h(s, i)
+			}
+		case discordgo.InteractionMessageComponent:
+			if h, ok := commandHandlers[i.MessageComponentData().CustomID]; ok {
+				h(s, i)
+			}
 		}
+
 	})
 	registeredCommands = make([]*discordgo.ApplicationCommand, len(commands))
 	previouslyRegisteredCommands, err := session.ApplicationCommands(session.State.User.ID, discord.GuildID)
@@ -67,7 +74,7 @@ func Init() {
 		// I don't care about O(n^2) complexity, we won't have that many commands.
 		skip := false
 		for _, prevCommand := range previouslyRegisteredCommands {
-			if compareCommands(command, prevCommand) && os.Getenv("mode") != "prod" {
+			if compareCommands(command, prevCommand) && env.Mode != env.PROD {
 				registeredCommands[i] = prevCommand
 				skip = true
 				break
