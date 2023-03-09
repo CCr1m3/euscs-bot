@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/haashi/omega-strikers-bot/internal/db"
-	"github.com/haashi/omega-strikers-bot/internal/discord"
-	"github.com/haashi/omega-strikers-bot/internal/models"
+	"github.com/euscs/euscs-bot/internal/db"
+	"github.com/euscs/euscs-bot/internal/discord"
+	"github.com/euscs/euscs-bot/internal/models"
 )
 
 func CreateTeam(ctx context.Context, ownerID string, teamName string) error {

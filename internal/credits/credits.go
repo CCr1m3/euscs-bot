@@ -3,7 +3,7 @@ package credits
 import (
 	"context"
 
-	"github.com/haashi/omega-strikers-bot/internal/db"
+	"github.com/euscs/euscs-bot/internal/db"
 )
 
 func GetPlayerCredits(ctx context.Context, playerID string) (int, error) {

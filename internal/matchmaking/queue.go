@@ -5,13 +5,13 @@ import (
 	"errors"
 	"time"
 
+	"github.com/euscs/euscs-bot/internal/discord"
+	"github.com/euscs/euscs-bot/internal/env"
 	"github.com/google/uuid"
-	"github.com/haashi/omega-strikers-bot/internal/discord"
-	"github.com/haashi/omega-strikers-bot/internal/env"
 
-	"github.com/haashi/omega-strikers-bot/internal/db"
-	"github.com/haashi/omega-strikers-bot/internal/models"
-	"github.com/haashi/omega-strikers-bot/internal/rank"
+	"github.com/euscs/euscs-bot/internal/db"
+	"github.com/euscs/euscs-bot/internal/models"
+	"github.com/euscs/euscs-bot/internal/rank"
 	log "github.com/sirupsen/logrus"
 )
 

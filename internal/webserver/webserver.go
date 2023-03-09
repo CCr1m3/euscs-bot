@@ -7,11 +7,11 @@ import (
 	"os"
 	"path"
 
+	"github.com/euscs/euscs-bot/internal/api"
+	"github.com/euscs/euscs-bot/internal/env"
+	"github.com/euscs/euscs-bot/web"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
-	"github.com/haashi/omega-strikers-bot/internal/api"
-	"github.com/haashi/omega-strikers-bot/internal/env"
-	"github.com/haashi/omega-strikers-bot/web"
 	log "github.com/sirupsen/logrus"
 )
 

@@ -3,7 +3,7 @@ package db
 import (
 	"context"
 
-	"github.com/haashi/omega-strikers-bot/internal/models"
+	"github.com/euscs/euscs-bot/internal/models"
 )
 
 func AddPlayerToQueue(ctx context.Context, p *models.Player, role models.Role, entryTime int) error {

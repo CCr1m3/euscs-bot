@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/euscs/euscs-bot/internal/db"
+	"github.com/euscs/euscs-bot/internal/discord"
+	"github.com/euscs/euscs-bot/internal/models"
+	"github.com/euscs/euscs-bot/internal/scheduled"
 	"github.com/google/uuid"
-	"github.com/haashi/omega-strikers-bot/internal/db"
-	"github.com/haashi/omega-strikers-bot/internal/discord"
-	"github.com/haashi/omega-strikers-bot/internal/models"
-	"github.com/haashi/omega-strikers-bot/internal/scheduled"
 	log "github.com/sirupsen/logrus"
 )
 

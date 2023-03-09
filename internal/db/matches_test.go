@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/haashi/omega-strikers-bot/internal/models"
+	"github.com/euscs/euscs-bot/internal/models"
 )
 
 func Test_db_CreateMatch(t *testing.T) {

@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/euscs/euscs-bot/internal/models"
+	"github.com/euscs/euscs-bot/internal/rank"
 	"github.com/google/uuid"
-	"github.com/haashi/omega-strikers-bot/internal/models"
-	"github.com/haashi/omega-strikers-bot/internal/rank"
 	log "github.com/sirupsen/logrus"
 )
 

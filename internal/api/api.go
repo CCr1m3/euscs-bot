@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/euscs/euscs-bot/internal/db"
+	"github.com/euscs/euscs-bot/internal/models"
 	"github.com/gorilla/mux"
-	"github.com/haashi/omega-strikers-bot/internal/db"
-	"github.com/haashi/omega-strikers-bot/internal/models"
 	log "github.com/sirupsen/logrus"
 )
 

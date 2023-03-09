@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/euscs/euscs-bot/internal/models"
+	"github.com/euscs/euscs-bot/internal/team"
 	"github.com/google/uuid"
-	"github.com/haashi/omega-strikers-bot/internal/models"
-	"github.com/haashi/omega-strikers-bot/internal/team"
 	log "github.com/sirupsen/logrus"
 )
 

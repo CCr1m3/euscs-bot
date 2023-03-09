@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/euscs/euscs-bot/internal/db"
+	"github.com/euscs/euscs-bot/internal/env"
+	"github.com/euscs/euscs-bot/internal/models"
+	"github.com/euscs/euscs-bot/internal/scheduled"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/haashi/omega-strikers-bot/internal/db"
-	"github.com/haashi/omega-strikers-bot/internal/env"
-	"github.com/haashi/omega-strikers-bot/internal/models"
-	"github.com/haashi/omega-strikers-bot/internal/scheduled"
 	"golang.org/x/oauth2"
 )
 

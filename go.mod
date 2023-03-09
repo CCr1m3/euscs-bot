@@ -1,4 +1,4 @@
-module github.com/haashi/omega-strikers-bot
+module github.com/euscs/euscs-bot
 
 go 1.20
 

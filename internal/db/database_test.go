@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/haashi/omega-strikers-bot/internal/env"
+	"github.com/euscs/euscs-bot/internal/env"
 	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 	log "github.com/sirupsen/logrus"

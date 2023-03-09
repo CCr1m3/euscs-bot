@@ -8,12 +8,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/haashi/omega-strikers-bot/internal/db"
-	"github.com/haashi/omega-strikers-bot/internal/discord"
-	"github.com/haashi/omega-strikers-bot/internal/env"
-	"github.com/haashi/omega-strikers-bot/internal/markov"
-	"github.com/haashi/omega-strikers-bot/internal/slashcommands"
-	"github.com/haashi/omega-strikers-bot/internal/webserver"
+	"github.com/euscs/euscs-bot/internal/db"
+	"github.com/euscs/euscs-bot/internal/discord"
+	"github.com/euscs/euscs-bot/internal/env"
+	"github.com/euscs/euscs-bot/internal/markov"
+	"github.com/euscs/euscs-bot/internal/slashcommands"
+	"github.com/euscs/euscs-bot/internal/webserver"
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
 )

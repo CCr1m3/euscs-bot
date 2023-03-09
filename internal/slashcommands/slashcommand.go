@@ -2,8 +2,8 @@ package slashcommands
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"github.com/haashi/omega-strikers-bot/internal/discord"
-	"github.com/haashi/omega-strikers-bot/internal/env"
+	"github.com/euscs/euscs-bot/internal/discord"
+	"github.com/euscs/euscs-bot/internal/env"
 	log "github.com/sirupsen/logrus"
 )
 

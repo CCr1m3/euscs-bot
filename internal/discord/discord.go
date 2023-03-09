@@ -2,8 +2,8 @@ package discord
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"github.com/haashi/omega-strikers-bot/internal/env"
-	"github.com/haashi/omega-strikers-bot/internal/scheduled"
+	"github.com/euscs/euscs-bot/internal/env"
+	"github.com/euscs/euscs-bot/internal/scheduled"
 	log "github.com/sirupsen/logrus"
 )
 

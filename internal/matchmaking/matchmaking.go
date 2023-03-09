@@ -10,13 +10,13 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/euscs/euscs-bot/internal/db"
+	"github.com/euscs/euscs-bot/internal/discord"
+	"github.com/euscs/euscs-bot/internal/env"
+	"github.com/euscs/euscs-bot/internal/models"
+	"github.com/euscs/euscs-bot/internal/scheduled"
+	"github.com/euscs/euscs-bot/internal/utils"
 	"github.com/google/uuid"
-	"github.com/haashi/omega-strikers-bot/internal/db"
-	"github.com/haashi/omega-strikers-bot/internal/discord"
-	"github.com/haashi/omega-strikers-bot/internal/env"
-	"github.com/haashi/omega-strikers-bot/internal/models"
-	"github.com/haashi/omega-strikers-bot/internal/scheduled"
-	"github.com/haashi/omega-strikers-bot/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
 

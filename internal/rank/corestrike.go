@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/haashi/omega-strikers-bot/internal/models"
+	"github.com/euscs/euscs-bot/internal/models"
 )
 
 func GetRankFromUsername(ctx context.Context, username string) (int, error) {

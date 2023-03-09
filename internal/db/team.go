@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/haashi/omega-strikers-bot/internal/models"
+	"github.com/euscs/euscs-bot/internal/models"
 )
 
 func CreateTeam(ctx context.Context, t *models.Team) error {

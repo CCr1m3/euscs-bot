@@ -3,8 +3,8 @@ package db
 import (
 	"time"
 
+	"github.com/euscs/euscs-bot/internal/env"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/haashi/omega-strikers-bot/internal/env"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	log "github.com/sirupsen/logrus"
