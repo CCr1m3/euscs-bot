@@ -101,7 +101,7 @@ func GetTeamByPlayerID(ctx context.Context, playerID string) (*models.Team, erro
 	err := db.Get(&team, "SELECT name,ownerplayerID FROM teams JOIN teamsplayers ON teamsplayers.team = teams.name WHERE teamsplayers.playerID=?", playerID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, &models.DBNotFoundError{}
+			return nil, models.ErrNotFound
 		}
 		return nil, &models.DBError{Err: err}
 	}

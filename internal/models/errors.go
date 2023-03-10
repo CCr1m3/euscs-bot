@@ -1,6 +1,9 @@
 package models
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 type DBError struct {
 	Err error
@@ -43,7 +46,7 @@ type UserAlreadyLinkedError struct {
 }
 
 func (e *UserAlreadyLinkedError) Error() string {
-	return fmt.Sprintf("User %s is already linked", e.UserID)
+	return fmt.Sprintf("user %s is already linked", e.UserID)
 }
 
 type UsernameAlreadyLinkedError struct {
@@ -51,12 +54,40 @@ type UsernameAlreadyLinkedError struct {
 }
 
 func (e *UsernameAlreadyLinkedError) Error() string {
-	return fmt.Sprintf("Username %s is already linked", e.Username)
+	return fmt.Sprintf("username %s is already linked", e.Username)
 }
 
 type DBNotFoundError struct {
 }
 
 func (e *DBNotFoundError) Error() string {
-	return fmt.Sprintf("Not found in db")
+	return fmt.Sprintf("not found in db")
 }
+
+type TeamIsFullError struct {
+}
+
+func (e *TeamIsFullError) Error() string {
+	return fmt.Sprintf("team is full")
+}
+
+type UserAlreadyInTeam struct {
+}
+
+func (e *UserAlreadyInTeam) Error() string {
+	return fmt.Sprintf("user is already in a team")
+}
+
+func ErrDB(err error) error {
+	return fmt.Errorf("database error: %w", err)
+}
+
+var ErrUsernameInvalid = errors.New("username invalid")
+var ErrUserNotLinked = errors.New("user not linked")
+var ErrUserAlreadyLinked = errors.New("user is already linked")
+var ErrUsernameAlreadyLinked = errors.New("username is already linked")
+var ErrNotFound = errors.New("not found")
+var ErrTeamFull = errors.New("team full")
+var ErrUserAlreadyInTeam = errors.New("user already in team")
+var ErrTeamnameTaken = errors.New("team name is taken")
+var ErrNotTeamOwner = errors.New("not team owner")

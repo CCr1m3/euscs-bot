@@ -2,6 +2,7 @@ package slashcommands
 
 import (
 	"context"
+	"errors"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/euscs/euscs-bot/internal/models"
@@ -84,15 +85,28 @@ func (p Invite) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}).Warning("invite failed, no arguments")
 		return
 	}
-	err = team.InvitePlayer(ctx, i.Member.User.ID, invitedPlayerID)
+	err = team.InvitePlayerToTeam(ctx, i.Member.User.ID, invitedPlayerID)
 	if err == nil {
 		message = "Successfully invited."
 	} else {
+		message = "Failed to invite."
 		log.WithFields(log.Fields{
 			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
 			string(models.CallerIDKey): i.Member.User.ID,
 			string(models.PlayerIDKey): invitedPlayerID,
-		}).Warning("invite failed, no arguments")
-		message = "Failed to invite."
+			string(models.ErrorKey):    err.Error(),
+		}).Warning("invite failed")
+		switch {
+		case errors.Is(err, models.ErrTeamFull):
+			message += " Your team is full."
+		case errors.Is(err, models.ErrUserAlreadyInTeam):
+			message += " This user already has a team."
+		case errors.Is(err, models.ErrNotFound):
+			message += " You don't have a team."
+		case errors.Is(err, models.ErrNotTeamOwner):
+			message += " You are not the team owner."
+		default:
+			message += "Unexpected Error."
+		}
 	}
 }
