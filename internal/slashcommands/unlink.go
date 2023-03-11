@@ -84,8 +84,7 @@ func (p Unlink) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 	err = rank.UnlinkPlayer(ctx, user.ID)
 	if err != nil {
-		var notLinkedErr *models.NotLinkedError
-		if errors.As(err, &notLinkedErr) {
+		if errors.Is(err, models.ErrUserNotLinked) {
 			log.WithFields(log.Fields{
 				string(models.UUIDKey):     ctx.Value(models.UUIDKey),
 				string(models.CallerIDKey): i.Member.User.ID,

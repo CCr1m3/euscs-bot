@@ -45,7 +45,7 @@ func GetRankFromUsername(ctx context.Context, username string) (int, error) {
 			rating, err := strconv.ParseInt(matches[1], 10, 0)
 			return int(rating), err
 		} else {
-			return 0, &models.RankUpdateUsernameError{Username: username}
+			return 0, models.ErrCorestrikeNotFound
 		}
 	}
 }

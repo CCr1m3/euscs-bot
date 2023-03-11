@@ -82,30 +82,28 @@ func (p Link) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	err = rank.LinkPlayerToUsername(ctx, playerID, username)
 	if err != nil {
 		log.Errorf("failed to link player %s with username %s: "+err.Error(), playerID, username)
-		var badUsernameErr *models.RankUpdateUsernameError
-		var userAlreadyLinkedErr *models.UserAlreadyLinkedError
-		var userNameAlreadyLinkedErr *models.UsernameAlreadyLinkedError
-		if errors.As(err, &badUsernameErr) {
+		switch {
+		case errors.Is(err, models.ErrUsernameInvalid):
 			log.WithFields(log.Fields{
 				string(models.UUIDKey):     ctx.Value(models.UUIDKey),
 				string(models.CallerIDKey): i.Member.User.ID,
 				string(models.UsernameKey): username,
 			}).Warning("failed to link player, username invalid")
-			message = fmt.Sprintf("Failed to link because username does not exist: %s\n", badUsernameErr.Username)
-		} else if errors.As(err, &userAlreadyLinkedErr) {
+			message = fmt.Sprintf("Failed to link because username does not exist: %s", username)
+		case errors.Is(err, models.ErrUserAlreadyLinked):
 			log.WithFields(log.Fields{
 				string(models.UUIDKey):     ctx.Value(models.UUIDKey),
 				string(models.CallerIDKey): i.Member.User.ID,
 			}).Warning("failed to link player, user already linked")
 			message = "You have already linked an omega strikers account. Please contact a mod if you want to unlink."
-		} else if errors.As(err, &userNameAlreadyLinkedErr) {
+		case errors.Is(err, models.ErrUsernameAlreadyLinked):
 			log.WithFields(log.Fields{
 				string(models.UUIDKey):     ctx.Value(models.UUIDKey),
 				string(models.CallerIDKey): i.Member.User.ID,
 				string(models.UsernameKey): username,
 			}).Warning("failed to link player, username already linked")
 			message = fmt.Sprintf("%s is already linked to an account. Please contact a mod if you think you are the rightful owner of the account.", username)
-		} else {
+		default:
 			log.WithFields(log.Fields{
 				string(models.UUIDKey):     ctx.Value(models.UUIDKey),
 				string(models.CallerIDKey): i.Member.User.ID,

@@ -16,7 +16,7 @@ type SlashCommand interface {
 }
 
 var registeredCommands []*discordgo.ApplicationCommand
-var commands = []SlashCommand{Join{}, Leave{}, Result{}, Who{}, Link{}, Unlink{}, Update{}, Cancel{}, Credits{}, Predict{}, Createteam{}, Invite{}}
+var commands = []SlashCommand{Who{}, Link{}, Unlink{}, Createteam{}, Invite{}, Update{}}
 
 // This doesn't perfectly compare options, but I can't be bothered deep checking literally everything.
 func compareApplicationCommandOption(o1 *discordgo.ApplicationCommandOption, o2 *discordgo.ApplicationCommandOption) bool {

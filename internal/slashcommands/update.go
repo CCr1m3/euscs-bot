@@ -65,21 +65,20 @@ func (p Update) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 	err = rank.UpdateRankIfNeeded(ctx, playerID)
 	if err != nil {
-		var tooFastErr *models.RankUpdateTooFastError
-		var notLinkedErr *models.NotLinkedError
-		if errors.As(err, &tooFastErr) {
+		switch {
+		case errors.Is(err, models.ErrRankUpdateTooFast):
 			log.WithFields(log.Fields{
 				string(models.UUIDKey):     ctx.Value(models.UUIDKey),
 				string(models.CallerIDKey): i.Member.User.ID,
 			}).Warning("player update too fast")
 			message = "You have updated your account recently. Please wait before using this command again."
-		} else if errors.As(err, &notLinkedErr) {
+		case errors.Is(err, models.ErrUserNotLinked):
 			log.WithFields(log.Fields{
 				string(models.UUIDKey):     ctx.Value(models.UUIDKey),
 				string(models.CallerIDKey): i.Member.User.ID,
 			}).Warning("player is not linked")
 			message = "You have not linked your omega strikers account. Please use 'link' first."
-		} else {
+		default:
 			log.WithFields(log.Fields{
 				string(models.UUIDKey):     ctx.Value(models.UUIDKey),
 				string(models.CallerIDKey): i.Member.User.ID,

@@ -13,7 +13,7 @@ func AddMarkovOccurences(ctx context.Context, ms []*models.Markov) error {
 		log.WithFields(log.Fields{
 			string(models.UUIDKey):  ctx.Value(models.UUIDKey),
 			string(models.ErrorKey): err.Error(),
-		}).Error("failed to start transactions")
+		}).Error("failed to start transaction")
 		return err
 	}
 	for _, m := range ms {
