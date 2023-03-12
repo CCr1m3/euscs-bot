@@ -47,26 +47,20 @@ func compareCommands(slashcommand SlashCommand, appcommand *discordgo.Applicatio
 
 func Init() {
 	session := discord.GetSession()
-
 	commandHandlers := make(map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate))
 	for _, command := range commands {
 		commandHandlers[command.Name()] = command.Run
 	}
 	session.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		switch i.Type {
-		case discordgo.InteractionApplicationCommand:
+		if i.Type == discordgo.InteractionApplicationCommand {
 			if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
-				h(s, i)
-			}
-		case discordgo.InteractionMessageComponent:
-			if h, ok := commandHandlers[i.MessageComponentData().CustomID]; ok {
 				h(s, i)
 			}
 		}
 
 	})
 	registeredCommands = make([]*discordgo.ApplicationCommand, len(commands))
-	previouslyRegisteredCommands, err := session.ApplicationCommands(session.State.User.ID, discord.GuildID)
+	previouslyRegisteredCommands, err := session.ApplicationCommands(session.State.User.ID, env.Discord.GuildID)
 	if err != nil {
 		log.Errorf("cannot get previously registered commands.")
 	}
@@ -90,7 +84,7 @@ func Init() {
 			Options:                  command.Options(),
 			DefaultMemberPermissions: command.RequiredPerm(),
 		}
-		cmd, err := session.ApplicationCommandCreate(session.State.User.ID, discord.GuildID, appCommand)
+		cmd, err := session.ApplicationCommandCreate(session.State.User.ID, env.Discord.GuildID, appCommand)
 		if err != nil {
 			log.Fatalf("Cannot create '%v' command: %v", command.Name(), err)
 		}

@@ -75,7 +75,16 @@ CREATE TABLE teamsplayers (
 	FOREIGN KEY (playerID) REFERENCES players(discordID),
 	FOREIGN KEY (team) REFERENCES teams(name),
 	PRIMARY KEY (playerID,team)
-);`
+);
+CREATE TABLE teamsinvitations (
+	playerID VARCHAR(100) NOT NULL,
+	team VARCHAR(100) NOT NULL,
+	messageID VARCHAR(100) UNIQUE NOT NULL,
+	timestamp INTEGER NOT NULL,
+	state INTEGER DEFAULT 0 NOT NULL,
+	PRIMARY KEY (messageID)
+);
+`
 
 var migration3 = `CREATE TABLE markov (
 	word1 VARCHAR(100) NOT NULL,

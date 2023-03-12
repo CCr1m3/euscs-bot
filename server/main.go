@@ -10,9 +10,10 @@ import (
 
 	"github.com/euscs/euscs-bot/internal/db"
 	"github.com/euscs/euscs-bot/internal/discord"
+	"github.com/euscs/euscs-bot/internal/discord/interactions"
+	"github.com/euscs/euscs-bot/internal/discord/slashcommands"
 	"github.com/euscs/euscs-bot/internal/env"
 	"github.com/euscs/euscs-bot/internal/markov"
-	"github.com/euscs/euscs-bot/internal/slashcommands"
 	"github.com/euscs/euscs-bot/internal/webserver"
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
@@ -40,6 +41,7 @@ func main() {
 	markov.Init()
 	//credits.Init()
 	slashcommands.Init()
+	interactions.Init()
 	//matchmaking.Init()
 	webserver.Init()
 	stop := make(chan os.Signal, 1)

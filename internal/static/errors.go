@@ -1,11 +1,15 @@
 package static
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 )
 
 func ErrDB(err error) error {
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrNotFound
+	}
 	return fmt.Errorf("database error: %w", err)
 }
 
@@ -22,3 +26,6 @@ var ErrOwnerNotInTeam = errors.New("owner not in team")
 var ErrCorestrikeNotFound = errors.New("username not found in corestrike")
 var ErrRankUpdateTooFast = errors.New("rank update too fast")
 var ErrDiscordIDRequired = errors.New("discord id required")
+var ErrMessageIDRequired = errors.New("message id required")
+var ErrPlayerRequired = errors.New("player required")
+var ErrTeamRequired = errors.New("team required")

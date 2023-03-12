@@ -32,8 +32,10 @@ func InvitePlayerToTeam(ctx context.Context, ownerID string, playerID string) er
 	if len(team.Players) >= 3 {
 		return static.ErrTeamFull
 	}
-	session := discord.GetSession()
-	channel, err := session.UserChannelCreate(playerID)
+	if team.OwnerID != ownerID {
+		return static.ErrNotTeamOwner
+	}
+	player, err := db.GetOrCreatePlayerByID(ctx, playerID)
 	if err != nil {
 		return err
 	}
@@ -46,10 +48,14 @@ func InvitePlayerToTeam(ctx context.Context, ownerID string, playerID string) er
 	if team2 != nil {
 		return static.ErrUserAlreadyInTeam
 	}
-
-	message := fmt.Sprintf("You have been invited by %s to the team '%s'", "<@"+ownerID+">", team.Name)
-	_, err = session.ChannelMessageSendComplex(channel.ID, &discordgo.MessageSend{
-		Content: message,
+	session := discord.GetSession()
+	channel, err := session.UserChannelCreate(playerID)
+	if err != nil {
+		return err
+	}
+	messageContent := fmt.Sprintf("You have been invited by %s to the team '%s'", "<@"+ownerID+">", team.Name)
+	message, err := session.ChannelMessageSendComplex(channel.ID, &discordgo.MessageSend{
+		Content: messageContent,
 		Components: []discordgo.MessageComponent{
 			discordgo.ActionsRow{
 				Components: []discordgo.MessageComponent{
@@ -69,10 +75,15 @@ func InvitePlayerToTeam(ctx context.Context, ownerID string, playerID string) er
 	if err != nil {
 		return err
 	}
+	invite := db.TeamInvitation{Player: player, Team: team, MessageID: message.ID, Timestamp: int(message.Timestamp.Unix()), State: db.InvitationPending}
+	err = invite.Save(ctx)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func AddPlayerToTeam(ctx context.Context, teamName string, playerID string) error {
+func AcceptInvitation(ctx context.Context, teamName string, playerID string) error {
 	team, err := db.GetTeamByName(ctx, teamName)
 	if err != nil {
 		return err
