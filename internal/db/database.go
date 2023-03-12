@@ -12,7 +12,7 @@ import (
 
 var db *sqlx.DB
 
-func getInstance() *sqlx.DB {
+func GetInstance() *sqlx.DB {
 	if db == nil {
 		var err error
 		if env.DB.Type == env.SQLITE {
@@ -38,7 +38,7 @@ func getInstance() *sqlx.DB {
 
 func Init() {
 	log.Info("starting db service")
-	getInstance()
+	GetInstance()
 	err := migrate()
 	if err != nil {
 		log.Fatal(err)

@@ -3,14 +3,15 @@ package webserver
 import (
 	"context"
 	"encoding/gob"
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/euscs/euscs-bot/internal/db"
 	"github.com/euscs/euscs-bot/internal/env"
-	"github.com/euscs/euscs-bot/internal/models"
 	"github.com/euscs/euscs-bot/internal/scheduled"
+	"github.com/euscs/euscs-bot/internal/static"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"golang.org/x/oauth2"
@@ -79,7 +80,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func redirectHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := context.WithValue(context.Background(), models.UUIDKey, uuid.New())
+	ctx := context.WithValue(context.Background(), static.UUIDKey, uuid.New())
 	session, err := store.Get(r, "session")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -115,7 +116,20 @@ func redirectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	session.Values["discordID"] = user.ID
-	db.CreatePlayer(ctx, user.ID)
+	p, err := db.GetPlayerByID(ctx, user.ID)
+	if err != nil && !errors.Is(err, static.ErrNotFound) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	} else if errors.Is(err, static.ErrNotFound) {
+		p = &db.Player{DiscordID: user.ID}
+		err = p.Save(ctx)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
+		}
+	}
 	err = session.Save(r, w)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

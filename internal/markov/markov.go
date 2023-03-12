@@ -8,7 +8,6 @@ import (
 
 	"github.com/euscs/euscs-bot/internal/db"
 	"github.com/euscs/euscs-bot/internal/discord"
-	"github.com/euscs/euscs-bot/internal/models"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -34,20 +33,20 @@ func parse(message string) []string {
 
 func learn(ctx context.Context, message string) error {
 	words := parse(message)
-	ms := make([]*models.Markov, 0)
+	ms := make([]*db.Markov, 0)
 	if len(words) > 1 {
-		ms = append(ms, &models.Markov{Word1: "__start__", Word2: words[0], Word3: words[1]})
+		ms = append(ms, &db.Markov{Word1: "__start__", Word2: words[0], Word3: words[1]})
 		for i := range words {
 			if i == len(words)-2 {
-				ms = append(ms, &models.Markov{Word1: words[i], Word2: words[i+1], Word3: "__end__"})
+				ms = append(ms, &db.Markov{Word1: words[i], Word2: words[i+1], Word3: "__end__"})
 				break
 			} else {
-				ms = append(ms, &models.Markov{Word1: words[i], Word2: words[i+1], Word3: words[i+2]})
+				ms = append(ms, &db.Markov{Word1: words[i], Word2: words[i+1], Word3: words[i+2]})
 			}
 		}
 	}
 	if len(words) == 1 {
-		ms = append(ms, &models.Markov{Word1: "__start__", Word2: words[0], Word3: "__end__"})
+		ms = append(ms, &db.Markov{Word1: "__start__", Word2: words[0], Word3: "__end__"})
 	}
 	return db.AddMarkovOccurences(ctx, ms)
 }

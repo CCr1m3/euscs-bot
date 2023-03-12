@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/euscs/euscs-bot/internal/models"
 	"github.com/euscs/euscs-bot/internal/rank"
+	"github.com/euscs/euscs-bot/internal/static"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
@@ -42,7 +42,7 @@ func (p Who) Options() []*discordgo.ApplicationCommandOption {
 }
 
 func (p Who) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	ctx := context.WithValue(context.Background(), models.UUIDKey, uuid.New())
+	ctx := context.WithValue(context.Background(), static.UUIDKey, uuid.New())
 	options := i.ApplicationCommandData().Options
 	optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
 	for _, opt := range options {
@@ -57,10 +57,10 @@ func (p Who) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		username = val.StringValue()
 	}
 	log.WithFields(log.Fields{
-		string(models.UUIDKey):     ctx.Value(models.UUIDKey),
-		string(models.CallerIDKey): i.Member.User.ID,
-		string(models.UsernameKey): username,
-		string(models.PlayerIDKey): userID,
+		string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+		string(static.CallerIDKey): i.Member.User.ID,
+		string(static.UsernameKey): username,
+		string(static.PlayerIDKey): userID,
 	}).Info("who slash command invoked")
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -70,8 +70,8 @@ func (p Who) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	})
 	if err != nil {
 		log.WithFields(log.Fields{
-			string(models.UUIDKey):  ctx.Value(models.UUIDKey),
-			string(models.ErrorKey): err.Error(),
+			string(static.UUIDKey):  ctx.Value(static.UUIDKey),
+			string(static.ErrorKey): err.Error(),
 		}).Error("failed to send message")
 		return
 	}
@@ -82,24 +82,24 @@ func (p Who) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		})
 		if err != nil {
 			log.WithFields(log.Fields{
-				string(models.UUIDKey):  ctx.Value(models.UUIDKey),
-				string(models.ErrorKey): err.Error(),
+				string(static.UUIDKey):  ctx.Value(static.UUIDKey),
+				string(static.ErrorKey): err.Error(),
 			}).Error("failed to edit message")
 		}
 	}()
 	if userID == "" && username == "" {
 		message = "Please enter at least one of the argument."
 		log.WithFields(log.Fields{
-			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
-			string(models.CallerIDKey): i.Member.User.ID,
+			string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+			string(static.CallerIDKey): i.Member.User.ID,
 		}).Warning("who failed, no arguments")
 		return
 	}
 	if userID != "" && username != "" {
 		message = "Please enter only one of the argument."
 		log.WithFields(log.Fields{
-			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
-			string(models.CallerIDKey): i.Member.User.ID,
+			string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+			string(static.CallerIDKey): i.Member.User.ID,
 		}).Warning("who failed, two arguments")
 		return
 	}
@@ -107,17 +107,17 @@ func (p Who) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		username, err := rank.GetLinkedUsername(ctx, userID)
 		if err != nil {
 			log.WithFields(log.Fields{
-				string(models.UUIDKey):     ctx.Value(models.UUIDKey),
-				string(models.PlayerIDKey): userID,
-				string(models.ErrorKey):    err.Error(),
+				string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+				string(static.PlayerIDKey): userID,
+				string(static.ErrorKey):    err.Error(),
 			}).Error("failed to lookup user")
 			message = "Failed to lookup user."
 			return
 		}
 		if username == "" {
 			log.WithFields(log.Fields{
-				string(models.UUIDKey):     ctx.Value(models.UUIDKey),
-				string(models.PlayerIDKey): userID,
+				string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+				string(static.PlayerIDKey): userID,
 			}).Warning("player is not linked")
 			message = fmt.Sprintf("%s has not linked his omega strikers account.", "<@"+userID+">")
 			return
@@ -129,17 +129,17 @@ func (p Who) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		userID, err := rank.GetLinkedUser(ctx, username)
 		if err != nil {
 			log.WithFields(log.Fields{
-				string(models.UUIDKey):     ctx.Value(models.UUIDKey),
-				string(models.UsernameKey): username,
-				string(models.ErrorKey):    err.Error(),
+				string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+				string(static.UsernameKey): username,
+				string(static.ErrorKey):    err.Error(),
 			}).Error("failed to lookup username")
 			message = "Failed to lookup username."
 			return
 		}
 		if userID == "" {
 			log.WithFields(log.Fields{
-				string(models.UUIDKey):     ctx.Value(models.UUIDKey),
-				string(models.UsernameKey): username,
+				string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+				string(static.UsernameKey): username,
 			}).Warning("username is not linked")
 			message = fmt.Sprintf("%s is not in this server.", username)
 			return

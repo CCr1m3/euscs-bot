@@ -21,7 +21,7 @@ func init() {
 }
 
 func clearDB() {
-	getInstance()
+	GetInstance()
 	if db != nil {
 		if env.DB.Type == env.SQLITE {
 			err := db.Close()
@@ -64,7 +64,7 @@ func clearDB() {
 }
 func Test_db_getInstance(t *testing.T) {
 	clearDB()
-	if got := getInstance(); got == nil {
+	if got := GetInstance(); got == nil {
 		t.Errorf("getInstance() returned nil")
 	}
 }

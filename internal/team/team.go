@@ -8,16 +8,16 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/euscs/euscs-bot/internal/db"
 	"github.com/euscs/euscs-bot/internal/discord"
-	"github.com/euscs/euscs-bot/internal/models"
+	"github.com/euscs/euscs-bot/internal/static"
 )
 
 func CreateTeam(ctx context.Context, ownerID string, teamName string) error {
-	player, err := db.GetOrCreatePlayerById(ctx, ownerID)
+	player, err := db.GetOrCreatePlayerByID(ctx, ownerID)
 	if err != nil {
 		return err
 	}
-	team := models.Team{Players: []*models.Player{player}, OwnerID: ownerID, Name: teamName}
-	err = db.CreateTeam(ctx, &team)
+	team := db.Team{Players: []*db.Player{player}, OwnerID: ownerID, Name: teamName}
+	err = team.Save(ctx)
 	if err != nil {
 		return err
 	}
@@ -30,7 +30,7 @@ func InvitePlayerToTeam(ctx context.Context, ownerID string, playerID string) er
 		return fmt.Errorf("team: %w", err)
 	}
 	if len(team.Players) >= 3 {
-		return models.ErrTeamFull
+		return static.ErrTeamFull
 	}
 	session := discord.GetSession()
 	channel, err := session.UserChannelCreate(playerID)
@@ -39,12 +39,12 @@ func InvitePlayerToTeam(ctx context.Context, ownerID string, playerID string) er
 	}
 	team2, err := db.GetTeamByPlayerID(ctx, playerID)
 	if err != nil {
-		if !errors.Is(err, models.ErrNotFound) {
+		if !errors.Is(err, static.ErrNotFound) {
 			return err
 		}
 	}
 	if team2 != nil {
-		return models.ErrUserAlreadyInTeam
+		return static.ErrUserAlreadyInTeam
 	}
 
 	message := fmt.Sprintf("You have been invited by %s to the team '%s'", "<@"+ownerID+">", team.Name)
@@ -78,7 +78,7 @@ func AddPlayerToTeam(ctx context.Context, teamName string, playerID string) erro
 		return err
 	}
 	if len(team.Players) >= 3 {
-		return models.ErrTeamFull
+		return static.ErrTeamFull
 	}
 	return nil
 }

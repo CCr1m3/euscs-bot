@@ -2,29 +2,30 @@ package rank
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/euscs/euscs-bot/internal/db"
 	"github.com/euscs/euscs-bot/internal/discord"
-	"github.com/euscs/euscs-bot/internal/models"
+	"github.com/euscs/euscs-bot/internal/static"
 	log "github.com/sirupsen/logrus"
 )
 
 func LinkPlayerToUsername(ctx context.Context, playerID string, username string) error {
-	player, err := db.GetOrCreatePlayerById(ctx, playerID)
+	player, err := db.GetOrCreatePlayerByID(ctx, playerID)
 	if err != nil {
 		return err
 	}
 	if player.OSUser == "" {
 		_, err := db.GetPlayerByUsername(ctx, username)
-		if !errors.Is(err, sql.ErrNoRows) {
-			return models.ErrUsernameAlreadyLinked
+		if err == nil {
+			return static.ErrUsernameAlreadyLinked
+		} else if err != nil && !errors.Is(err, static.ErrNotFound) {
+			return err
 		}
 		player.OSUser = username
-		err = db.UpdatePlayer(ctx, player)
+		err = player.Save(ctx)
 		if err != nil {
 			return err
 		}
@@ -34,21 +35,21 @@ func LinkPlayerToUsername(ctx context.Context, playerID string, username string)
 		}
 		return nil
 	} else {
-		return models.ErrUserAlreadyLinked
+		return static.ErrUserAlreadyLinked
 	}
 }
 
 func UnlinkPlayer(ctx context.Context, playerID string) error {
-	player, err := db.GetOrCreatePlayerById(ctx, playerID)
+	player, err := db.GetOrCreatePlayerByID(ctx, playerID)
 	if err != nil {
 		return err
 	}
 	if player.OSUser == "" {
-		return models.ErrUserNotLinked
+		return static.ErrUserNotLinked
 	}
 	player.Elo = 0
 	player.OSUser = ""
-	err = db.UpdatePlayer(ctx, player)
+	err = player.Save(ctx)
 	if err != nil {
 		return err
 	}
@@ -62,7 +63,7 @@ func UnlinkPlayer(ctx context.Context, playerID string) error {
 }
 
 func GetLinkedUsername(ctx context.Context, playerID string) (string, error) {
-	player, err := db.GetOrCreatePlayerById(ctx, playerID)
+	player, err := db.GetOrCreatePlayerByID(ctx, playerID)
 	if err != nil {
 		return "", err
 	}
@@ -78,29 +79,29 @@ func GetLinkedUser(ctx context.Context, username string) (string, error) {
 }
 
 func UpdateRankIfNeeded(ctx context.Context, playerID string) error {
-	player, err := db.GetOrCreatePlayerById(ctx, playerID)
+	player, err := db.GetOrCreatePlayerByID(ctx, playerID)
 	if err != nil {
 		return err
 	}
 	if player.OSUser == "" {
-		return models.ErrUserNotLinked
+		return static.ErrUserNotLinked
 	}
 	return UpdateRank(ctx, player.DiscordID)
 }
 
 func UpdateRank(ctx context.Context, playerID string) error {
-	player, err := db.GetOrCreatePlayerById(ctx, playerID)
+	player, err := db.GetOrCreatePlayerByID(ctx, playerID)
 	if err != nil {
 		return err
 	}
 	if player.OSUser == "" {
-		return models.ErrUserNotLinked
+		return static.ErrUserNotLinked
 	}
 	log.Infof("updating player elo %s", player.DiscordID)
 	rank, err := GetRankFromUsername(ctx, player.OSUser)
 	if err != nil {
 		log.Errorf("failed to retrieve rank of player %s: "+err.Error(), player.DiscordID)
-		if errors.Is(err, models.ErrUsernameInvalid) {
+		if errors.Is(err, static.ErrUsernameInvalid) {
 			log.Warningf("unlinking %s because username %s was not valid", playerID, player.OSUser)
 			if player.OSUser != "" {
 				err2 := UnlinkPlayer(ctx, playerID)
@@ -115,7 +116,7 @@ func UpdateRank(ctx context.Context, playerID string) error {
 	if rank > player.Elo {
 		player.Elo = rank
 	}
-	err = db.UpdatePlayer(ctx, player)
+	err = player.Save(ctx)
 	if err != nil {
 		log.Errorf("failed to update player %s: "+err.Error(), player.DiscordID)
 	}
@@ -131,7 +132,7 @@ func UpdateRank(ctx context.Context, playerID string) error {
 func updatePlayerDiscordRole(ctx context.Context, playerID string) error {
 	session := discord.GetSession()
 	guildID := discord.GuildID
-	player, err := db.GetPlayerById(ctx, playerID)
+	player, err := db.GetPlayerByID(ctx, playerID)
 	if err != nil {
 		return err
 	}

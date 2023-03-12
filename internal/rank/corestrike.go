@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/euscs/euscs-bot/internal/models"
+	"github.com/euscs/euscs-bot/internal/static"
 )
 
 func GetRankFromUsername(ctx context.Context, username string) (int, error) {
@@ -45,7 +45,7 @@ func GetRankFromUsername(ctx context.Context, username string) (int, error) {
 			rating, err := strconv.ParseInt(matches[1], 10, 0)
 			return int(rating), err
 		} else {
-			return 0, models.ErrCorestrikeNotFound
+			return 0, static.ErrCorestrikeNotFound
 		}
 	}
 }

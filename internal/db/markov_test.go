@@ -3,17 +3,15 @@ package db
 import (
 	"context"
 	"testing"
-
-	"github.com/euscs/euscs-bot/internal/models"
 )
 
 func Test_db_Markov(t *testing.T) {
 	clearDB()
 	Init()
 	ctx := context.TODO()
-	m1 := &models.Markov{Word1: "__start__", Word2: "i", Word3: "love"}
-	m2 := &models.Markov{Word1: "__start__", Word2: "i", Word3: "must"}
-	err := AddMarkovOccurences(ctx, []*models.Markov{m1, m1, m1, m2})
+	m1 := &Markov{Word1: "__start__", Word2: "i", Word3: "love"}
+	m2 := &Markov{Word1: "__start__", Word2: "i", Word3: "must"}
+	err := AddMarkovOccurences(ctx, []*Markov{m1, m1, m1, m2})
 	if err != nil {
 		t.Errorf("failed to add markov occurences: " + err.Error())
 	}

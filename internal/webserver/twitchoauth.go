@@ -7,7 +7,7 @@ import (
 
 	"github.com/euscs/euscs-bot/internal/db"
 	"github.com/euscs/euscs-bot/internal/env"
-	"github.com/euscs/euscs-bot/internal/models"
+	"github.com/euscs/euscs-bot/internal/static"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/nicklaw5/helix"
@@ -36,8 +36,8 @@ func initTwitchAuth(s *mux.Router) {
 
 func twitchAuthHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	discordId := ctx.Value(models.CallerIDKey).(string)
-	player, err := db.GetPlayerById(ctx, discordId)
+	discordId := ctx.Value(static.CallerIDKey).(string)
+	player, err := db.GetPlayerByID(ctx, discordId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -98,15 +98,15 @@ func twitchRedirectHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
-	discordId := ctx.Value(models.CallerIDKey).(string)
-	player, err := db.GetPlayerById(ctx, discordId)
+	discordId := ctx.Value(static.CallerIDKey).(string)
+	player, err := db.GetPlayerByID(ctx, discordId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
 	}
 	player.TwitchID = user.Data.Users[0].ID
-	err = db.UpdatePlayer(ctx, player)
+	err = player.Save(ctx)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -117,15 +117,15 @@ func twitchRedirectHandler(w http.ResponseWriter, r *http.Request) {
 
 func twitchLogoutHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	discordId := ctx.Value(models.CallerIDKey).(string)
-	player, err := db.GetPlayerById(ctx, discordId)
+	discordId := ctx.Value(static.CallerIDKey).(string)
+	player, err := db.GetPlayerByID(ctx, discordId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
 	}
 	player.TwitchID = ""
-	err = db.UpdatePlayer(ctx, player)
+	err = player.Save(ctx)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))

@@ -6,13 +6,13 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/euscs/euscs-bot/internal/env"
-	"github.com/euscs/euscs-bot/internal/models"
+	"github.com/euscs/euscs-bot/internal/static"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
 
 func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
-	ctx := context.WithValue(context.Background(), models.UUIDKey, uuid.New())
+	ctx := context.WithValue(context.Background(), static.UUIDKey, uuid.New())
 	if m.Author.ID == s.State.User.ID || env.Discord.GuildID != m.GuildID {
 		return
 	}

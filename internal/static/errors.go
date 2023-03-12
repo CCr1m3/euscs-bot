@@ -1,4 +1,4 @@
-package models
+package static
 
 import (
 	"errors"
@@ -18,5 +18,7 @@ var ErrTeamFull = errors.New("team full")
 var ErrUserAlreadyInTeam = errors.New("user already in team")
 var ErrTeamnameTaken = errors.New("team name is taken")
 var ErrNotTeamOwner = errors.New("not team owner")
+var ErrOwnerNotInTeam = errors.New("owner not in team")
 var ErrCorestrikeNotFound = errors.New("username not found in corestrike")
 var ErrRankUpdateTooFast = errors.New("rank update too fast")
+var ErrDiscordIDRequired = errors.New("discord id required")

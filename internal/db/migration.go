@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/euscs/euscs-bot/internal/models"
+	"github.com/euscs/euscs-bot/internal/static"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -19,21 +19,21 @@ func migrate() error {
 	var start int
 	_, err := db.Exec(migrations[0])
 	if err != nil && !strings.Contains(err.Error(), "UNIQUE") && !strings.Contains(err.Error(), "1062") {
-		return models.ErrDB(err)
+		return static.ErrDB(err)
 	}
 	start, err = getLatestMigration()
 	if err != nil {
-		return models.ErrDB(err)
+		return static.ErrDB(err)
 	}
 	for i := start + 1; i < len(migrations); i++ {
 		log.Info(fmt.Sprintf("applying migration %d", i))
 		_, err = db.Exec(migrations[i])
 		if err != nil {
-			return models.ErrDB(err)
+			return static.ErrDB(err)
 		}
 		_, err = db.Exec(`INSERT INTO migrations (version) VALUES (?)`, i)
 		if err != nil {
-			return models.ErrDB(err)
+			return static.ErrDB(err)
 		}
 	}
 	return nil
@@ -47,7 +47,7 @@ func getLatestMigration() (int, error) {
 	LIMIT 1`)
 	err := row.Scan(&ver)
 	if err != nil {
-		return 0, models.ErrDB(err)
+		return 0, static.ErrDB(err)
 	}
 	return ver, err
 }

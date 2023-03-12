@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/euscs/euscs-bot/internal/models"
+	"github.com/euscs/euscs-bot/internal/static"
 	"github.com/euscs/euscs-bot/internal/team"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -32,11 +32,12 @@ func (p Createteam) Options() []*discordgo.ApplicationCommandOption {
 			Name:        "teamname",
 			Description: "name of the team",
 			Type:        discordgo.ApplicationCommandOptionString,
+			Required:    true,
 		},
 	}
 }
 func (p Createteam) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	ctx := context.WithValue(context.Background(), models.UUIDKey, uuid.New())
+	ctx := context.WithValue(context.Background(), static.UUIDKey, uuid.New())
 	options := i.ApplicationCommandData().Options
 	optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
 	for _, opt := range options {
@@ -47,9 +48,9 @@ func (p Createteam) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		teamName = val.StringValue()
 	}
 	log.WithFields(log.Fields{
-		string(models.UUIDKey):     ctx.Value(models.UUIDKey),
-		string(models.CallerIDKey): i.Member.User.ID,
-		string(models.TeamNameKey): teamName,
+		string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+		string(static.CallerIDKey): i.Member.User.ID,
+		string(static.TeamNameKey): teamName,
 	}).Info("createteam slash command invoked")
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -59,8 +60,8 @@ func (p Createteam) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	})
 	if err != nil {
 		log.WithFields(log.Fields{
-			string(models.UUIDKey):  ctx.Value(models.UUIDKey),
-			string(models.ErrorKey): err.Error(),
+			string(static.UUIDKey):  ctx.Value(static.UUIDKey),
+			string(static.ErrorKey): err.Error(),
 		}).Error("failed to send message")
 		return
 	}
@@ -71,16 +72,16 @@ func (p Createteam) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		})
 		if err != nil {
 			log.WithFields(log.Fields{
-				string(models.UUIDKey):  ctx.Value(models.UUIDKey),
-				string(models.ErrorKey): err.Error(),
+				string(static.UUIDKey):  ctx.Value(static.UUIDKey),
+				string(static.ErrorKey): err.Error(),
 			}).Error("failed to edit message")
 		}
 	}()
 	if teamName == "" {
 		message = "Please enter a teamname."
 		log.WithFields(log.Fields{
-			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
-			string(models.CallerIDKey): i.Member.User.ID,
+			string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+			string(static.CallerIDKey): i.Member.User.ID,
 		}).Warning("createteam failed, no arguments")
 		return
 	}
@@ -89,10 +90,10 @@ func (p Createteam) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		message = fmt.Sprintf("Succesfully created team : %s", teamName)
 	} else {
 		log.WithFields(log.Fields{
-			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
-			string(models.CallerIDKey): i.Member.User.ID,
-			string(models.ErrorKey):    err.Error(),
-			string(models.TeamNameKey): teamName,
+			string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+			string(static.CallerIDKey): i.Member.User.ID,
+			string(static.ErrorKey):    err.Error(),
+			string(static.TeamNameKey): teamName,
 		}).Error("failed to created team")
 		message = fmt.Sprintf("Failed to created team : %s", teamName)
 	}

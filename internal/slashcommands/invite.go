@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/euscs/euscs-bot/internal/models"
+	"github.com/euscs/euscs-bot/internal/static"
 	"github.com/euscs/euscs-bot/internal/team"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -37,7 +37,7 @@ func (p Invite) Options() []*discordgo.ApplicationCommandOption {
 	}
 }
 func (p Invite) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	ctx := context.WithValue(context.Background(), models.UUIDKey, uuid.New())
+	ctx := context.WithValue(context.Background(), static.UUIDKey, uuid.New())
 	options := i.ApplicationCommandData().Options
 	optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
 	for _, opt := range options {
@@ -48,9 +48,9 @@ func (p Invite) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		invitedPlayerID = val.UserValue(s).ID
 	}
 	log.WithFields(log.Fields{
-		string(models.UUIDKey):     ctx.Value(models.UUIDKey),
-		string(models.CallerIDKey): i.Member.User.ID,
-		string(models.PlayerIDKey): invitedPlayerID,
+		string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+		string(static.CallerIDKey): i.Member.User.ID,
+		string(static.PlayerIDKey): invitedPlayerID,
 	}).Info("invite slash command invoked")
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -60,8 +60,8 @@ func (p Invite) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	})
 	if err != nil {
 		log.WithFields(log.Fields{
-			string(models.UUIDKey):  ctx.Value(models.UUIDKey),
-			string(models.ErrorKey): err.Error(),
+			string(static.UUIDKey):  ctx.Value(static.UUIDKey),
+			string(static.ErrorKey): err.Error(),
 		}).Error("failed to send message")
 		return
 	}
@@ -72,16 +72,16 @@ func (p Invite) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		})
 		if err != nil {
 			log.WithFields(log.Fields{
-				string(models.UUIDKey):  ctx.Value(models.UUIDKey),
-				string(models.ErrorKey): err.Error(),
+				string(static.UUIDKey):  ctx.Value(static.UUIDKey),
+				string(static.ErrorKey): err.Error(),
 			}).Error("failed to edit message")
 		}
 	}()
 	if invitedPlayerID == "" {
 		message = "Please enter user in discord."
 		log.WithFields(log.Fields{
-			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
-			string(models.CallerIDKey): i.Member.User.ID,
+			string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+			string(static.CallerIDKey): i.Member.User.ID,
 		}).Warning("invite failed, no arguments")
 		return
 	}
@@ -91,19 +91,19 @@ func (p Invite) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	} else {
 		message = "Failed to invite."
 		log.WithFields(log.Fields{
-			string(models.UUIDKey):     ctx.Value(models.UUIDKey),
-			string(models.CallerIDKey): i.Member.User.ID,
-			string(models.PlayerIDKey): invitedPlayerID,
-			string(models.ErrorKey):    err.Error(),
+			string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+			string(static.CallerIDKey): i.Member.User.ID,
+			string(static.PlayerIDKey): invitedPlayerID,
+			string(static.ErrorKey):    err.Error(),
 		}).Warning("invite failed")
 		switch {
-		case errors.Is(err, models.ErrTeamFull):
+		case errors.Is(err, static.ErrTeamFull):
 			message += " Your team is full."
-		case errors.Is(err, models.ErrUserAlreadyInTeam):
+		case errors.Is(err, static.ErrUserAlreadyInTeam):
 			message += " This user already has a team."
-		case errors.Is(err, models.ErrNotFound):
+		case errors.Is(err, static.ErrNotFound):
 			message += " You don't have a team."
-		case errors.Is(err, models.ErrNotTeamOwner):
+		case errors.Is(err, static.ErrNotTeamOwner):
 			message += " You are not the team owner."
 		default:
 			message += "Unexpected Error."
