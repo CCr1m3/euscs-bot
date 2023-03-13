@@ -58,8 +58,8 @@ func TestPlayer_Invite(t *testing.T) {
 			t.Errorf("unexpected error: %s", err)
 		}
 	})
-	team1.Players = Players{p1, p2, p3}
-	team1.Save(ctx)
+	team1.AddPlayer(ctx, p2)
+	team1.AddPlayer(ctx, p3)
 	t.Run("full", func(t *testing.T) {
 		_, err := p1.Invite(ctx, p4)
 		if !errors.Is(err, static.ErrTeamFull) {
@@ -106,6 +106,23 @@ func TestTeamInvitation_Accept(t *testing.T) {
 		err := invite4.Accept(ctx)
 		if !errors.Is(err, static.ErrTeamFull) {
 			t.Errorf("unexpected error, should be :%s", static.ErrTeamFull)
+		}
+	})
+}
+
+func TestTeamInvitation_Refuse(t *testing.T) {
+	Clear()
+	Init()
+	ctx := context.TODO()
+	p1, _ := CreatePlayerWithID(ctx, "12345")
+	p2, _ := CreatePlayerWithID(ctx, "12346")
+	p1.CreateTeamWithName(ctx, "team1")
+	invite2, _ := p1.Invite(ctx, p2)
+	t.Run("simple", func(t *testing.T) {
+		invite2, _ := GetTeamInvitationByID(ctx, invite2.MessageID)
+		err := invite2.Refuse(ctx)
+		if err != nil {
+			t.Errorf("unexpected error: %s", err)
 		}
 	})
 }

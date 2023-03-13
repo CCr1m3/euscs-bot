@@ -110,8 +110,7 @@ func (p *Player) Invite(ctx context.Context, p2 *Player) (*TeamInvitation, error
 }
 
 func (ti *TeamInvitation) Accept(ctx context.Context) error {
-	ti.Team.Players = append(ti.Team.Players, ti.Player)
-	return ti.Team.Save(ctx)
+	return ti.Team.AddPlayer(ctx, ti.Player)
 }
 
 func (ti *TeamInvitation) Refuse(ctx context.Context) error {

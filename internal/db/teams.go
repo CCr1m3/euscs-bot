@@ -50,97 +50,61 @@ func (t *Team) Delete(ctx context.Context) error {
 	return nil
 }
 
-func (t *Team) Save(ctx context.Context) error {
-	if len(t.Players) > 3 {
+func (t *Team) AddPlayer(ctx context.Context, player *Player) error {
+	if len(t.Players) >= 3 {
 		return static.ErrTeamFull
 	}
-	ownerInTeam := false
-	for _, player := range t.Players {
-		if t.OwnerID == player.DiscordID {
-			ownerInTeam = true
-		}
+	team, err := player.GetTeam(ctx)
+	if err != nil && !errors.Is(err, static.ErrNotFound) {
+		return err
+	} else if team != nil {
+		return static.ErrUserAlreadyInTeam
 	}
-	if !ownerInTeam {
+	_, err = db.Exec("INSERT INTO teamsplayers (team,playerID) VALUES (?,?)", t.Name, player.DiscordID)
+	if err != nil {
+		return static.ErrDB(err)
+	}
+	t.Players = append(t.Players, player)
+	return nil
+}
+
+func (t *Team) KickPlayer(ctx context.Context, player *Player) error {
+	if t.OwnerID == player.DiscordID {
 		return static.ErrOwnerNotInTeam
 	}
-	currentTeam, err := GetTeamByName(ctx, t.Name)
+	inTeam := false
+	for _, p2 := range t.Players {
+		if p2.DiscordID == player.DiscordID {
+			inTeam = true
+		}
+	}
+	if !inTeam {
+		return static.ErrPlayerNotInTeam
+	}
+	_, err := db.Exec("DELETE FROM teamsplayers WHERE team=? AND playerID=?", t.Name, player.DiscordID)
+	if err != nil {
+		return static.ErrDB(err)
+	}
+	err = getPlayersInTeam(ctx, t)
 	if err != nil {
 		return err
-	} else {
-		tx, err := db.Beginx()
-		if err != nil {
-			return static.ErrDB(err)
-		}
-		if currentTeam.OwnerID != t.OwnerID {
-			_, err = tx.NamedExec("UPDATE teams set ownerplayerID=:ownerplayerID where name=:name", t)
-			if err != nil {
-				err2 := tx.Rollback()
-				if err2 != nil {
-					return static.ErrDB(err2)
-				}
-				return static.ErrDB(err)
-			}
-		}
-		for _, currentPlayer := range currentTeam.Players {
-			playerKicked := true
-			for _, player := range t.Players {
-				if currentPlayer.DiscordID == player.DiscordID {
-					playerKicked = false
-				}
-			}
-			if playerKicked {
-				_, err = tx.Exec("DELETE FROM teamsplayers WHERE team=? AND playerID=?", t.Name, currentPlayer.DiscordID)
-				if err != nil {
-					err2 := tx.Rollback()
-					if err2 != nil {
-						return static.ErrDB(err2)
-					}
-					return static.ErrDB(err)
-				}
-			}
-		}
+	}
+	return nil
+}
 
-		for _, player := range t.Players {
-			newPlayer := true
-			for _, currentPlayer := range currentTeam.Players {
-				if currentPlayer.DiscordID == player.DiscordID {
-					newPlayer = false
-				}
-			}
-			if newPlayer {
-				team, err := GetTeamByPlayerID(ctx, player.DiscordID)
-				if err != nil && !errors.Is(err, static.ErrNotFound) {
-					err2 := tx.Rollback()
-					if err2 != nil {
-						return static.ErrDB(err2)
-					}
-					return static.ErrDB(err)
-				} else if team != nil {
-					err2 := tx.Rollback()
-					if err2 != nil {
-						return static.ErrDB(err2)
-					}
-					return static.ErrUserAlreadyInTeam
-				} else {
-					_, err = tx.Exec("INSERT INTO teamsplayers (team,playerID) VALUES (?,?)", t.Name, player.DiscordID)
-					if err != nil {
-						err2 := tx.Rollback()
-						if err2 != nil {
-							return static.ErrDB(err2)
-						}
-						return static.ErrDB(err)
-					}
-				}
-			}
+func (t *Team) SetOwner(ctx context.Context, player *Player) error {
+	inTeam := false
+	for _, p2 := range t.Players {
+		if p2.DiscordID == player.DiscordID {
+			inTeam = true
 		}
-		err = tx.Commit()
-		if err != nil {
-			err2 := tx.Rollback()
-			if err2 != nil {
-				return static.ErrDB(err2)
-			}
-			return static.ErrDB(err)
-		}
+	}
+	if !inTeam {
+		return static.ErrOwnerNotInTeam
+	}
+	_, err := db.Exec("UPDATE teams set ownerplayerID=? where name=?", player.DiscordID, t.Name)
+	if err != nil {
+		return static.ErrDB(err)
 	}
 	return nil
 }

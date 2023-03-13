@@ -105,62 +105,6 @@ func TestTeam_Delete(t *testing.T) {
 	})
 }
 
-func TestTeam_Save(t *testing.T) {
-	Clear()
-	Init()
-	ctx := context.TODO()
-	p1, _ := CreatePlayerWithID(ctx, "12345")
-	p2, _ := CreatePlayerWithID(ctx, "12346")
-	p3, _ := CreatePlayerWithID(ctx, "12347")
-	p4, _ := CreatePlayerWithID(ctx, "12348")
-	team1, _ := p1.CreateTeamWithName(ctx, "team1")
-	t.Run("savewith4players", func(t *testing.T) {
-		team1.Players = Players{p1, p2, p3, p4}
-		err := team1.Save(ctx)
-		if !errors.Is(err, static.ErrTeamFull) {
-			t.Errorf("error should be: %s", static.ErrTeamFull)
-		}
-	})
-	team2, _ := p2.CreateTeamWithName(ctx, "team2")
-	t.Run("savewithwrongownerid", func(t *testing.T) {
-		team2.OwnerID = p1.DiscordID
-		err := team2.Save(ctx)
-		if !errors.Is(err, static.ErrOwnerNotInTeam) {
-			t.Errorf("error should be: %s", static.ErrOwnerNotInTeam)
-		}
-	})
-
-	t.Run("saveandedit", func(t *testing.T) {
-		team1.Players = Players{p1, p3}
-		team1.OwnerID = p3.DiscordID
-		err := team1.Save(ctx)
-		if err != nil {
-			t.Errorf("unexpected error while saving team: %s", err.Error())
-		}
-	})
-	t.Run("tryingtoaddsomeonealreadyinateam", func(t *testing.T) {
-		team1.Players = Players{p1, p2, p3}
-		err := team1.Save(ctx)
-		if !errors.Is(err, static.ErrUserAlreadyInTeam) {
-			t.Errorf("error should be: %s", static.ErrUserAlreadyInTeam)
-		}
-	})
-	t.Run("kickowner", func(t *testing.T) {
-		team1.Players = Players{p4}
-		err := team1.Save(ctx)
-		if !errors.Is(err, static.ErrOwnerNotInTeam) {
-			t.Errorf("error should be: %s", static.ErrOwnerNotInTeam)
-		}
-	})
-	t.Run("kickplayers", func(t *testing.T) {
-		team1.Players = Players{p3}
-		err := team1.Save(ctx)
-		if err != nil {
-			t.Errorf("unexpected error while saving team: %s", err.Error())
-		}
-	})
-}
-
 func TestPlayer_GetTeam(t *testing.T) {
 	Clear()
 	Init()
@@ -182,6 +126,97 @@ func TestPlayer_GetTeam(t *testing.T) {
 			t.Logf("want: %#v\n", team)
 			t.Logf("got: %#v\n", team2)
 			t.Errorf("teams are different")
+		}
+	})
+}
+
+func TestTeam_AddPlayer(t *testing.T) {
+	Clear()
+	Init()
+	ctx := context.TODO()
+	p1, _ := CreatePlayerWithID(ctx, "12345")
+	p2, _ := CreatePlayerWithID(ctx, "12346")
+	p3, _ := CreatePlayerWithID(ctx, "12347")
+	p4, _ := CreatePlayerWithID(ctx, "12348")
+	p5, _ := CreatePlayerWithID(ctx, "12349")
+	team1, _ := p1.CreateTeamWithName(ctx, "team1")
+	p5.CreateTeamWithName(ctx, "team5")
+	t.Run("addoneplayer", func(t *testing.T) {
+		err := team1.AddPlayer(ctx, p2)
+		if err != nil {
+			t.Errorf("unexpected error: %s", err)
+		}
+	})
+	t.Run("addotherteam", func(t *testing.T) {
+		err := team1.AddPlayer(ctx, p5)
+		if !errors.Is(err, static.ErrUserAlreadyInTeam) {
+			t.Errorf("unexpected error, should be: %s", static.ErrUserAlreadyInTeam)
+		}
+	})
+	t.Run("addfull", func(t *testing.T) {
+		err := team1.AddPlayer(ctx, p3)
+		if err != nil {
+			t.Errorf("unexpected error: %s", err)
+		}
+		err = team1.AddPlayer(ctx, p4)
+		if !errors.Is(err, static.ErrTeamFull) {
+			t.Errorf("unexpected error, should be: %s", static.ErrTeamFull)
+		}
+	})
+}
+
+func TestTeam_KickPlayer(t *testing.T) {
+	Clear()
+	Init()
+	ctx := context.TODO()
+	p1, _ := CreatePlayerWithID(ctx, "12345")
+	p2, _ := CreatePlayerWithID(ctx, "12346")
+	p3, _ := CreatePlayerWithID(ctx, "12347")
+	p4, _ := CreatePlayerWithID(ctx, "12348")
+	team1, _ := p1.CreateTeamWithName(ctx, "team1")
+	team1.AddPlayer(ctx, p2)
+	team1.AddPlayer(ctx, p3)
+	t.Run("kickowner", func(t *testing.T) {
+		err := team1.KickPlayer(ctx, p1)
+		if !errors.Is(err, static.ErrOwnerNotInTeam) {
+			t.Errorf("unexpected error, should be: %s", static.ErrOwnerNotInTeam)
+		}
+	})
+	t.Run("kick", func(t *testing.T) {
+		err := team1.KickPlayer(ctx, p2)
+		if err != nil {
+			t.Errorf("unexpected error: %s", err)
+		}
+	})
+	t.Run("kicknobody", func(t *testing.T) {
+		err := team1.KickPlayer(ctx, p4)
+		if !errors.Is(err, static.ErrPlayerNotInTeam) {
+			t.Errorf("unexpected error, should be: %s", static.ErrPlayerNotInTeam)
+		}
+	})
+}
+
+func TestTeam_SetOwner(t *testing.T) {
+	Clear()
+	Init()
+	ctx := context.TODO()
+	p1, _ := CreatePlayerWithID(ctx, "12345")
+	p2, _ := CreatePlayerWithID(ctx, "12346")
+	p3, _ := CreatePlayerWithID(ctx, "12347")
+	p4, _ := CreatePlayerWithID(ctx, "12348")
+	team1, _ := p1.CreateTeamWithName(ctx, "team1")
+	team1.AddPlayer(ctx, p2)
+	team1.AddPlayer(ctx, p3)
+	t.Run("setownernotinteam", func(t *testing.T) {
+		err := team1.SetOwner(ctx, p4)
+		if !errors.Is(err, static.ErrOwnerNotInTeam) {
+			t.Errorf("unexpected error, should be: %s", static.ErrOwnerNotInTeam)
+		}
+	})
+	t.Run("setowner", func(t *testing.T) {
+		err := team1.SetOwner(ctx, p2)
+		if err != nil {
+			t.Errorf("unexpected error: %s", err)
 		}
 	})
 }
