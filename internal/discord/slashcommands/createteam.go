@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/euscs/euscs-bot/internal/db"
 	"github.com/euscs/euscs-bot/internal/static"
-	"github.com/euscs/euscs-bot/internal/team"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
@@ -85,7 +85,16 @@ func (p Createteam) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}).Warning("createteam failed, no arguments")
 		return
 	}
-	err = team.CreateTeam(ctx, i.Member.User.ID, teamName)
+	player, err := db.GetOrCreatePlayerByID(ctx, i.Member.User.ID)
+	if err != nil {
+		log.WithFields(log.Fields{
+			string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+			string(static.CallerIDKey): i.Member.User.ID,
+			string(static.ErrorKey):    err.Error(),
+		}).Error("failed to get player")
+		message = fmt.Sprintf("Failed to created team : %s", teamName)
+	}
+	_, err = player.CreateTeamWithName(ctx, teamName)
 	if err == nil {
 		message = fmt.Sprintf("Succesfully created team : %s", teamName)
 	} else {

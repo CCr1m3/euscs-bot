@@ -3,10 +3,11 @@ package slashcommands
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/euscs/euscs-bot/internal/db"
 	"github.com/euscs/euscs-bot/internal/static"
-	"github.com/euscs/euscs-bot/internal/team"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
@@ -85,7 +86,25 @@ func (p Invite) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}).Warning("invite failed, no arguments")
 		return
 	}
-	err = team.InvitePlayerToTeam(ctx, i.Member.User.ID, invitedPlayerID)
+	player, err := db.GetOrCreatePlayerByID(ctx, i.Member.User.ID)
+	if err != nil {
+		log.WithFields(log.Fields{
+			string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+			string(static.CallerIDKey): i.Member.User.ID,
+			string(static.ErrorKey):    err.Error(),
+		}).Error("failed to get player")
+		message = fmt.Sprintf("Failed to invite.")
+	}
+	player2, err := db.GetOrCreatePlayerByID(ctx, invitedPlayerID)
+	if err != nil {
+		log.WithFields(log.Fields{
+			string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+			string(static.CallerIDKey): i.Member.User.ID,
+			string(static.ErrorKey):    err.Error(),
+		}).Error("failed to get invited player")
+		message = fmt.Sprintf("Failed to invite.")
+	}
+	_, err = player.Invite(ctx, player2)
 	if err == nil {
 		message = "Successfully invited."
 	} else {
@@ -101,7 +120,7 @@ func (p Invite) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			message += " Your team is full."
 		case errors.Is(err, static.ErrUserAlreadyInTeam):
 			message += " This user already has a team."
-		case errors.Is(err, static.ErrNotFound):
+		case errors.Is(err, static.ErrNoTeam):
 			message += " You don't have a team."
 		case errors.Is(err, static.ErrNotTeamOwner):
 			message += " You are not the team owner."

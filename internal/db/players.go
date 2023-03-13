@@ -21,20 +21,28 @@ func (p *Player) Save(ctx context.Context) error {
 		return static.ErrDiscordIDRequired
 	}
 	_, err := GetPlayerByID(ctx, p.DiscordID)
-	if err != nil && !errors.Is(err, static.ErrNotFound) {
+	if err != nil {
 		return err
-	} else if errors.Is(err, static.ErrNotFound) {
-		_, err := db.NamedExec("INSERT INTO players (discordID,twitchID,elo,osuser) VALUES (:discordID,:twitchID,:elo,:osuser)", p)
-		if err != nil {
-			return static.ErrDB(err)
-		}
-	} else {
-		_, err := db.NamedExec("UPDATE players SET twitchID=:twitchID,elo=:elo,osuser=:osuser WHERE discordID=:discordID", p)
-		if err != nil {
-			return static.ErrDB(err)
-		}
+	}
+	_, err = db.NamedExec("UPDATE players SET twitchID=:twitchID,elo=:elo,osuser=:osuser WHERE discordID=:discordID", p)
+	if err != nil {
+		return static.ErrDB(err)
 	}
 	return nil
+}
+
+func CreatePlayerWithID(ctx context.Context, discordID string) (*Player, error) {
+	_, err := GetPlayerByID(ctx, discordID)
+	if err != nil && !errors.Is(err, static.ErrNotFound) {
+		return nil, err
+	} else if err == nil {
+		return nil, static.ErrAlreadyExists
+	}
+	_, err = db.Exec("INSERT INTO players (discordID) VALUES (?)", discordID)
+	if err != nil {
+		return nil, static.ErrDB(err)
+	}
+	return &Player{DiscordID: discordID, Elo: 1500}, nil
 }
 
 func GetPlayerByID(ctx context.Context, discordID string) (*Player, error) {
@@ -64,15 +72,13 @@ func GetPlayerByUsername(ctx context.Context, osuser string) (*Player, error) {
 func GetOrCreatePlayerByID(ctx context.Context, discordID string) (*Player, error) {
 	p, err := GetPlayerByID(ctx, discordID)
 	if err != nil && errors.Is(err, static.ErrNotFound) {
-		p := &Player{DiscordID: discordID}
-		err = p.Save(ctx)
-		if err != nil {
-			return nil, err
-		} else {
-			return p, nil
-		}
+		return CreatePlayerWithID(ctx, discordID)
 	} else if err != nil {
 		return nil, err
 	}
 	return p, nil
+}
+
+func (p *Player) isDummy() bool {
+	return len(p.DiscordID) < 10
 }

@@ -15,6 +15,10 @@ type Team struct {
 }
 
 func (t *Team) Delete(ctx context.Context) error {
+	_, err := GetTeamByName(ctx, t.Name)
+	if err != nil {
+		return err
+	}
 	tx, err := db.Beginx()
 	if err != nil {
 		return static.ErrDB(err)
@@ -60,54 +64,8 @@ func (t *Team) Save(ctx context.Context) error {
 		return static.ErrOwnerNotInTeam
 	}
 	currentTeam, err := GetTeamByName(ctx, t.Name)
-	if err != nil && !errors.Is(err, static.ErrNotFound) {
+	if err != nil {
 		return err
-	} else if errors.Is(err, static.ErrNotFound) {
-		tx, err := db.Beginx()
-		if err != nil {
-			return static.ErrDB(err)
-		}
-		_, err = tx.NamedExec("INSERT INTO teams (name,ownerplayerID) VALUES(:name,:ownerplayerID)", t)
-		if err != nil {
-			err2 := tx.Rollback()
-			if err2 != nil {
-				return static.ErrDB(err2)
-			}
-			return static.ErrDB(err)
-		}
-		for _, player := range t.Players {
-			team, err := GetTeamByPlayerID(ctx, player.DiscordID)
-			if err != nil && !errors.Is(err, static.ErrNotFound) {
-				err2 := tx.Rollback()
-				if err2 != nil {
-					return static.ErrDB(err2)
-				}
-				return static.ErrDB(err)
-			} else if team != nil {
-				err2 := tx.Rollback()
-				if err2 != nil {
-					return static.ErrDB(err2)
-				}
-				return static.ErrUserAlreadyInTeam
-			} else {
-				_, err = tx.Exec("INSERT INTO teamsplayers (team,playerID) VALUES(?,?)", t.Name, player.DiscordID)
-				if err != nil {
-					err2 := tx.Rollback()
-					if err2 != nil {
-						return static.ErrDB(err2)
-					}
-					return static.ErrDB(err)
-				}
-			}
-		}
-		err = tx.Commit()
-		if err != nil {
-			err2 := tx.Rollback()
-			if err2 != nil {
-				return static.ErrDB(err2)
-			}
-			return static.ErrDB(err)
-		}
 	} else {
 		tx, err := db.Beginx()
 		if err != nil {
@@ -187,6 +145,50 @@ func (t *Team) Save(ctx context.Context) error {
 	return nil
 }
 
+func (p *Player) CreateTeamWithName(ctx context.Context, teamname string) (*Team, error) {
+	_, err := GetTeamByName(ctx, teamname)
+	if err != nil && !errors.Is(err, static.ErrNotFound) {
+		return nil, err
+	} else if err == nil {
+		return nil, static.ErrTeamnameTaken
+	}
+	_, err = GetTeamByPlayerID(ctx, p.DiscordID)
+	if err != nil && !errors.Is(err, static.ErrNotFound) {
+		return nil, err
+	} else if err == nil {
+		return nil, static.ErrUserAlreadyInTeam
+	}
+	tx, err := db.Beginx()
+	if err != nil {
+		return nil, static.ErrDB(err)
+	}
+	_, err = tx.Exec("INSERT INTO teams (name,ownerplayerID) VALUES(?,?)", teamname, p.DiscordID)
+	if err != nil {
+		err2 := tx.Rollback()
+		if err2 != nil {
+			return nil, static.ErrDB(err2)
+		}
+		return nil, static.ErrDB(err)
+	}
+	_, err = tx.Exec("INSERT INTO teamsplayers (team,playerID) VALUES (?,?)", teamname, p.DiscordID)
+	if err != nil {
+		err2 := tx.Rollback()
+		if err2 != nil {
+			return nil, static.ErrDB(err2)
+		}
+		return nil, static.ErrDB(err)
+	}
+	err = tx.Commit()
+	if err != nil {
+		err2 := tx.Rollback()
+		if err2 != nil {
+			return nil, static.ErrDB(err2)
+		}
+		return nil, static.ErrDB(err)
+	}
+	return &Team{OwnerID: p.DiscordID, Players: Players{p}, Name: teamname}, nil
+}
+
 func GetTeamByName(ctx context.Context, name string) (*Team, error) {
 	var team Team
 	err := db.Get(&team, "SELECT name,ownerplayerID FROM teams WHERE name=?", name)
@@ -198,7 +200,7 @@ func GetTeamByName(ctx context.Context, name string) (*Team, error) {
 	}
 	err = getPlayersInTeam(ctx, &team)
 	if err != nil {
-		return nil, static.ErrDB(err)
+		return nil, err
 	}
 	return &team, nil
 }
@@ -214,7 +216,23 @@ func GetTeamByPlayerID(ctx context.Context, playerID string) (*Team, error) {
 	}
 	err = getPlayersInTeam(ctx, &team)
 	if err != nil {
+		return nil, err
+	}
+	return &team, nil
+}
+
+func (p *Player) GetTeam(ctx context.Context) (*Team, error) {
+	var team Team
+	err := db.Get(&team, "SELECT name,ownerplayerID FROM teams JOIN teamsplayers ON teamsplayers.team = teams.name WHERE teamsplayers.playerID=?", p.DiscordID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, static.ErrNotFound
+		}
 		return nil, static.ErrDB(err)
+	}
+	err = getPlayersInTeam(ctx, &team)
+	if err != nil {
+		return nil, err
 	}
 	return &team, nil
 }
@@ -228,7 +246,7 @@ func GetTeams(ctx context.Context) ([]*Team, error) {
 	for i := range teams {
 		err = getPlayersInTeam(ctx, teams[i])
 		if err != nil {
-			return nil, static.ErrDB(err)
+			return nil, err
 		}
 	}
 	return teams, nil

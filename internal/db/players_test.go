@@ -10,7 +10,7 @@ import (
 )
 
 func TestGetPlayerByUsername(t *testing.T) {
-	clearDB()
+	Clear()
 	Init()
 	ctx := context.TODO()
 	t.Run("empty", func(t *testing.T) {
@@ -19,7 +19,8 @@ func TestGetPlayerByUsername(t *testing.T) {
 			t.Errorf("found unexisting player")
 		}
 	})
-	p1 := &Player{DiscordID: "12345", OSUser: "osuser"}
+	p1, _ := CreatePlayerWithID(ctx, "12345")
+	p1.OSUser = "osuser"
 	p1.Save(ctx)
 	t.Run("success", func(t *testing.T) {
 		p2, err := GetPlayerByUsername(ctx, "osuser")
@@ -27,15 +28,13 @@ func TestGetPlayerByUsername(t *testing.T) {
 			t.Errorf("unexpected error, %s", err.Error())
 		}
 		if !cmp.Equal(p1, p2) {
-			t.Logf("want: %#v\n", p1)
-			t.Logf("got: %#v\n", p2)
-			t.Errorf("players are different")
+			t.Errorf("players are different: %s", cmp.Diff(p1, p2))
 		}
 	})
 }
 
 func TestGetPlayerByID(t *testing.T) {
-	clearDB()
+	Clear()
 	Init()
 	ctx := context.TODO()
 	t.Run("empty", func(t *testing.T) {
@@ -44,57 +43,43 @@ func TestGetPlayerByID(t *testing.T) {
 			t.Errorf("found unexisting player")
 		}
 	})
-	p1 := &Player{DiscordID: "12345"}
-	p1.Save(ctx)
+	p1, _ := CreatePlayerWithID(ctx, "12345")
 	t.Run("success", func(t *testing.T) {
 		p2, err := GetPlayerByID(ctx, "12345")
 		if err != nil {
 			t.Errorf("unexpected error, %s", err.Error())
 		}
 		if !cmp.Equal(p1, p2) {
-			t.Logf("want: %#v\n", p1)
-			t.Logf("got: %#v\n", p2)
-			t.Errorf("players are different")
+			t.Errorf("players are different: %s", cmp.Diff(p1, p2))
 		}
 	})
 }
 
 func TestPlayer_Save(t *testing.T) {
-	clearDB()
+	Clear()
 	Init()
 	ctx := context.TODO()
+
+	p1, _ := CreatePlayerWithID(ctx, "12345")
 	t.Run("simplesave", func(t *testing.T) {
-		p := &Player{DiscordID: "12345"}
-		err := p.Save(ctx)
+		p1.Elo = 1500
+		err := p1.Save(ctx)
 		if err != nil {
 			t.Errorf("unexpected error, %s", err.Error())
 		}
 	})
-	t.Run("savewithdiscourdid", func(t *testing.T) {
-		p := &Player{}
-		err := p.Save(ctx)
+	p2, _ := CreatePlayerWithID(ctx, "123456")
+	t.Run("savewithdiscordid", func(t *testing.T) {
+		p2.DiscordID = ""
+		err := p2.Save(ctx)
 		if !errors.Is(err, static.ErrDiscordIDRequired) {
 			t.Errorf("error should be: %s", static.ErrDiscordIDRequired)
-		}
-	})
-	t.Run("saveandedit", func(t *testing.T) {
-		p := &Player{DiscordID: "12346"}
-		err := p.Save(ctx)
-		if err != nil {
-			t.Errorf("unexpected error, %s", err.Error())
-		}
-		p.Elo = 1600
-		p.TwitchID = "1233456"
-		p.OSUser = "osuser"
-		err = p.Save(ctx)
-		if err != nil {
-			t.Errorf("unexpected error, %s", err.Error())
 		}
 	})
 }
 
 func TestGetOrCreatePlayerByID(t *testing.T) {
-	clearDB()
+	Clear()
 	Init()
 	ctx := context.TODO()
 	t.Run("firstgetorcreate", func(t *testing.T) {
@@ -112,6 +97,29 @@ func TestGetOrCreatePlayerByID(t *testing.T) {
 		_, err := GetOrCreatePlayerByID(ctx, "12345")
 		if err != nil {
 			t.Errorf("unexpected error, %s", err.Error())
+		}
+	})
+}
+
+func TestCreatePlayerWithID(t *testing.T) {
+	Clear()
+	Init()
+	ctx := context.TODO()
+	t.Run("firstcreate", func(t *testing.T) {
+		_, err := CreatePlayerWithID(ctx, "12345")
+		if err != nil {
+			t.Errorf("unexpected error, %s", err.Error())
+		}
+		_, err = GetPlayerByID(ctx, "12345")
+		if err != nil {
+			t.Errorf("player should be created")
+		}
+	})
+
+	t.Run("secondcreate", func(t *testing.T) {
+		_, err := CreatePlayerWithID(ctx, "12345")
+		if !errors.Is(err, static.ErrAlreadyExists) {
+			t.Errorf("unexpected error, should be: %s", static.ErrAlreadyExists)
 		}
 	})
 }

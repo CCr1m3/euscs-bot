@@ -10,7 +10,7 @@ import (
 )
 
 func Test_db_GetTeams(t *testing.T) {
-	clearDB()
+	Clear()
 	Init()
 	ctx := context.TODO()
 	t.Run("empty", func(t *testing.T) {
@@ -22,10 +22,8 @@ func Test_db_GetTeams(t *testing.T) {
 			t.Errorf("teams is not empty")
 		}
 	})
-	p1 := &Player{DiscordID: "12345"}
-	p1.Save(ctx)
-	team := Team{Players: Players{p1}, OwnerID: p1.DiscordID, Name: "teamname"}
-	team.Save(ctx)
+	p, _ := CreatePlayerWithID(ctx, "12345")
+	p.CreateTeamWithName(ctx, "teamname")
 	t.Run("with1team", func(t *testing.T) {
 		teams, err := GetTeams(ctx)
 		if err != nil {
@@ -38,13 +36,11 @@ func Test_db_GetTeams(t *testing.T) {
 }
 
 func Test_db_GetTeamByName(t *testing.T) {
-	clearDB()
+	Clear()
 	Init()
 	ctx := context.TODO()
-	p1 := &Player{DiscordID: "12345"}
-	p1.Save(ctx)
-	team := &Team{Players: Players{p1}, OwnerID: p1.DiscordID, Name: "teamname"}
-	team.Save(ctx)
+	p, _ := CreatePlayerWithID(ctx, "12345")
+	team, _ := p.CreateTeamWithName(ctx, "teamname")
 	t.Run("wrongname", func(t *testing.T) {
 		_, err := GetTeamByName(ctx, "wrongname")
 		if !errors.Is(err, static.ErrNotFound) {
@@ -57,21 +53,17 @@ func Test_db_GetTeamByName(t *testing.T) {
 			t.Errorf("unexpected error, %s", err.Error())
 		}
 		if !cmp.Equal(team, team2) {
-			t.Logf("want: %#v\n", team)
-			t.Logf("got: %#v\n", team2)
-			t.Errorf("teams are different")
+			t.Errorf("teams are different: %s", cmp.Diff(team, team2))
 		}
 	})
 }
 
 func Test_db_GetTeamByPlayerID(t *testing.T) {
-	clearDB()
+	Clear()
 	Init()
 	ctx := context.TODO()
-	p1 := &Player{DiscordID: "12345"}
-	p1.Save(ctx)
-	team := &Team{Players: Players{p1}, OwnerID: p1.DiscordID, Name: "teamname"}
-	team.Save(ctx)
+	p, _ := CreatePlayerWithID(ctx, "12345")
+	team, _ := p.CreateTeamWithName(ctx, "teamname")
 	t.Run("wrongid", func(t *testing.T) {
 		_, err := GetTeamByPlayerID(ctx, "123456")
 		if !errors.Is(err, static.ErrNotFound) {
@@ -92,20 +84,19 @@ func Test_db_GetTeamByPlayerID(t *testing.T) {
 }
 
 func TestTeam_Delete(t *testing.T) {
-	clearDB()
+	Clear()
 	Init()
 	ctx := context.TODO()
-	p1 := &Player{DiscordID: "12345"}
-	p1.Save(ctx)
-	team := Team{Players: Players{p1}, OwnerID: p1.DiscordID, Name: "teamname"}
-
+	p, _ := CreatePlayerWithID(ctx, "12345")
+	team := &Team{Name: "test"}
 	t.Run("deleteunexistingteam", func(t *testing.T) {
 		err := team.Delete(ctx)
-		if err != nil {
-			t.Errorf("unexpected error while deleting team: %s", err.Error())
+		if !errors.Is(err, static.ErrNotFound) {
+			t.Errorf("unexpected error should be: %s", static.ErrNotFound)
 		}
 	})
-	team.Save(ctx)
+
+	team, _ = p.CreateTeamWithName(ctx, "teamname")
 	t.Run("deleteteam", func(t *testing.T) {
 		err := team.Delete(ctx)
 		if err != nil {
@@ -115,80 +106,82 @@ func TestTeam_Delete(t *testing.T) {
 }
 
 func TestTeam_Save(t *testing.T) {
-	clearDB()
+	Clear()
 	Init()
 	ctx := context.TODO()
-	p1 := &Player{DiscordID: "12345"}
-	p1.Save(ctx)
-	p2 := &Player{DiscordID: "12346"}
-	p2.Save(ctx)
-	p3 := &Player{DiscordID: "12347"}
-	p3.Save(ctx)
-	p4 := &Player{DiscordID: "12348"}
-	p4.Save(ctx)
-	team := Team{Players: Players{p1, p2, p3, p4}, OwnerID: p1.DiscordID, Name: "teamname"}
+	p1, _ := CreatePlayerWithID(ctx, "12345")
+	p2, _ := CreatePlayerWithID(ctx, "12346")
+	p3, _ := CreatePlayerWithID(ctx, "12347")
+	p4, _ := CreatePlayerWithID(ctx, "12348")
+	team1, _ := p1.CreateTeamWithName(ctx, "team1")
 	t.Run("savewith4players", func(t *testing.T) {
-		err := team.Save(ctx)
+		team1.Players = Players{p1, p2, p3, p4}
+		err := team1.Save(ctx)
 		if !errors.Is(err, static.ErrTeamFull) {
 			t.Errorf("error should be: %s", static.ErrTeamFull)
 		}
 	})
-	team = Team{Players: Players{p1}, OwnerID: p2.DiscordID, Name: "teamname"}
+	team2, _ := p2.CreateTeamWithName(ctx, "team2")
 	t.Run("savewithwrongownerid", func(t *testing.T) {
-		err := team.Save(ctx)
-		if !errors.Is(err, static.ErrOwnerNotInTeam) {
-			t.Errorf("error should be: %s", static.ErrOwnerNotInTeam)
-		}
-	})
-	team = Team{Players: Players{p1}, OwnerID: p1.DiscordID, Name: "teamname"}
-	t.Run("simplesave", func(t *testing.T) {
-		err := team.Save(ctx)
-		if err != nil {
-			t.Errorf("unexpected error while saving team: %s", err.Error())
-		}
-	})
-	t.Run("saveandedit", func(t *testing.T) {
-		err := team.Save(ctx)
-		if err != nil {
-			t.Errorf("unexpected error while saving team: %s", err.Error())
-		}
-		team.Players = append(team.Players, p2)
-		team.OwnerID = p2.DiscordID
-		team.Save(ctx)
-		if err != nil {
-			t.Errorf("unexpected error while saving team: %s", err.Error())
-		}
-	})
-	team2 := Team{Players: Players{p1}, OwnerID: p1.DiscordID, Name: "teamname2"}
-	t.Run("tryingtoaddsomeonealreadyinateam", func(t *testing.T) {
+		team2.OwnerID = p1.DiscordID
 		err := team2.Save(ctx)
-		if !errors.Is(err, static.ErrUserAlreadyInTeam) {
-			t.Errorf("error should be: %s", static.ErrUserAlreadyInTeam)
-		}
-	})
-	team3 := Team{Players: Players{p3}, OwnerID: p3.DiscordID, Name: "teamname2"}
-	team3.Save(ctx)
-	t.Run("tryingtoaddsomeonealreadyinateambis", func(t *testing.T) {
-		team3.Players = append(team3.Players, p1)
-		err := team3.Save(ctx)
-		if !errors.Is(err, static.ErrUserAlreadyInTeam) {
-			t.Errorf("error should be: %s", static.ErrUserAlreadyInTeam)
-		}
-	})
-	team3 = Team{Players: Players{p3, p4}, OwnerID: p3.DiscordID, Name: "teamname2"}
-	team3.Save(ctx)
-	t.Run("kickowner", func(t *testing.T) {
-		team3.Players = Players{p4}
-		err := team3.Save(ctx)
 		if !errors.Is(err, static.ErrOwnerNotInTeam) {
 			t.Errorf("error should be: %s", static.ErrOwnerNotInTeam)
 		}
 	})
-	t.Run("kickplayer", func(t *testing.T) {
-		team3.Players = Players{p3}
-		err := team3.Save(ctx)
+
+	t.Run("saveandedit", func(t *testing.T) {
+		team1.Players = Players{p1, p3}
+		team1.OwnerID = p3.DiscordID
+		err := team1.Save(ctx)
 		if err != nil {
 			t.Errorf("unexpected error while saving team: %s", err.Error())
+		}
+	})
+	t.Run("tryingtoaddsomeonealreadyinateam", func(t *testing.T) {
+		team1.Players = Players{p1, p2, p3}
+		err := team1.Save(ctx)
+		if !errors.Is(err, static.ErrUserAlreadyInTeam) {
+			t.Errorf("error should be: %s", static.ErrUserAlreadyInTeam)
+		}
+	})
+	t.Run("kickowner", func(t *testing.T) {
+		team1.Players = Players{p4}
+		err := team1.Save(ctx)
+		if !errors.Is(err, static.ErrOwnerNotInTeam) {
+			t.Errorf("error should be: %s", static.ErrOwnerNotInTeam)
+		}
+	})
+	t.Run("kickplayers", func(t *testing.T) {
+		team1.Players = Players{p3}
+		err := team1.Save(ctx)
+		if err != nil {
+			t.Errorf("unexpected error while saving team: %s", err.Error())
+		}
+	})
+}
+
+func TestPlayer_GetTeam(t *testing.T) {
+	Clear()
+	Init()
+	ctx := context.TODO()
+	p, _ := CreatePlayerWithID(ctx, "12345")
+	t.Run("noteam", func(t *testing.T) {
+		_, err := p.GetTeam(ctx)
+		if !errors.Is(err, static.ErrNotFound) {
+			t.Errorf("unexpected error, should be: %s", static.ErrNotFound)
+		}
+	})
+	team, _ := p.CreateTeamWithName(ctx, "teamname")
+	t.Run("success", func(t *testing.T) {
+		team2, err := p.GetTeam(ctx)
+		if err != nil {
+			t.Errorf("unexpected error, %s", err.Error())
+		}
+		if !cmp.Equal(team, team2) {
+			t.Logf("want: %#v\n", team)
+			t.Logf("got: %#v\n", team2)
+			t.Errorf("teams are different")
 		}
 	})
 }

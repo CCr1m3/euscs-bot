@@ -6,7 +6,7 @@ import (
 )
 
 func Test_db_Markov(t *testing.T) {
-	clearDB()
+	Clear()
 	Init()
 	ctx := context.TODO()
 	m1 := &Markov{Word1: "__start__", Word2: "i", Word3: "love"}

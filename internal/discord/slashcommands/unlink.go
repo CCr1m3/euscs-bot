@@ -77,7 +77,6 @@ func (p Unlink) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			}).Error("failed to edit message")
 		}
 	}()
-
 	if i.Member.Permissions&discordgo.PermissionModerateMembers != discordgo.PermissionModerateMembers {
 		message = "You do not have the permission to unlink."
 		return

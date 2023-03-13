@@ -3,9 +3,13 @@ package db
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
+	"github.com/bwmarrin/discordgo"
+	"github.com/euscs/euscs-bot/internal/discord"
 	"github.com/euscs/euscs-bot/internal/static"
+	"github.com/google/uuid"
 )
 
 type InvitationState int
@@ -42,36 +46,74 @@ func GetTeamInvitationByID(ctx context.Context, messageID string) (*TeamInvitati
 	if err != nil {
 		return nil, err
 	}
-	invite := TeamInvitation{Player: player, Team: team, MessageID: inviteTmp.MessageID}
+	invite := TeamInvitation{Player: player, Team: team, MessageID: inviteTmp.MessageID, Timestamp: inviteTmp.Timestamp}
 	return &invite, nil
 }
 
-func (i *TeamInvitation) Save(ctx context.Context) error {
-	if i.Player == nil {
-		return static.ErrPlayerRequired
+func (p *Player) Invite(ctx context.Context, p2 *Player) (*TeamInvitation, error) {
+	team, err := p.GetTeam(ctx)
+	if err != nil {
+		if errors.Is(err, static.ErrNotFound) {
+			return nil, static.ErrNoTeam
+		}
+		return nil, err
 	}
-	if i.Team == nil {
-		return static.ErrTeamRequired
+	if len(team.Players) >= 3 {
+		return nil, static.ErrTeamFull
 	}
-	if i.MessageID == "" {
-		return static.ErrMessageIDRequired
-	}
-	if i.Timestamp == 0 {
-		i.Timestamp = int(time.Now().Unix())
-	}
-	_, err := GetTeamInvitationByID(ctx, i.MessageID)
+	team2, err := p2.GetTeam(ctx)
 	if err != nil && !errors.Is(err, static.ErrNotFound) {
-		return err
-	} else if errors.Is(err, static.ErrNotFound) {
-		_, err := db.Exec("INSERT INTO teamsinvitations (playerID,team,messageID,timestamp,state) VALUES (?,?,?,?,?)", i.Player.DiscordID, i.Team.Name, i.MessageID, i.Timestamp, i.State)
-		if err != nil {
-			return static.ErrDB(err)
-		}
-	} else {
-		_, err := db.NamedExec("UPDATE teamsinvitations SET state=:state WHERE messageID=:messageID", i)
-		if err != nil {
-			return static.ErrDB(err)
-		}
+		return nil, err
+	} else if team2 != nil {
+		return nil, static.ErrUserAlreadyInTeam
 	}
+
+	var messageID string
+	if p2.isDummy() {
+		messageID = uuid.New().String()
+	} else {
+		session := discord.GetSession()
+		channel, err := session.UserChannelCreate(p2.DiscordID)
+		if err != nil {
+			return nil, err
+		}
+		messageContent := fmt.Sprintf("You have been invited by %s to the team '%s'", "<@"+p.DiscordID+">", team.Name)
+		message, err := session.ChannelMessageSendComplex(channel.ID, &discordgo.MessageSend{
+			Content: messageContent,
+			Components: []discordgo.MessageComponent{
+				discordgo.ActionsRow{
+					Components: []discordgo.MessageComponent{
+						discordgo.Button{
+							Label:    "Accept",
+							Style:    discordgo.PrimaryButton,
+							CustomID: "accept_invite",
+						},
+						discordgo.Button{
+							Label:    "Refuse",
+							Style:    discordgo.DangerButton,
+							CustomID: "refuse_invite",
+						},
+					},
+				},
+			}})
+		if err != nil {
+			return nil, err
+		}
+		messageID = message.ID
+	}
+	timestamp := int(time.Now().Unix())
+	_, err = db.Exec("INSERT INTO teamsinvitations (playerID,team,messageID,timestamp,state) VALUES (?,?,?,?,?)", p2.DiscordID, team.Name, messageID, timestamp, InvitationPending)
+	if err != nil {
+		return nil, static.ErrDB(err)
+	}
+	return &TeamInvitation{Player: p2, Team: team, MessageID: messageID, Timestamp: timestamp, State: InvitationPending}, nil
+}
+
+func (ti *TeamInvitation) Accept(ctx context.Context) error {
+	ti.Team.Players = append(ti.Team.Players, ti.Player)
+	return ti.Team.Save(ctx)
+}
+
+func (ti *TeamInvitation) Refuse(ctx context.Context) error {
 	return nil
 }

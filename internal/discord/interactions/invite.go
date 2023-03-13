@@ -57,8 +57,7 @@ func (p AcceptInvite) Run(s *discordgo.Session, i *discordgo.InteractionCreate) 
 			Content:    &i.Message.Content,
 		})
 	}()
-	invitation.Team.Players = append(invitation.Team.Players, invitation.Player)
-	err = invitation.Team.Save(ctx)
+	err = invitation.Accept(ctx)
 	if err != nil {
 		log.WithFields(log.Fields{
 			string(static.UUIDKey):  ctx.Value(static.UUIDKey),
@@ -91,7 +90,7 @@ func (p RefuseInvite) Run(s *discordgo.Session, i *discordgo.InteractionCreate) 
 		}).Error("failed to send message")
 		return
 	}
-	_, err = db.GetTeamInvitationByID(ctx, i.Message.ID)
+	invitation, err := db.GetTeamInvitationByID(ctx, i.Message.ID)
 	if err != nil {
 		log.WithFields(log.Fields{
 			string(static.UUIDKey):  ctx.Value(static.UUIDKey),
@@ -117,5 +116,15 @@ func (p RefuseInvite) Run(s *discordgo.Session, i *discordgo.InteractionCreate) 
 			Content:    &i.Message.Content,
 		})
 	}()
-	message = "Successfully refused invitation."
+
+	err = invitation.Refuse(ctx)
+	if err != nil {
+		log.WithFields(log.Fields{
+			string(static.UUIDKey):  ctx.Value(static.UUIDKey),
+			string(static.ErrorKey): err.Error(),
+		}).Error("failed to refused invitation")
+		message = "Failed to refused invitation."
+	} else {
+		message = "Successfully refused invitation."
+	}
 }

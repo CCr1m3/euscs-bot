@@ -19,7 +19,7 @@ func Test_scheduledTaskManager_Add(t *testing.T) {
 	time.Sleep(time.Second)
 	TaskManager.Cancel(Task{ID: "increment"})
 	if a < 10 {
-		t.Errorf("increment was not succesfully ran at least 1000 times: a=%d", a)
+		t.Errorf("increment was not succesfully ran at least 10 times: a=%d", a)
 	}
 	time.Sleep(time.Second)
 	if a > 150 {

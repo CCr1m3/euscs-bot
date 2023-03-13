@@ -15,9 +15,11 @@ func ErrDB(err error) error {
 
 var ErrUsernameInvalid = errors.New("username invalid")
 var ErrUserNotLinked = errors.New("user not linked")
+var ErrAlreadyExists = errors.New("already exists")
 var ErrUserAlreadyLinked = errors.New("user is already linked")
 var ErrUsernameAlreadyLinked = errors.New("username is already linked")
 var ErrNotFound = errors.New("not found")
+var ErrNoTeam = errors.New("no team")
 var ErrTeamFull = errors.New("team full")
 var ErrUserAlreadyInTeam = errors.New("user already in team")
 var ErrTeamnameTaken = errors.New("team name is taken")
