@@ -3,9 +3,11 @@ package rank
 import (
 	"context"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
-func TestGetRankFromUsername(t *testing.T) {
+func TestGetCorestrikeInfoFromUsername(t *testing.T) {
 	type args struct {
 		ctx      context.Context
 		username string
@@ -13,21 +15,41 @@ func TestGetRankFromUsername(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    int
+		want    *CorestrikeResponse
 		wantErr bool
 	}{
-		{name: "haashi", args: args{ctx: context.TODO(), username: "haashi"}, want: 2921},
-		{name: "haashixxx", args: args{ctx: context.TODO(), username: "haashixxx"}, wantErr: true},
+		{
+			name: "haashi", args: args{ctx: context.TODO(), username: "haashi"}, want: &CorestrikeResponse{
+				RankedStats: CorestrikeRankedStats{
+					Rating: 2921,
+					Rank:   71,
+					Role:   "Forward",
+					Wins:   465,
+					Losses: 342,
+					LPHistory: [][2]int{
+						{1665121141421, 2817}, {1665150512089, 2829}, {1665166708009, 2802}, {1665391708710, 2815}, {1665393508936, 2775}, {1665395310037, 2791}, {1665397107865, 2802}, {1665398909929, 2843}, {1665401596526, 2833}, {1665404192644, 2850}, {1665404529245, 2864}, {1665405650696, 2847}, {1665406106675, 2829}, {1665406837142, 2812}, {1665406919958, 2825}, {1665407476678, 2833}, {1665407912910, 2849}, {1665408263988, 2865}, {1665408778100, 2879}, {1665411511567, 2870}, {1665412345995, 2891}, {1665413162253, 2883}, {1665413312513, 2869}, {1665413698656, 2849}, {1665414291419, 2847}, {1665414738023, 2857}, {1665416386290, 2869}, {1665425037241, 2882}, {1665425907046, 2891}, {1665430825855, 2910}, {1665601332205, 2933}, {1665793676729, 2914}, {1665794906652, 2915}, {1665796710643, 2926}, {1665832707597, 2917}, {1665833879158, 2932}, {1665865109234, 2900}, {1665870513494, 2875}, {1665871355072, 2886}, {1665872308645, 2927}, {1665872404439, 2940}, {1665873998636, 2959}, {1666094714991, 2944}, {1666095508630, 2947}, {1666096169139, 2933}, {1666097031748, 2944}, {1666099110186, 2900}, {1666104513934, 2927}, {1666106306759, 2940}, {1666133310256, 2922}, {1666134174493, 2927}, {1666135114797, 2945}, {1666135624373, 2955}, {1666136905525, 2964}, {1666138705100, 2975}, {1666347508386, 2982}, {1666347780493, 2977}, {1666349307686, 2990}, {1666356510845, 2945}, {1666358307903, 2955}, {1667080106147, 2968}, {1667332105881, 2982}, {1667333475198, 2938}, {1667333906161, 2951}, {1667334486222, 2963}, {1667335713490, 2994}, {1667335849201, 3008}, {1667337509518, 2996}, {1667338328987, 2967}, {1667338671857, 2956}, {1667339187289, 2939}, {1667341107937, 2936}, {1667342908461, 2953}, {1667344717611, 2980}, {1667346217548, 2922}, {1667348303594, 2933}, {1667350107618, 2962}, {1667405910502, 2951}, {1667407708913, 2962}, {1667945905813, 2921},
+					},
+				},
+			},
+		},
+		{
+			name: "haashixxx",
+			args: args{
+				ctx:      context.TODO(),
+				username: "haashixxx",
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetRankFromUsername(tt.args.ctx, tt.args.username)
+			got, err := GetCorestrikeInfoFromUsername(tt.args.ctx, tt.args.username)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetRankFromUsername() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetCorestrikeInfoFromUsername() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if got != tt.want {
-				t.Errorf("GetRankFromUsername() = %v, want %v", got, tt.want)
+			if !cmp.Equal(got, tt.want) {
+				t.Errorf("GetCorestrikeInfoFromUsername() diff : %s", cmp.Diff(got, tt.want))
 			}
 		})
 	}

@@ -98,7 +98,7 @@ func UpdateRank(ctx context.Context, playerID string) error {
 		return static.ErrUserNotLinked
 	}
 	log.Infof("updating player elo %s", player.DiscordID)
-	rank, err := GetRankFromUsername(ctx, player.OSUser)
+	info, err := GetCorestrikeInfoFromUsername(ctx, player.OSUser)
 	if err != nil {
 		log.Errorf("failed to retrieve rank of player %s: "+err.Error(), player.DiscordID)
 		if errors.Is(err, static.ErrUsernameInvalid) {
@@ -113,6 +113,7 @@ func UpdateRank(ctx context.Context, playerID string) error {
 		}
 		return err
 	}
+	rank := info.RankedStats.Rating
 	if rank > player.Elo {
 		player.Elo = rank
 	}
@@ -207,4 +208,8 @@ func updatePlayerDiscordRole(ctx context.Context, playerID string) error {
 		}
 	}
 	return err
+}
+
+func Init() {
+	go CopyLeaderboardsRoutine()
 }

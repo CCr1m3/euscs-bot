@@ -1,7 +1,7 @@
 package db
 
 import (
-	"io/ioutil"
+	"io"
 	"testing"
 
 	"github.com/euscs/euscs-bot/internal/env"
@@ -16,7 +16,7 @@ func init() {
 	if err != nil {
 		log.Warning("error loading .env file: " + err.Error())
 	}
-	log.SetOutput(ioutil.Discard)
+	log.SetOutput(io.Discard)
 }
 
 func Test_db_getInstance(t *testing.T) {

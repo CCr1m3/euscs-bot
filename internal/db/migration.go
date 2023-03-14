@@ -13,6 +13,7 @@ var migrations = []string{
 	migration1,
 	migration2,
 	migration3,
+	migration4,
 }
 
 func migrate() error {
@@ -92,6 +93,21 @@ var migration3 = `CREATE TABLE markov (
 	word3	VARCHAR(100) NOT NULL,
 	count INTEGER NOT NULL,
 	PRIMARY KEY (word1,word2,word3)
+);`
+
+var migration4 = `CREATE TABLE leaderboard (
+	username VARCHAR(100),
+	playerID VARCHAR(100),
+	logoID VARCHAR(100),
+	titleID VARCHAR(100),
+	nameplateID VARCHAR(100),
+	emoticonID VARCHAR(100),
+	rating INTEGER,
+	toprole VARCHAR(100),
+	wins INTEGER,
+	losses INTEGER,
+	games INTEGER,
+	PRIMARY KEY (playerID)
 );`
 
 /*var migration4 = `CREATE TABLE matches (

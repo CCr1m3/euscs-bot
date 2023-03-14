@@ -2,11 +2,9 @@ package main
 
 import (
 	"flag"
-	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/euscs/euscs-bot/internal/db"
 	"github.com/euscs/euscs-bot/internal/discord"
@@ -14,6 +12,8 @@ import (
 	"github.com/euscs/euscs-bot/internal/discord/slashcommands"
 	"github.com/euscs/euscs-bot/internal/env"
 	"github.com/euscs/euscs-bot/internal/markov"
+	"github.com/euscs/euscs-bot/internal/random"
+	"github.com/euscs/euscs-bot/internal/rank"
 	"github.com/euscs/euscs-bot/internal/webserver"
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
@@ -24,7 +24,6 @@ func init() {
 }
 
 func main() {
-	rand.Seed(time.Now().Unix())
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Warning("error loading .env file: " + err.Error())
@@ -36,9 +35,13 @@ func main() {
 	} else {
 		log.SetLevel(log.InfoLevel)
 	}
+	random.Init()
 	db.Init()
 	discord.Init()
 	markov.Init()
+	if env.Mode != "dev" {
+		rank.Init()
+	}
 	//credits.Init()
 	slashcommands.Init()
 	interactions.Init()
