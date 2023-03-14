@@ -220,3 +220,23 @@ func TestTeam_SetOwner(t *testing.T) {
 		}
 	})
 }
+
+func TestPlayer_LeaveTeam(t *testing.T) {
+	Clear()
+	Init()
+	ctx := context.TODO()
+	p, _ := CreatePlayerWithID(ctx, "12345")
+	t.Run("noteam", func(t *testing.T) {
+		err := p.LeaveTeam(ctx)
+		if !errors.Is(err, static.ErrNoTeam) {
+			t.Errorf("unexpected error, should be: %s", static.ErrNoTeam)
+		}
+	})
+	p.CreateTeamWithName(ctx, "teamname")
+	t.Run("leave", func(t *testing.T) {
+		err := p.LeaveTeam(ctx)
+		if err != nil {
+			t.Errorf("unexpected error: %s", err)
+		}
+	})
+}

@@ -18,6 +18,11 @@ func (p AcceptInvite) Name() string {
 
 func (p AcceptInvite) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	ctx := context.WithValue(context.Background(), static.UUIDKey, uuid.New())
+	log.WithFields(log.Fields{
+		string(static.UUIDKey):         ctx.Value(static.UUIDKey),
+		string(static.CallerIDKey):     i.User.ID,
+		string(static.InvitationIDKey): i.Message.ID,
+	}).Info("accept invitation interaction invoked")
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
@@ -77,6 +82,11 @@ func (p RefuseInvite) Name() string {
 
 func (p RefuseInvite) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	ctx := context.WithValue(context.Background(), static.UUIDKey, uuid.New())
+	log.WithFields(log.Fields{
+		string(static.UUIDKey):         ctx.Value(static.UUIDKey),
+		string(static.CallerIDKey):     i.User.ID,
+		string(static.InvitationIDKey): i.Message.ID,
+	}).Info("refuse invitation interaction invoked")
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{

@@ -61,6 +61,9 @@ func (p *Player) Invite(ctx context.Context, p2 *Player) (*TeamInvitation, error
 	if len(team.Players) >= 3 {
 		return nil, static.ErrTeamFull
 	}
+	if team.OwnerID != p.DiscordID {
+		return nil, static.ErrNotTeamOwner
+	}
 	team2, err := p2.GetTeam(ctx)
 	if err != nil && !errors.Is(err, static.ErrNotFound) {
 		return nil, err
@@ -107,6 +110,23 @@ func (p *Player) Invite(ctx context.Context, p2 *Player) (*TeamInvitation, error
 		return nil, static.ErrDB(err)
 	}
 	return &TeamInvitation{Player: p2, Team: team, MessageID: messageID, Timestamp: timestamp, State: InvitationPending}, nil
+}
+
+func (p *Player) KickPlayerFromTeam(ctx context.Context, p2 *Player) error {
+	team, err := p.GetTeam(ctx)
+	if err != nil {
+		if errors.Is(err, static.ErrNotFound) {
+			return static.ErrNoTeam
+		}
+		return err
+	}
+	if team.OwnerID != p.DiscordID {
+		return static.ErrNotTeamOwner
+	}
+	if p.DiscordID == p2.DiscordID {
+		return static.ErrOwnerNotInTeam
+	}
+	return team.KickPlayer(ctx, p2)
 }
 
 func (ti *TeamInvitation) Accept(ctx context.Context) error {

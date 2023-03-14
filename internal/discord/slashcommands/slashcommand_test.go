@@ -17,17 +17,17 @@ func Test_compareCommands(t *testing.T) {
 		want bool
 	}{
 		{name: "basic", args: args{
-			slashcommand: Who{},
+			slashcommand: Link{},
 			appcommand: &discordgo.ApplicationCommand{
-				Name:                     Who{}.Name(),
-				Description:              Who{}.Description(),
-				Options:                  Who{}.Options(),
-				DefaultMemberPermissions: Who{}.RequiredPerm(),
+				Name:                     Link{}.Name(),
+				Description:              Link{}.Description(),
+				Options:                  Link{}.Options(),
+				DefaultMemberPermissions: Link{}.RequiredPerm(),
 			},
 		}, want: true,
 		},
 		{name: "false", args: args{
-			slashcommand: Who{},
+			slashcommand: Link{},
 			appcommand: &discordgo.ApplicationCommand{
 				Name:                     Link{}.Name(),
 				Description:              Link{}.Description(),

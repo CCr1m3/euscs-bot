@@ -201,6 +201,21 @@ func (p *Player) GetTeam(ctx context.Context) (*Team, error) {
 	return &team, nil
 }
 
+func (p *Player) LeaveTeam(ctx context.Context) error {
+	team, err := p.GetTeam(ctx)
+	if err != nil {
+		if errors.Is(err, static.ErrNotFound) {
+			return static.ErrNoTeam
+		}
+		return err
+	}
+	if p.DiscordID == team.OwnerID {
+		return team.Delete(ctx)
+	} else {
+		return team.KickPlayer(ctx, p)
+	}
+}
+
 func GetTeams(ctx context.Context) ([]*Team, error) {
 	teams := []*Team{}
 	err := db.Select(&teams, "SELECT name,ownerplayerID FROM teams")

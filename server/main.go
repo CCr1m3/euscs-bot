@@ -39,7 +39,7 @@ func main() {
 	db.Init()
 	discord.Init()
 	markov.Init()
-	if env.Mode != "dev" {
+	if env.Mode != env.DEV {
 		rank.Init()
 	}
 	//credits.Init()

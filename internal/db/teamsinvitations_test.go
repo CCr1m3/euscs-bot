@@ -126,3 +126,41 @@ func TestTeamInvitation_Refuse(t *testing.T) {
 		}
 	})
 }
+
+func TestPlayer_Kick(t *testing.T) {
+	Clear()
+	Init()
+	ctx := context.TODO()
+	p1, _ := CreatePlayerWithID(ctx, "12345")
+	p2, _ := CreatePlayerWithID(ctx, "12346")
+	p3, _ := CreatePlayerWithID(ctx, "12347")
+	p4, _ := CreatePlayerWithID(ctx, "12348")
+	team1, _ := p1.CreateTeamWithName(ctx, "team1")
+	team1.AddPlayer(ctx, p2)
+	team1.AddPlayer(ctx, p3)
+	t.Run("kickowner", func(t *testing.T) {
+		err := p1.KickPlayerFromTeam(ctx, p1)
+		if !errors.Is(err, static.ErrOwnerNotInTeam) {
+			t.Errorf("unexpected error, should be: %s", static.ErrOwnerNotInTeam)
+		}
+	})
+	t.Run("kick", func(t *testing.T) {
+		err := p1.KickPlayerFromTeam(ctx, p2)
+		if err != nil {
+			t.Errorf("unexpected error: %s", err)
+		}
+	})
+	t.Run("kicknotinteam", func(t *testing.T) {
+		err := p1.KickPlayerFromTeam(ctx, p4)
+		if !errors.Is(err, static.ErrPlayerNotInTeam) {
+			t.Errorf("unexpected error, should be: %s", static.ErrPlayerNotInTeam)
+		}
+	})
+
+	t.Run("noteam", func(t *testing.T) {
+		err := p4.KickPlayerFromTeam(ctx, p1)
+		if !errors.Is(err, static.ErrNoTeam) {
+			t.Errorf("unexpected error, should be: %s", static.ErrNoTeam)
+		}
+	})
+}
