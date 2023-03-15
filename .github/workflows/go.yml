@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       mode: dev
-      db: mysql
+      dbtype: mysql
       DB_DATABASE: euos
       DB_USER: osuser
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}

@@ -29,10 +29,10 @@ func Test_compareCommands(t *testing.T) {
 		{name: "false", args: args{
 			slashcommand: Link{},
 			appcommand: &discordgo.ApplicationCommand{
-				Name:                     Link{}.Name(),
-				Description:              Link{}.Description(),
-				Options:                  Link{}.Options(),
-				DefaultMemberPermissions: Link{}.RequiredPerm(),
+				Name:                     Unlink{}.Name(),
+				Description:              Unlink{}.Description(),
+				Options:                  Unlink{}.Options(),
+				DefaultMemberPermissions: Unlink{}.RequiredPerm(),
 			},
 		}, want: false,
 		},
