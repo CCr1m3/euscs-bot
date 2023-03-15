@@ -90,22 +90,17 @@ func Init() {
 		}
 		registeredCommands[i] = cmd
 	}
-}
-
-func Stop() {
-	if env.Mode == env.PROD {
-		session := discord.GetSession()
-
-		log.Println("removing commands...")
-		registeredCommands, err := session.ApplicationCommands(session.State.User.ID, discord.GuildID)
-		if err != nil {
-			log.Errorf("Could not fetch registered commands: %v", err)
+	for _, prevCommand := range previouslyRegisteredCommands {
+		delete := true
+		for _, command := range commands {
+			if command.Name() == prevCommand.Name {
+				delete = false
+			}
 		}
-
-		for _, v := range registeredCommands {
-			err := session.ApplicationCommandDelete(session.State.User.ID, discord.GuildID, v.ID)
+		if delete {
+			err := session.ApplicationCommandDelete(session.State.User.ID, discord.GuildID, prevCommand.ID)
 			if err != nil {
-				log.Errorf("cannot delete '%v' command: %v", v.Name, err)
+				log.Errorf("cannot delete '%v' command: %v", prevCommand.Name, err)
 			}
 		}
 	}

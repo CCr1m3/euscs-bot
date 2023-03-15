@@ -52,6 +52,5 @@ func main() {
 	log.Info("initialization done")
 	<-stop
 	log.Info("gracefully shutting down.")
-	slashcommands.Stop()
 	discord.Stop()
 }
