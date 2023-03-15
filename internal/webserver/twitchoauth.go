@@ -105,8 +105,7 @@ func twitchRedirectHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
-	player.TwitchID = user.Data.Users[0].ID
-	err = player.Save(ctx)
+	err = player.SetTwitchID(ctx, user.Data.Users[0].ID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -124,8 +123,7 @@ func twitchLogoutHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
-	player.TwitchID = ""
-	err = player.Save(ctx)
+	err = player.SetTwitchID(ctx, "")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))

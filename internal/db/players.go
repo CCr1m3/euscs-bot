@@ -16,18 +16,30 @@ type Player struct {
 }
 type Players []*Player
 
-func (p *Player) Save(ctx context.Context) error {
-	if p.DiscordID == "" {
-		return static.ErrDiscordIDRequired
-	}
-	_, err := GetPlayerByID(ctx, p.DiscordID)
-	if err != nil {
-		return err
-	}
-	_, err = db.NamedExec("UPDATE players SET twitchID=:twitchID,elo=:elo,osuser=:osuser WHERE discordID=:discordID", p)
+func (p *Player) SetTwitchID(ctx context.Context, twitchID string) error {
+	_, err := db.Exec("UPDATE players SET twitchID=? WHERE discordID=?", twitchID, p.DiscordID)
 	if err != nil {
 		return static.ErrDB(err)
 	}
+	p.TwitchID = twitchID
+	return nil
+}
+
+func (p *Player) SetOSUser(ctx context.Context, OSUser string) error {
+	_, err := db.Exec("UPDATE players SET osuser=? WHERE discordID=?", OSUser, p.DiscordID)
+	if err != nil {
+		return static.ErrDB(err)
+	}
+	p.OSUser = OSUser
+	return nil
+}
+
+func (p *Player) SetElo(ctx context.Context, elo int) error {
+	_, err := db.Exec("UPDATE players SET elo=? WHERE discordID=?", elo, p.DiscordID)
+	if err != nil {
+		return static.ErrDB(err)
+	}
+	p.Elo = elo
 	return nil
 }
 

@@ -26,8 +26,7 @@ func LinkPlayerToUsername(ctx context.Context, playerID string, username string)
 		} else if err != nil && !errors.Is(err, static.ErrNotFound) {
 			return err
 		}
-		player.OSUser = username
-		err = player.Save(ctx)
+		player.SetOSUser(ctx, username)
 		if err != nil {
 			return err
 		}
@@ -49,9 +48,11 @@ func UnlinkPlayer(ctx context.Context, playerID string) error {
 	if player.OSUser == "" {
 		return static.ErrUserNotLinked
 	}
-	player.Elo = 0
-	player.OSUser = ""
-	err = player.Save(ctx)
+	err = player.SetElo(ctx, 0)
+	if err != nil {
+		return err
+	}
+	err = player.SetOSUser(ctx, "")
 	if err != nil {
 		return err
 	}
@@ -117,12 +118,12 @@ func UpdateRank(ctx context.Context, playerID string) error {
 	}
 	rank := info.RankedStats.Rating
 	if rank > player.Elo {
-		player.Elo = rank
+		player.SetElo(ctx, rank)
+		if err != nil {
+			log.Errorf("failed to update player %s: "+err.Error(), player.DiscordID)
+		}
 	}
-	err = player.Save(ctx)
-	if err != nil {
-		log.Errorf("failed to update player %s: "+err.Error(), player.DiscordID)
-	}
+
 	go func() { //update in background
 		err := updatePlayerDiscordRole(ctx, player.DiscordID)
 		if err != nil {

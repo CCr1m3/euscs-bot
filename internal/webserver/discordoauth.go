@@ -116,19 +116,11 @@ func redirectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	session.Values["discordID"] = user.ID
-	p, err := db.GetPlayerByID(ctx, user.ID)
+	_, err = db.GetOrCreatePlayerByID(ctx, user.ID)
 	if err != nil && !errors.Is(err, static.ErrNotFound) {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
-	} else if errors.Is(err, static.ErrNotFound) {
-		p = &db.Player{DiscordID: user.ID}
-		err = p.Save(ctx)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-			return
-		}
 	}
 	err = session.Save(r, w)
 	if err != nil {
