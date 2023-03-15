@@ -20,17 +20,28 @@ func (g *scheduledTaskManager) Add(t Task) {
 	key := t.ID
 	g.m.Store(key, cancel)
 	go func() {
-		log.Debugf("task %v launched for first launch", t.ID)
-		t.Run() //run once
-		for {
-			select {
-			case <-ctx.Done():
-				log.Infof("task %v runner was stopped", t.ID)
-				return
-			case <-time.After(t.Frequency):
-				log.Debugf("task %v launched after %s", t.ID, t.Frequency)
-				t.Run()
+		initTime := time.Now()
+		select {
+		case <-ctx.Done():
+			log.Debugf("task %v runner was stopped", t.ID)
+			return
+		case <-time.After(time.Until(t.At)):
+			log.Debugf("task %v launched for first launch after %s", t.ID, time.Since(initTime))
+			t.Run() //run once
+		}
+		if t.Frequency != 0 {
+			for {
+				select {
+				case <-ctx.Done():
+					log.Debugf("task %v runner was stopped", t.ID)
+					return
+				case <-time.After(t.Frequency):
+					log.Debugf("task %v launched after %s", t.ID, t.Frequency)
+					t.Run()
+				}
 			}
+		} else {
+			log.Debugf("task %v finished", t.ID)
 		}
 	}()
 }
