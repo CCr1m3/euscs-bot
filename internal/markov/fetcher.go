@@ -6,9 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/haashi/omega-strikers-bot/internal/db"
-	"github.com/haashi/omega-strikers-bot/internal/discord"
-	"github.com/haashi/omega-strikers-bot/internal/models"
+	"github.com/euscs/euscs-bot/internal/db"
+	"github.com/euscs/euscs-bot/internal/discord"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -25,23 +24,23 @@ func loadMarkovFromFile(ctx context.Context) {
 	}
 	fileScanner := bufio.NewScanner(readFile)
 	fileScanner.Split(bufio.ScanLines)
-	ms := make([]*models.Markov, 0)
+	ms := make([]*db.Markov, 0)
 	for fileScanner.Scan() {
 		message := fileScanner.Text()
 		words := parse(message)
 		if len(words) > 1 {
-			ms = append(ms, &models.Markov{Word1: "__start__", Word2: words[0], Word3: words[1]})
+			ms = append(ms, &db.Markov{Word1: "__start__", Word2: words[0], Word3: words[1]})
 			for i := range words {
 				if i == len(words)-2 {
-					ms = append(ms, &models.Markov{Word1: words[i], Word2: words[i+1], Word3: "__end__"})
+					ms = append(ms, &db.Markov{Word1: words[i], Word2: words[i+1], Word3: "__end__"})
 					break
 				} else {
-					ms = append(ms, &models.Markov{Word1: words[i], Word2: words[i+1], Word3: words[i+2]})
+					ms = append(ms, &db.Markov{Word1: words[i], Word2: words[i+1], Word3: words[i+2]})
 				}
 			}
 		}
 		if len(words) == 1 {
-			ms = append(ms, &models.Markov{Word1: "__start__", Word2: words[0], Word3: "__end__"})
+			ms = append(ms, &db.Markov{Word1: "__start__", Word2: words[0], Word3: "__end__"})
 
 		}
 		if len(ms) > 400 {
@@ -49,7 +48,7 @@ func loadMarkovFromFile(ctx context.Context) {
 			if err != nil {
 				log.Fatal("failed to save markov occurences: " + err.Error())
 			}
-			ms = make([]*models.Markov, 0)
+			ms = make([]*db.Markov, 0)
 		}
 	}
 	err = db.AddMarkovOccurences(ctx, ms)

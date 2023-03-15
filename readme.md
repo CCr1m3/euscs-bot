@@ -36,9 +36,9 @@ url : https://discord.com/api/oauth2/authorize?client_id={clientid}&permissions=
 
 ## letsgo
 - clone the repo
-- run `cd web && npm run install && npm run build`
+- run `cd web && npm install && npm run build`
 - fill and rename .env.sampe to .env (to get tokens, you'll need to declare applications on discord and twitch dev portals)
 - invite the bot to your discord server (replace {clientID} with your own): https://discord.com/api/oauth2/authorize?client_id={clientid}&permissions=397552920592&scope=applications.commands%20bot
-- run the server : `go run webserver/main.go`
+- run the server : `go run server/main.go`
 - access the web page via localhost:9000
 - you can also live edit the web page using `npm run start` in the web folder, it will proxy the request to the go server (access via localhost:5173)

@@ -3,16 +3,17 @@ package webserver
 import (
 	"context"
 	"encoding/gob"
+	"errors"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/euscs/euscs-bot/internal/db"
+	"github.com/euscs/euscs-bot/internal/env"
+	"github.com/euscs/euscs-bot/internal/scheduled"
+	"github.com/euscs/euscs-bot/internal/static"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/haashi/omega-strikers-bot/internal/db"
-	"github.com/haashi/omega-strikers-bot/internal/models"
-	"github.com/haashi/omega-strikers-bot/internal/scheduled"
 	"golang.org/x/oauth2"
 )
 
@@ -22,9 +23,9 @@ var authorizedStates map[string]string
 
 func initAuth(s *mux.Router) {
 	discordoauth2 = oauth2.Config{
-		RedirectURL:  os.Getenv("discordoauth2redirectURL"),
-		ClientID:     os.Getenv("discordoauth2id"),
-		ClientSecret: os.Getenv("discordoauth2secret"),
+		RedirectURL:  env.Discord.OAuth2RedirectURL,
+		ClientID:     env.Discord.OAuth2ID,
+		ClientSecret: env.Discord.OAuth2Secret,
 		Scopes:       []string{"identify"},
 		Endpoint: oauth2.Endpoint{
 			AuthURL:   "https://discord.com/api/oauth2/authorize",
@@ -79,7 +80,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func redirectHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := context.WithValue(context.Background(), models.UUIDKey, uuid.New())
+	ctx := context.WithValue(context.Background(), static.UUIDKey, uuid.New())
 	session, err := store.Get(r, "session")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -115,7 +116,12 @@ func redirectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	session.Values["discordID"] = user.ID
-	db.CreatePlayer(ctx, user.ID)
+	_, err = db.GetOrCreatePlayerByID(ctx, user.ID)
+	if err != nil && !errors.Is(err, static.ErrNotFound) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
 	err = session.Save(r, w)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

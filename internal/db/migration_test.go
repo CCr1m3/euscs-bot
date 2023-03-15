@@ -5,16 +5,16 @@ import (
 )
 
 func Test_db_migrate(t *testing.T) {
-	clearDB()
-	getInstance()
+	Clear()
+	GetInstance()
 	if err := migrate(); err != nil {
 		t.Errorf("migrate() error: " + err.Error())
 	}
 }
 
 func Test_db_getLatestMigration(t *testing.T) {
-	clearDB()
-	getInstance()
+	Clear()
+	GetInstance()
 	_, err := getLatestMigration()
 	if err == nil {
 		t.Error("getLatestMigration() should be in error, no table migrations yet", err)

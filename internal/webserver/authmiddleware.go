@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/euscs/euscs-bot/internal/static"
 	"github.com/google/uuid"
-	"github.com/haashi/omega-strikers-bot/internal/models"
 )
 
 func newAuthHandler(next http.Handler) http.Handler {
@@ -18,8 +18,8 @@ func newAuthHandler(next http.Handler) http.Handler {
 		discordIDraw, ok := session.Values["discordID"]
 		if ok {
 			discordID := discordIDraw.(string)
-			ctx := context.WithValue(context.Background(), models.UUIDKey, uuid.New())
-			ctx = context.WithValue(ctx, models.CallerIDKey, discordID)
+			ctx := context.WithValue(context.Background(), static.UUIDKey, uuid.New())
+			ctx = context.WithValue(ctx, static.CallerIDKey, discordID)
 			r = r.WithContext(ctx)
 			next.ServeHTTP(w, r)
 		} else {

@@ -2,14 +2,14 @@ name: Go
 
 on:
   pull_request:
-    branches: ["main"]
+    branches: ["main", "test"]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     env:
       mode: dev
-      db: mysql
+      dbtype: mysql
       DB_DATABASE: euos
       DB_USER: osuser
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
@@ -32,7 +32,7 @@ jobs:
           go-version: stable
 
       - name: Install dependencies
-        run: go get .
+        run: go mod download
 
       - name: Build
         run: go build -v ./...

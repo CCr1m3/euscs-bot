@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/euscs/euscs-bot/internal/db"
+	"github.com/euscs/euscs-bot/internal/static"
 	"github.com/gorilla/mux"
-	"github.com/haashi/omega-strikers-bot/internal/db"
-	"github.com/haashi/omega-strikers-bot/internal/models"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -15,8 +15,8 @@ func Init(s *mux.Router) {
 }
 
 func apiHandler(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value(models.CallerIDKey).(string)
-	player, err := db.GetPlayerById(r.Context(), userID)
+	userID := r.Context().Value(static.CallerIDKey).(string)
+	player, err := db.GetPlayerByID(r.Context(), userID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))

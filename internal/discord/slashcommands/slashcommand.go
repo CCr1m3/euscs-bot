@@ -1,10 +1,9 @@
 package slashcommands
 
 import (
-	"os"
-
 	"github.com/bwmarrin/discordgo"
-	"github.com/haashi/omega-strikers-bot/internal/discord"
+	"github.com/euscs/euscs-bot/internal/discord"
+	"github.com/euscs/euscs-bot/internal/env"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -17,7 +16,7 @@ type SlashCommand interface {
 }
 
 var registeredCommands []*discordgo.ApplicationCommand
-var commands = []SlashCommand{Join{}, Leave{}, Result{}, Who{}, Link{}, Unlink{}, Update{}, Cancel{}, Credits{}, Predict{}}
+var commands = []SlashCommand{Link{}, Unlink{}, TeamCreate{}, TeamInvite{}, TeamKick{}, Update{}, TeamInfo{}, TeamLeave{}}
 
 // This doesn't perfectly compare options, but I can't be bothered deep checking literally everything.
 func compareApplicationCommandOption(o1 *discordgo.ApplicationCommandOption, o2 *discordgo.ApplicationCommandOption) bool {
@@ -48,18 +47,20 @@ func compareCommands(slashcommand SlashCommand, appcommand *discordgo.Applicatio
 
 func Init() {
 	session := discord.GetSession()
-
 	commandHandlers := make(map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate))
 	for _, command := range commands {
 		commandHandlers[command.Name()] = command.Run
 	}
 	session.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
-			h(s, i)
+		if i.Type == discordgo.InteractionApplicationCommand {
+			if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
+				h(s, i)
+			}
 		}
+
 	})
 	registeredCommands = make([]*discordgo.ApplicationCommand, len(commands))
-	previouslyRegisteredCommands, err := session.ApplicationCommands(session.State.User.ID, discord.GuildID)
+	previouslyRegisteredCommands, err := session.ApplicationCommands(session.State.User.ID, env.Discord.GuildID)
 	if err != nil {
 		log.Errorf("cannot get previously registered commands.")
 	}
@@ -67,7 +68,7 @@ func Init() {
 		// I don't care about O(n^2) complexity, we won't have that many commands.
 		skip := false
 		for _, prevCommand := range previouslyRegisteredCommands {
-			if compareCommands(command, prevCommand) && os.Getenv("mode") != "prod" {
+			if compareCommands(command, prevCommand) && env.Mode != env.PROD {
 				registeredCommands[i] = prevCommand
 				skip = true
 				break
@@ -83,7 +84,7 @@ func Init() {
 			Options:                  command.Options(),
 			DefaultMemberPermissions: command.RequiredPerm(),
 		}
-		cmd, err := session.ApplicationCommandCreate(session.State.User.ID, discord.GuildID, appCommand)
+		cmd, err := session.ApplicationCommandCreate(session.State.User.ID, env.Discord.GuildID, appCommand)
 		if err != nil {
 			log.Fatalf("Cannot create '%v' command: %v", command.Name(), err)
 		}
@@ -92,22 +93,20 @@ func Init() {
 }
 
 func Stop() {
-	/*session := discord.GetSession()
+	if env.Mode == env.PROD {
+		session := discord.GetSession()
 
-	log.Println("removing commands...")
-	// We need to fetch the commands, since deleting requires the command ID.
-	// We are doing this from the returned commands on line 375, because using
-	// this will delete all the commands, which might not be desirable, so we
-	// are deleting only the commands that we added.
-	registeredCommands, err := session.ApplicationCommands(session.State.User.ID, discord.GuildID)
-	if err != nil {
-		log.Errorf("Could not fetch registered commands: %v", err)
-	}
-
-	for _, v := range registeredCommands {
-		err := session.ApplicationCommandDelete(session.State.User.ID, discord.GuildID, v.ID)
+		log.Println("removing commands...")
+		registeredCommands, err := session.ApplicationCommands(session.State.User.ID, discord.GuildID)
 		if err != nil {
-			log.Errorf("cannot delete '%v' command: %v", v.Name, err)
+			log.Errorf("Could not fetch registered commands: %v", err)
 		}
-	}*/
+
+		for _, v := range registeredCommands {
+			err := session.ApplicationCommandDelete(session.State.User.ID, discord.GuildID, v.ID)
+			if err != nil {
+				log.Errorf("cannot delete '%v' command: %v", v.Name, err)
+			}
+		}
+	}
 }

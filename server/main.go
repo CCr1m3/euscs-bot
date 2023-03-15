@@ -2,19 +2,19 @@ package main
 
 import (
 	"flag"
-	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
-	"github.com/haashi/omega-strikers-bot/internal/credits"
-	"github.com/haashi/omega-strikers-bot/internal/db"
-	"github.com/haashi/omega-strikers-bot/internal/discord"
-	"github.com/haashi/omega-strikers-bot/internal/markov"
-	"github.com/haashi/omega-strikers-bot/internal/matchmaking"
-	"github.com/haashi/omega-strikers-bot/internal/slashcommands"
-	"github.com/haashi/omega-strikers-bot/internal/webserver"
+	"github.com/euscs/euscs-bot/internal/db"
+	"github.com/euscs/euscs-bot/internal/discord"
+	"github.com/euscs/euscs-bot/internal/discord/interactions"
+	"github.com/euscs/euscs-bot/internal/discord/slashcommands"
+	"github.com/euscs/euscs-bot/internal/env"
+	"github.com/euscs/euscs-bot/internal/markov"
+	"github.com/euscs/euscs-bot/internal/random"
+	"github.com/euscs/euscs-bot/internal/rank"
+	"github.com/euscs/euscs-bot/internal/webserver"
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
 )
@@ -24,24 +24,28 @@ func init() {
 }
 
 func main() {
-	rand.Seed(time.Now().Unix())
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Warning("error loading .env file: " + err.Error())
 	}
-	logLevel := os.Getenv("loglevel")
-	if logLevel == "debug" {
+	env.Init()
+	if env.LogLevel == env.DEBUG {
 		log.SetLevel(log.DebugLevel)
 		log.SetReportCaller(true)
 	} else {
 		log.SetLevel(log.InfoLevel)
 	}
+	random.Init()
 	db.Init()
 	discord.Init()
 	markov.Init()
-	credits.Init()
+	if env.Mode != env.DEV {
+		rank.Init()
+	}
+	//credits.Init()
 	slashcommands.Init()
-	matchmaking.Init()
+	interactions.Init()
+	//matchmaking.Init()
 	webserver.Init()
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)

@@ -5,9 +5,9 @@ import (
 	"errors"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/euscs/euscs-bot/internal/rank"
+	"github.com/euscs/euscs-bot/internal/static"
 	"github.com/google/uuid"
-	"github.com/haashi/omega-strikers-bot/internal/models"
-	"github.com/haashi/omega-strikers-bot/internal/rank"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -22,7 +22,7 @@ func (p Update) Description() string {
 }
 
 func (p Update) RequiredPerm() *int64 {
-	perm := int64(discordgo.PermissionViewChannel)
+	perm := int64(discordgo.PermissionSendMessages)
 	return &perm
 }
 
@@ -31,11 +31,11 @@ func (p Update) Options() []*discordgo.ApplicationCommandOption {
 }
 
 func (p Update) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	ctx := context.WithValue(context.Background(), models.UUIDKey, uuid.New())
+	ctx := context.WithValue(context.Background(), static.UUIDKey, uuid.New())
 	playerID := i.Member.User.ID
 	log.WithFields(log.Fields{
-		string(models.UUIDKey):     ctx.Value(models.UUIDKey),
-		string(models.CallerIDKey): i.Member.User.ID,
+		string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+		string(static.CallerIDKey): i.Member.User.ID,
 	}).Info("update slash command invoked")
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -45,8 +45,8 @@ func (p Update) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	})
 	if err != nil {
 		log.WithFields(log.Fields{
-			string(models.UUIDKey):  ctx.Value(models.UUIDKey),
-			string(models.ErrorKey): err.Error(),
+			string(static.UUIDKey):  ctx.Value(static.UUIDKey),
+			string(static.ErrorKey): err.Error(),
 		}).Error("failed to send message")
 		return
 	}
@@ -57,33 +57,32 @@ func (p Update) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		})
 		if err != nil {
 			log.WithFields(log.Fields{
-				string(models.UUIDKey):  ctx.Value(models.UUIDKey),
-				string(models.ErrorKey): err.Error(),
+				string(static.UUIDKey):  ctx.Value(static.UUIDKey),
+				string(static.ErrorKey): err.Error(),
 			}).Error("failed to edit message")
 		}
 	}()
 
 	err = rank.UpdateRankIfNeeded(ctx, playerID)
 	if err != nil {
-		var tooFastErr *models.RankUpdateTooFastError
-		var notLinkedErr *models.NotLinkedError
-		if errors.As(err, &tooFastErr) {
+		switch {
+		case errors.Is(err, static.ErrRankUpdateTooFast):
 			log.WithFields(log.Fields{
-				string(models.UUIDKey):     ctx.Value(models.UUIDKey),
-				string(models.CallerIDKey): i.Member.User.ID,
+				string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+				string(static.CallerIDKey): i.Member.User.ID,
 			}).Warning("player update too fast")
 			message = "You have updated your account recently. Please wait before using this command again."
-		} else if errors.As(err, &notLinkedErr) {
+		case errors.Is(err, static.ErrUserNotLinked):
 			log.WithFields(log.Fields{
-				string(models.UUIDKey):     ctx.Value(models.UUIDKey),
-				string(models.CallerIDKey): i.Member.User.ID,
+				string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+				string(static.CallerIDKey): i.Member.User.ID,
 			}).Warning("player is not linked")
 			message = "You have not linked your omega strikers account. Please use 'link' first."
-		} else {
+		default:
 			log.WithFields(log.Fields{
-				string(models.UUIDKey):     ctx.Value(models.UUIDKey),
-				string(models.CallerIDKey): i.Member.User.ID,
-				string(models.ErrorKey):    err.Error(),
+				string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+				string(static.CallerIDKey): i.Member.User.ID,
+				string(static.ErrorKey):    err.Error(),
 			}).Error("failed to update player")
 			message = "Failed to update your rank."
 		}

@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/gob"
 	"net/http"
-	"os"
 
+	"github.com/euscs/euscs-bot/internal/db"
+	"github.com/euscs/euscs-bot/internal/env"
+	"github.com/euscs/euscs-bot/internal/static"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/haashi/omega-strikers-bot/internal/db"
-	"github.com/haashi/omega-strikers-bot/internal/models"
 	"github.com/nicklaw5/helix"
 	"golang.org/x/oauth2"
 )
@@ -18,9 +18,9 @@ var twitchoauth2 oauth2.Config
 
 func initTwitchAuth(s *mux.Router) {
 	twitchoauth2 = oauth2.Config{
-		RedirectURL:  os.Getenv("twitchoauth2redirectURL"),
-		ClientID:     os.Getenv("twitchoauth2id"),
-		ClientSecret: os.Getenv("twitchoauth2secret"),
+		RedirectURL:  env.Twitch.OAuth2RedirectURL,
+		ClientID:     env.Twitch.OAuth2ID,
+		ClientSecret: env.Twitch.OAuth2Secret,
 		Scopes:       []string{},
 		Endpoint: oauth2.Endpoint{
 			AuthURL:   "https://id.twitch.tv/oauth2/authorize",
@@ -36,8 +36,8 @@ func initTwitchAuth(s *mux.Router) {
 
 func twitchAuthHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	discordId := ctx.Value(models.CallerIDKey).(string)
-	player, err := db.GetPlayerById(ctx, discordId)
+	discordId := ctx.Value(static.CallerIDKey).(string)
+	player, err := db.GetPlayerByID(ctx, discordId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -86,7 +86,7 @@ func twitchRedirectHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
-	twitchSession, err := helix.NewClient(&helix.Options{ClientID: os.Getenv("twitchoauth2id"), UserAccessToken: token.AccessToken})
+	twitchSession, err := helix.NewClient(&helix.Options{ClientID: env.Twitch.OAuth2ID, UserAccessToken: token.AccessToken})
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -98,15 +98,14 @@ func twitchRedirectHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
-	discordId := ctx.Value(models.CallerIDKey).(string)
-	player, err := db.GetPlayerById(ctx, discordId)
+	discordId := ctx.Value(static.CallerIDKey).(string)
+	player, err := db.GetPlayerByID(ctx, discordId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
 	}
-	player.TwitchID = user.Data.Users[0].ID
-	err = db.UpdatePlayer(ctx, player)
+	err = player.SetTwitchID(ctx, user.Data.Users[0].ID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -117,15 +116,14 @@ func twitchRedirectHandler(w http.ResponseWriter, r *http.Request) {
 
 func twitchLogoutHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	discordId := ctx.Value(models.CallerIDKey).(string)
-	player, err := db.GetPlayerById(ctx, discordId)
+	discordId := ctx.Value(static.CallerIDKey).(string)
+	player, err := db.GetPlayerByID(ctx, discordId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
 	}
-	player.TwitchID = ""
-	err = db.UpdatePlayer(ctx, player)
+	err = player.SetTwitchID(ctx, "")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
