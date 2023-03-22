@@ -31,7 +31,6 @@ type Tournament struct {
 		t.Matches[matchID].Winner = t.Matches[matchID].Team2
 		winner = t.Matches[matchID].Team2
 	}
-
 }*/
 
 func (t Tournament) getRunningMatches() []*Match {
