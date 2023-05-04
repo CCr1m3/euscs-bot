@@ -100,27 +100,6 @@ func TestCreatePlayerWithID(t *testing.T) {
 	})
 }
 
-func TestPlayer_SetTwitchID(t *testing.T) {
-	Clear()
-	Init()
-	ctx := context.TODO()
-	t.Run("empty", func(t *testing.T) {
-		p := Player{DiscordID: "12345"}
-		err := p.SetTwitchID(ctx, "twitchid")
-		if !errors.Is(err, static.ErrNotFound) {
-			t.Errorf("found unexisting player")
-		}
-	})
-	p, _ := CreatePlayerWithID(ctx, "12345")
-	t.Run("success", func(t *testing.T) {
-		p.SetTwitchID(ctx, "twitchID")
-		p2, _ := GetPlayerByID(ctx, "12345")
-		if !cmp.Equal(p, p2) {
-			t.Errorf("players are different: %s", cmp.Diff(p, p2))
-		}
-	})
-}
-
 func TestPlayer_SetElo(t *testing.T) {
 	Clear()
 	Init()

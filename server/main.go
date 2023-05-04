@@ -8,7 +8,6 @@ import (
 
 	"github.com/euscs/euscs-bot/internal/db"
 	"github.com/euscs/euscs-bot/internal/discord"
-	"github.com/euscs/euscs-bot/internal/discord/interactions"
 	"github.com/euscs/euscs-bot/internal/discord/slashcommands"
 	"github.com/euscs/euscs-bot/internal/env"
 	"github.com/euscs/euscs-bot/internal/markov"
@@ -43,7 +42,6 @@ func main() {
 	}
 	//credits.Init()
 	slashcommands.Init()
-	interactions.Init()
 	//matchmaking.Init()
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)

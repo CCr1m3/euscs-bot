@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/euscs/euscs-bot/internal/db"
@@ -87,7 +89,15 @@ func UpdateRankIfNeeded(ctx context.Context, playerID string) error {
 	if player.OSUser == "" {
 		return static.ErrUserNotLinked
 	}
-	return UpdateRank(ctx, player.DiscordID)
+	updateDelay := time.Hour * 1
+	if os.Getenv("mode") == "dev" {
+		updateDelay = time.Second * 15
+	}
+	if time.Since(time.Unix(int64(player.LastRankUpdate), 0)) > updateDelay {
+		return UpdateRank(ctx, player.DiscordID)
+	} else {
+		return static.ErrRankUpdateTooFast
+	}
 }
 
 func UpdateRank(ctx context.Context, playerID string) error {

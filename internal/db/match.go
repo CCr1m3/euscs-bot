@@ -1,8 +1,8 @@
 package db
 
 type Match struct {
-	Team1         *Team
-	Team2         *Team
+	Team1         []Player   `db:"team1"`
+	Team2         []Player   `db:"team2"`
 	ThreadID      string     `db:"threadID"`
 	MessageID     string     `db:"messageID"`
 	VoteMessageID string     `db:"votemessageID"`

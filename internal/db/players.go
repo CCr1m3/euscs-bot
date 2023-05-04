@@ -4,30 +4,19 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/euscs/euscs-bot/internal/static"
 )
 
 type Player struct {
-	DiscordID string `db:"discordID"`
-	TwitchID  string `db:"twitchID"`
-	Elo       int    `db:"elo"`
-	OSUser    string `db:"osuser"`
+	DiscordID      string `db:"discordID"`
+	Elo            int    `db:"elo"`
+	OSUser         string `db:"osuser"`
+	LastRankUpdate int    `db:"lastrankupdate"`
+	Credits        int    `db:"credits"`
 }
 type Players []*Player
-
-func (p *Player) SetTwitchID(ctx context.Context, twitchID string) error {
-	_, err := GetPlayerByID(ctx, p.DiscordID)
-	if err != nil {
-		return err
-	}
-	_, err = db.Exec("UPDATE players SET twitchID=? WHERE discordID=?", twitchID, p.DiscordID)
-	if err != nil {
-		return static.ErrDB(err)
-	}
-	p.TwitchID = twitchID
-	return nil
-}
 
 func (p *Player) SetOSUser(ctx context.Context, OSUser string) error {
 	_, err := GetPlayerByID(ctx, p.DiscordID)
@@ -51,6 +40,10 @@ func (p *Player) SetElo(ctx context.Context, elo int) error {
 	if err != nil {
 		return static.ErrDB(err)
 	}
+	_, err = db.Exec("UPDATE players SET lastrankupdate=? WHERE discordID=?", time.Now(), p.DiscordID)
+	if err != nil {
+		return static.ErrDB(err)
+	}
 	p.Elo = elo
 	return nil
 }
@@ -71,7 +64,7 @@ func CreatePlayerWithID(ctx context.Context, discordID string) (*Player, error) 
 
 func GetPlayerByID(ctx context.Context, discordID string) (*Player, error) {
 	var player Player
-	err := db.Get(&player, "SELECT discordID,twitchID,elo,osuser FROM players WHERE discordID=?", discordID)
+	err := db.Get(&player, "SELECT discordID,elo,osuser,lastrankupdate,credits FROM players WHERE discordID=?", discordID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, static.ErrNotFound
@@ -83,7 +76,7 @@ func GetPlayerByID(ctx context.Context, discordID string) (*Player, error) {
 
 func GetPlayerByUsername(ctx context.Context, osuser string) (*Player, error) {
 	var player Player
-	err := db.Get(&player, "SELECT discordID,twitchID,elo,osuser FROM players WHERE osuser=?", osuser)
+	err := db.Get(&player, "SELECT discordID,elo,osuser,lastrankupdate,credits FROM players WHERE osuser=?", osuser)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, static.ErrNotFound
