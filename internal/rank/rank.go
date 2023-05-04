@@ -4,12 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/euscs/euscs-bot/internal/db"
 	"github.com/euscs/euscs-bot/internal/discord"
-	"github.com/euscs/euscs-bot/internal/scheduled"
 	"github.com/euscs/euscs-bot/internal/static"
 	log "github.com/sirupsen/logrus"
 )
@@ -26,7 +24,7 @@ func LinkPlayerToUsername(ctx context.Context, playerID string, username string)
 		} else if err != nil && !errors.Is(err, static.ErrNotFound) {
 			return err
 		}
-		player.SetOSUser(ctx, username)
+		err = player.SetOSUser(ctx, username)
 		if err != nil {
 			return err
 		}
@@ -214,5 +212,5 @@ func updatePlayerDiscordRole(ctx context.Context, playerID string) error {
 }
 
 func Init() {
-	scheduled.TaskManager.Add(scheduled.Task{ID: "copyLeaderboards", Run: CopyLeaderboardsRoutine, Frequency: time.Hour * 24, At: time.Now().Add(time.Hour)})
+
 }

@@ -14,7 +14,6 @@ import (
 	"github.com/euscs/euscs-bot/internal/markov"
 	"github.com/euscs/euscs-bot/internal/random"
 	"github.com/euscs/euscs-bot/internal/rank"
-	"github.com/euscs/euscs-bot/internal/webserver"
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
 )
@@ -46,7 +45,6 @@ func main() {
 	slashcommands.Init()
 	interactions.Init()
 	//matchmaking.Init()
-	webserver.Init()
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	log.Info("initialization done")

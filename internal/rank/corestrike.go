@@ -7,65 +7,98 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/euscs/euscs-bot/internal/static"
 )
 
-type CorestrikeRankedStats struct {
-	Rating    int      `json:"rating"`
-	Rank      int      `json:"rank"`
-	Role      string   `json:"role"`
-	Wins      int      `json:"wins"`
-	Losses    int      `json:"losses"`
-	LPHistory [][2]int `json:"lp_history"`
-}
 type CorestrikeResponse struct {
-	RankedStats    CorestrikeRankedStats `json:"rankedStats"`
-	PlayerID       string                `json:"playerID"`
-	EquippedTitle  string                `json:"equippedTitle"`
-	EquippedBanner string                `json:"equippedBanner"`
-	EquippedAvatar string                `json:"equippedAvatar"`
-	Error          string                `json:"error"`
+	RankedStats struct {
+		Username      string  `json:"username"`
+		Rating        int     `json:"rating"`
+		RatingDisplay string  `json:"rating_display"`
+		Rank          int     `json:"rank"`
+		Role          string  `json:"role"`
+		Wins          int     `json:"wins"`
+		Losses        int     `json:"losses"`
+		Winpercent    string  `json:"winpercent"`
+		Toppercent    string  `json:"toppercent"`
+		Verified      bool    `json:"verified"`
+		IsRanked      bool    `json:"is_ranked"`
+		LpHistory     [][]any `json:"lp_history"`
+	} `json:"rankedStats"`
+	CharacterStats struct {
+		Forwards []struct {
+			Name        string `json:"name"`
+			DisplayName string `json:"display_name"`
+			Wins        int    `json:"wins"`
+			Losses      int    `json:"losses"`
+			Assists     int    `json:"assists"`
+			Mvp         int    `json:"mvp"`
+			Knockouts   int    `json:"knockouts"`
+			Scores      int    `json:"scores"`
+			Saves       int    `json:"saves"`
+		} `json:"forwards"`
+		Goalies []struct {
+			Name        string `json:"name"`
+			DisplayName string `json:"display_name"`
+			Wins        int    `json:"wins"`
+			Losses      int    `json:"losses"`
+			Assists     int    `json:"assists"`
+			Mvp         int    `json:"mvp"`
+			Knockouts   int    `json:"knockouts"`
+			Scores      int    `json:"scores"`
+			Saves       int    `json:"saves"`
+		} `json:"goalies"`
+	} `json:"characterStats"`
+	OverallStats struct {
+		Forwards struct {
+			Name        string `json:"name"`
+			DisplayName string `json:"display_name"`
+			Wins        int    `json:"wins"`
+			Losses      int    `json:"losses"`
+			Assists     int    `json:"assists"`
+			Mvp         int    `json:"mvp"`
+			Knockouts   int    `json:"knockouts"`
+			Scores      int    `json:"scores"`
+			Saves       int    `json:"saves"`
+		} `json:"forwards"`
+		Goalies struct {
+			Name        string `json:"name"`
+			DisplayName string `json:"display_name"`
+			Wins        int    `json:"wins"`
+			Losses      int    `json:"losses"`
+			Assists     int    `json:"assists"`
+			Mvp         int    `json:"mvp"`
+			Knockouts   int    `json:"knockouts"`
+			Scores      int    `json:"scores"`
+			Saves       int    `json:"saves"`
+		} `json:"goalies"`
+	} `json:"overallStats"`
+	Error string `json:"error"`
 }
 
 func GetCorestrikeInfoFromUsername(ctx context.Context, username string) (*CorestrikeResponse, error) {
-	corestrikeUrl := fmt.Sprintf("https://corestrike.gg/lookup/%s?region=Europe&json=true", url.PathEscape(username))
+	corestrikeUrl := fmt.Sprintf("https://corestrike.gg/lookup/%s?region=Global&json=true", url.PathEscape(username))
 	resp, err := http.Get(corestrikeUrl)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	jsonStr, err := io.ReadAll(resp.Body)
+	jsonBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 	var response CorestrikeResponse
-	err = json.Unmarshal(jsonStr, &response)
+	err = json.Unmarshal(jsonBytes, &response)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error == "" {
+	if strings.EqualFold(response.Error, "") {
 		return &response, nil
+	} else if strings.EqualFold(response.Error, "Invalid username") {
+		return nil, static.ErrUsernameInvalid
 	} else {
-		corestrikeUrl = fmt.Sprintf("https://corestrike.gg/lookup/%s&json=true", url.PathEscape(username))
-		resp, err = http.Get(corestrikeUrl)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-		jsonStr, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-		var response CorestrikeResponse
-		err = json.Unmarshal(jsonStr, &response)
-		if err != nil {
-			return nil, err
-		}
-		if response.Error == "" {
-			return &response, nil
-		} else {
-			return nil, static.ErrCorestrikeNotFound
-		}
+		return nil, static.ErrCorestrikeNotFound
 	}
 }

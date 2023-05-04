@@ -89,7 +89,7 @@ func (p Link) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 				string(static.CallerIDKey): i.Member.User.ID,
 				string(static.UsernameKey): username,
 			}).Warning("failed to link player, username invalid")
-			message = fmt.Sprintf("Failed to link because username does not exist: %s", username)
+			message = fmt.Sprintf("Failed to link because username does not exist: %s (Perhaps you just have not reached Top 10,000 yet)", username)
 		case errors.Is(err, static.ErrUserAlreadyLinked):
 			log.WithFields(log.Fields{
 				string(static.UUIDKey):     ctx.Value(static.UUIDKey),
