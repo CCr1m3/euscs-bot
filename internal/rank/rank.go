@@ -91,7 +91,7 @@ func UpdateRankIfNeeded(ctx context.Context, playerID string) error {
 	}
 	updateDelay := time.Hour * 1
 	if os.Getenv("mode") == "dev" {
-		updateDelay = time.Second * 15
+		updateDelay = time.Second * 30
 	}
 	if time.Since(time.Unix(int64(player.LastRankUpdate), 0)) > updateDelay {
 		return UpdateRank(ctx, player.DiscordID)

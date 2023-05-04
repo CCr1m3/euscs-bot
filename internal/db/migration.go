@@ -12,8 +12,6 @@ var migrations = []string{
 	migration0,
 	migration1,
 	migration2,
-	migration3,
-	migration4,
 }
 
 func migrate() error {
@@ -60,34 +58,12 @@ var migration1 = `CREATE TABLE players (
     discordID VARCHAR(100) UNIQUE NOT NULL,
 		elo INTEGER DEFAULT 1500 NOT NULL,
 		osuser VARCHAR(100) DEFAULT "" NOT NULL,
-		twitchID VARCHAR(100) default "",
+		lastrankupdate INT NOT NULL,
+		credits INT NOT NULL,
 		PRIMARY KEY (discordID)
 );`
 
-var migration2 = `CREATE TABLE teams (
-	name VARCHAR(100) UNIQUE NOT NULL,
-	ownerplayerID VARCHAR(100) UNIQUE NOT NULL,
-	FOREIGN KEY (ownerplayerID) REFERENCES players(discordID),
-	PRIMARY KEY(name)
-);
-CREATE TABLE teamsplayers (
-	playerID VARCHAR(100) UNIQUE NOT NULL,
-	team VARCHAR(100) NOT NULL,
-	FOREIGN KEY (playerID) REFERENCES players(discordID),
-	FOREIGN KEY (team) REFERENCES teams(name),
-	PRIMARY KEY (playerID,team)
-);
-CREATE TABLE teamsinvitations (
-	playerID VARCHAR(100) NOT NULL,
-	team VARCHAR(100) NOT NULL,
-	messageID VARCHAR(100) UNIQUE NOT NULL,
-	timestamp INTEGER NOT NULL,
-	state INTEGER DEFAULT 0 NOT NULL,
-	PRIMARY KEY (messageID)
-);
-`
-
-var migration3 = `CREATE TABLE markov (
+var migration2 = `CREATE TABLE markov (
 	word1 VARCHAR(100) NOT NULL,
 	word2	VARCHAR(100) NOT NULL,
 	word3	VARCHAR(100) NOT NULL,
@@ -95,20 +71,42 @@ var migration3 = `CREATE TABLE markov (
 	PRIMARY KEY (word1,word2,word3)
 );`
 
-var migration4 = `CREATE TABLE leaderboard (
-	username VARCHAR(100),
-	playerID VARCHAR(100),
-	logoID VARCHAR(100),
-	titleID VARCHAR(100),
-	nameplateID VARCHAR(100),
-	emoticonID VARCHAR(100),
-	rating INTEGER,
-	toprole VARCHAR(100),
-	wins INTEGER,
-	losses INTEGER,
-	games INTEGER,
-	PRIMARY KEY (playerID)
-);`
+// var migration2 = `CREATE TABLE teams (
+// 	name VARCHAR(100) UNIQUE NOT NULL,
+// 	ownerplayerID VARCHAR(100) UNIQUE NOT NULL,
+// 	FOREIGN KEY (ownerplayerID) REFERENCES players(discordID),
+// 	PRIMARY KEY(name)
+// );
+// CREATE TABLE teamsplayers (
+// 	playerID VARCHAR(100) UNIQUE NOT NULL,
+// 	team VARCHAR(100) NOT NULL,
+// 	FOREIGN KEY (playerID) REFERENCES players(discordID),
+// 	FOREIGN KEY (team) REFERENCES teams(name),
+// 	PRIMARY KEY (playerID,team)
+// );
+// CREATE TABLE teamsinvitations (
+// 	playerID VARCHAR(100) NOT NULL,
+// 	team VARCHAR(100) NOT NULL,
+// 	messageID VARCHAR(100) UNIQUE NOT NULL,
+// 	timestamp INTEGER NOT NULL,
+// 	state INTEGER DEFAULT 0 NOT NULL,
+// 	PRIMARY KEY (messageID)
+// );`
+
+// var migration4 = `CREATE TABLE leaderboard (
+// 	username VARCHAR(100),
+// 	playerID VARCHAR(100),
+// 	logoID VARCHAR(100),
+// 	titleID VARCHAR(100),
+// 	nameplateID VARCHAR(100),
+// 	emoticonID VARCHAR(100),
+// 	rating INTEGER,
+// 	toprole VARCHAR(100),
+// 	wins INTEGER,
+// 	losses INTEGER,
+// 	games INTEGER,
+// 	PRIMARY KEY (playerID)
+// );`
 
 /*var migration4 = `CREATE TABLE matches (
 	matchID VARCHAR(100) UNIQUE NOT NULL,

@@ -48,6 +48,19 @@ func (p *Player) SetElo(ctx context.Context, elo int) error {
 	return nil
 }
 
+func (p *Player) SetCredits(ctx context.Context, credits int) error {
+	_, err := GetPlayerByID(ctx, p.DiscordID)
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("UPDATE players SET credits=? WHERE discordID=?", credits, p.DiscordID)
+	if err != nil {
+		return static.ErrDB(err)
+	}
+	p.Credits = credits
+	return nil
+}
+
 func CreatePlayerWithID(ctx context.Context, discordID string) (*Player, error) {
 	_, err := GetPlayerByID(ctx, discordID)
 	if err != nil && !errors.Is(err, static.ErrNotFound) {
