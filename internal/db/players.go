@@ -16,7 +16,67 @@ type Player struct {
 	LastRankUpdate int    `db:"lastrankupdate"`
 	Credits        int    `db:"credits"`
 }
-type Players []*Player
+type Players []Player
+
+func CreatePlayerWithID(ctx context.Context, discordID string) (*Player, error) {
+	_, err := GetPlayerByID(ctx, discordID)
+	if err != nil && !errors.Is(err, static.ErrNotFound) {
+		return nil, err
+	} else if err == nil {
+		return nil, static.ErrAlreadyExists
+	}
+	_, err = db.Exec("INSERT INTO players (discordID) VALUES (?)", discordID)
+	if err != nil {
+		return nil, static.ErrDB(err)
+	}
+	return &Player{DiscordID: discordID, Elo: 1500}, nil
+}
+
+func GetPlayerByID(ctx context.Context, discordID string) (*Player, error) {
+	var player Player
+	err := db.Get(&player, "SELECT discordID,elo,osuser,lastrankupdate,credits FROM players WHERE discordID=?", discordID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, static.ErrNotFound
+		}
+		return nil, static.ErrDB(err)
+	}
+	return &player, nil
+}
+
+func GetPlayerByUsername(ctx context.Context, osuser string) (*Player, error) {
+	var player Player
+	err := db.Get(&player, "SELECT discordID,elo,osuser,lastrankupdate,credits FROM players WHERE osuser=?", osuser)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, static.ErrNotFound
+		}
+		return nil, static.ErrDB(err)
+	}
+	return &player, nil
+}
+
+func GetOrCreatePlayerByID(ctx context.Context, discordID string) (*Player, error) {
+	p, err := GetPlayerByID(ctx, discordID)
+	if err != nil && errors.Is(err, static.ErrNotFound) {
+		return CreatePlayerWithID(ctx, discordID)
+	} else if err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
+func GetPlayersOrderedByCredits(ctx context.Context) (*Players, error) {
+	var players Players
+	err := db.Get(&players, "SELECT discordID,elo,osuser,lastrankupdate,credits FROM players ORDER BY credits DESC")
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, static.ErrNotFound
+		}
+		return nil, static.ErrDB(err)
+	}
+	return &players, nil
+}
 
 func (p *Player) SetOSUser(ctx context.Context, OSUser string) error {
 	_, err := GetPlayerByID(ctx, p.DiscordID)
@@ -69,54 +129,6 @@ func (p *Player) SetCredits(ctx context.Context, credits int) error {
 	}
 	p.Credits = credits
 	return nil
-}
-
-func CreatePlayerWithID(ctx context.Context, discordID string) (*Player, error) {
-	_, err := GetPlayerByID(ctx, discordID)
-	if err != nil && !errors.Is(err, static.ErrNotFound) {
-		return nil, err
-	} else if err == nil {
-		return nil, static.ErrAlreadyExists
-	}
-	_, err = db.Exec("INSERT INTO players (discordID) VALUES (?)", discordID)
-	if err != nil {
-		return nil, static.ErrDB(err)
-	}
-	return &Player{DiscordID: discordID, Elo: 1500}, nil
-}
-
-func GetPlayerByID(ctx context.Context, discordID string) (*Player, error) {
-	var player Player
-	err := db.Get(&player, "SELECT discordID,elo,osuser,lastrankupdate,credits FROM players WHERE discordID=?", discordID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, static.ErrNotFound
-		}
-		return nil, static.ErrDB(err)
-	}
-	return &player, nil
-}
-
-func GetPlayerByUsername(ctx context.Context, osuser string) (*Player, error) {
-	var player Player
-	err := db.Get(&player, "SELECT discordID,elo,osuser,lastrankupdate,credits FROM players WHERE osuser=?", osuser)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, static.ErrNotFound
-		}
-		return nil, static.ErrDB(err)
-	}
-	return &player, nil
-}
-
-func GetOrCreatePlayerByID(ctx context.Context, discordID string) (*Player, error) {
-	p, err := GetPlayerByID(ctx, discordID)
-	if err != nil && errors.Is(err, static.ErrNotFound) {
-		return CreatePlayerWithID(ctx, discordID)
-	} else if err != nil {
-		return nil, err
-	}
-	return p, nil
 }
 
 func (p *Player) isDummy() bool {

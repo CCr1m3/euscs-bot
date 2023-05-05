@@ -35,7 +35,7 @@ func (p Update) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	playerID := i.Member.User.ID
 	log.WithFields(log.Fields{
 		string(static.UUIDKey):     ctx.Value(static.UUIDKey),
-		string(static.CallerIDKey): i.Member.User.ID,
+		string(static.CallerIDKey): playerID,
 	}).Info("update slash command invoked")
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,

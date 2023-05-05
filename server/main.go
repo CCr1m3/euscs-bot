@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/euscs/euscs-bot/internal/credits"
 	"github.com/euscs/euscs-bot/internal/db"
 	"github.com/euscs/euscs-bot/internal/discord"
 	"github.com/euscs/euscs-bot/internal/discord/slashcommands"
@@ -40,7 +41,7 @@ func main() {
 	if env.Mode != env.DEV {
 		rank.Init()
 	}
-	//credits.Init()
+	credits.Init()
 	slashcommands.Init()
 	//matchmaking.Init()
 	stop := make(chan os.Signal, 1)
