@@ -12,6 +12,7 @@ var migrations = []string{
 	migration0,
 	migration1,
 	migration2,
+	migration3,
 }
 
 func migrate() error {
@@ -71,44 +72,14 @@ var migration2 = `CREATE TABLE markov (
 	PRIMARY KEY (word1,word2,word3)
 );`
 
-// var migration2 = `CREATE TABLE teams (
-// 	name VARCHAR(100) UNIQUE NOT NULL,
-// 	ownerplayerID VARCHAR(100) UNIQUE NOT NULL,
-// 	FOREIGN KEY (ownerplayerID) REFERENCES players(discordID),
-// 	PRIMARY KEY(name)
-// );
-// CREATE TABLE teamsplayers (
-// 	playerID VARCHAR(100) UNIQUE NOT NULL,
-// 	team VARCHAR(100) NOT NULL,
-// 	FOREIGN KEY (playerID) REFERENCES players(discordID),
-// 	FOREIGN KEY (team) REFERENCES teams(name),
-// 	PRIMARY KEY (playerID,team)
-// );
-// CREATE TABLE teamsinvitations (
-// 	playerID VARCHAR(100) NOT NULL,
-// 	team VARCHAR(100) NOT NULL,
-// 	messageID VARCHAR(100) UNIQUE NOT NULL,
-// 	timestamp INTEGER NOT NULL,
-// 	state INTEGER DEFAULT 0 NOT NULL,
-// 	PRIMARY KEY (messageID)
-// );`
-
-// var migration4 = `CREATE TABLE leaderboard (
-// 	username VARCHAR(100),
-// 	playerID VARCHAR(100),
-// 	logoID VARCHAR(100),
-// 	titleID VARCHAR(100),
-// 	nameplateID VARCHAR(100),
-// 	emoticonID VARCHAR(100),
-// 	rating INTEGER,
-// 	toprole VARCHAR(100),
-// 	wins INTEGER,
-// 	losses INTEGER,
-// 	games INTEGER,
-// 	PRIMARY KEY (playerID)
-// );`
-
-/*var migration4 = `CREATE TABLE matches (
+var migration3 = `CREATE TABLE queue (
+	playerID VARCHAR(100) UNIQUE NOT NULL,
+	role VARCHAR(100) DEFAULT "" NOT NULL,
+	entrytime INTEGER NOT NULL,
+	PRIMARY KEY (playerID),
+	FOREIGN KEY (playerID) REFERENCES players(discordID)
+);
+CREATE TABLE matches (
 	matchID VARCHAR(100) UNIQUE NOT NULL,
 	messageID VARCHAR(100) UNIQUE,
 	votemessageID VARCHAR(100),
@@ -126,4 +97,14 @@ CREATE TABLE matchesplayers (
 	FOREIGN KEY (playerID) REFERENCES players(discordID),
 	FOREIGN KEY (matchID) REFERENCES matches(matchID),
 	PRIMARY KEY (playerID,matchID)
-);`*/
+);
+CREATE TABLE predictions (
+	matchID VARCHAR(100) NOT NULL,
+	team INTEGER NOT NULL,
+	playerID VARCHAR(100) NOT NULL,
+	amount INTEGER NOT NULL,
+	FOREIGN KEY (playerID) REFERENCES players(discordID),
+	FOREIGN KEY (matchID) REFERENCES matches(matchID),
+	PRIMARY KEY (playerID,matchID)
+);
+`

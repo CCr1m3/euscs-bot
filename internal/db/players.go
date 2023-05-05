@@ -16,7 +16,7 @@ type Player struct {
 	LastRankUpdate int    `db:"lastrankupdate"`
 	Credits        int    `db:"credits"`
 }
-type Players []Player
+type Players []*Player
 
 func CreatePlayerWithID(ctx context.Context, discordID string) (*Player, error) {
 	_, err := GetPlayerByID(ctx, discordID)
@@ -66,16 +66,16 @@ func GetOrCreatePlayerByID(ctx context.Context, discordID string) (*Player, erro
 	return p, nil
 }
 
-func GetPlayersOrderedByCredits(ctx context.Context) (*Players, error) {
+func GetPlayersOrderedByCredits(ctx context.Context) (Players, error) {
 	var players Players
-	err := db.Get(&players, "SELECT discordID,elo,osuser,lastrankupdate,credits FROM players ORDER BY credits DESC")
+	err := db.Select(&players, "SELECT discordID,elo,osuser,lastrankupdate,credits FROM players ORDER BY credits DESC")
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, static.ErrNotFound
 		}
 		return nil, static.ErrDB(err)
 	}
-	return &players, nil
+	return players, nil
 }
 
 func (p *Player) SetOSUser(ctx context.Context, OSUser string) error {

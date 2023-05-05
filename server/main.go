@@ -12,6 +12,7 @@ import (
 	"github.com/euscs/euscs-bot/internal/discord/slashcommands"
 	"github.com/euscs/euscs-bot/internal/env"
 	"github.com/euscs/euscs-bot/internal/markov"
+	"github.com/euscs/euscs-bot/internal/matchmaking"
 	"github.com/euscs/euscs-bot/internal/random"
 	"github.com/euscs/euscs-bot/internal/rank"
 	"github.com/joho/godotenv"
@@ -43,7 +44,7 @@ func main() {
 	}
 	credits.Init()
 	slashcommands.Init()
-	//matchmaking.Init()
+	matchmaking.Init()
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	log.Info("initialization done")

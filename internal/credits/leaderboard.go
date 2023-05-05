@@ -23,7 +23,7 @@ func updateLeaderboard() {
 		}).Error("failed to get players ordered by credits")
 		return
 	}
-	nbMessagesNeeded := (len(*players)-1)/10 + 1
+	nbMessagesNeeded := (len(players)-1)/5 + 1
 	session := discord.GetSession()
 	messages, err := session.ChannelMessages(discord.LeaderboardChannel.ID, 100, "", "", "")
 	if err != nil {
@@ -62,8 +62,8 @@ func updateLeaderboard() {
 		return
 	}
 	contents := make([]string, nbMessagesNeeded)
-	for i, player := range *players {
-		contents[i/10] += fmt.Sprintf("%d: %s (%d credits)\n", i+1, "<@"+player.DiscordID+">", player.Credits)
+	for i, player := range players {
+		contents[i/5] += fmt.Sprintf("%d: %s (%d credits)\n", i+1, "<@"+player.DiscordID+">", player.Credits)
 	}
 	for i := 0; i < nbMessagesNeeded; i++ {
 		_, err := session.ChannelMessageEdit(discord.LeaderboardChannel.ID, messages[i].ID, contents[nbMessagesNeeded-i-1])
@@ -78,5 +78,5 @@ func updateLeaderboard() {
 }
 
 func Init() {
-	scheduled.TaskManager.Add(scheduled.Task{ID: "updateLeaderboard", Run: updateLeaderboard, Frequency: time.Second * 10})
+	scheduled.TaskManager.Add(scheduled.Task{ID: "updateLeaderboard", Run: updateLeaderboard, Frequency: time.Minute * 5})
 }
