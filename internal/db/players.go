@@ -40,11 +40,21 @@ func (p *Player) SetElo(ctx context.Context, elo int) error {
 	if err != nil {
 		return static.ErrDB(err)
 	}
-	_, err = db.Exec("UPDATE players SET lastrankupdate=? WHERE discordID=?", time.Now(), p.DiscordID)
+	p.Elo = elo
+	return nil
+}
+
+func (p *Player) SetLastUpdate(ctx context.Context) error {
+	_, err := GetPlayerByID(ctx, p.DiscordID)
+	if err != nil {
+		return err
+	}
+	lastRankUpdate := int(time.Now().Unix())
+	_, err = db.Exec("UPDATE players SET lastrankupdate=? WHERE discordID=?", lastRankUpdate, p.DiscordID)
 	if err != nil {
 		return static.ErrDB(err)
 	}
-	p.Elo = elo
+	p.LastRankUpdate = lastRankUpdate
 	return nil
 }
 

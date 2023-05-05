@@ -126,10 +126,14 @@ func UpdateRank(ctx context.Context, playerID string) error {
 	}
 	rank := info.RankedStats.Rating
 	if rank > player.Elo {
-		player.SetElo(ctx, rank)
+		err = player.SetElo(ctx, rank)
 		if err != nil {
 			log.Errorf("failed to update player %s: "+err.Error(), player.DiscordID)
 		}
+	}
+	err = player.SetLastUpdate(ctx)
+	if err != nil {
+		log.Errorf("failed to update time of user %s: "+err.Error(), player.DiscordID)
 	}
 
 	go func() { //update in background
