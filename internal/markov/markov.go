@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"math/rand"
+	"os"
 	"strings"
 
 	"github.com/euscs/euscs-bot/internal/db"
@@ -24,6 +25,7 @@ func Init() {
 		log.Info("deleted table markov")
 		log.Info("fetching all messages from discord server")
 		fetchAllMessages(ctx)
+		os.Remove("messages")
 		log.Info("done loading messages into db")
 	}
 	session := discord.GetSession()
