@@ -17,22 +17,22 @@ func Test_compareCommands(t *testing.T) {
 		want bool
 	}{
 		{name: "basic", args: args{
-			slashcommand: Link{},
+			slashcommand: Sync{},
 			appcommand: &discordgo.ApplicationCommand{
-				Name:                     Link{}.Name(),
-				Description:              Link{}.Description(),
-				Options:                  Link{}.Options(),
-				DefaultMemberPermissions: Link{}.RequiredPerm(),
+				Name:                     Sync{}.Name(),
+				Description:              Sync{}.Description(),
+				Options:                  Sync{}.Options(),
+				DefaultMemberPermissions: Sync{}.RequiredPerm(),
 			},
 		}, want: true,
 		},
 		{name: "false", args: args{
-			slashcommand: Link{},
+			slashcommand: Unsync{},
 			appcommand: &discordgo.ApplicationCommand{
-				Name:                     Unlink{}.Name(),
-				Description:              Unlink{}.Description(),
-				Options:                  Unlink{}.Options(),
-				DefaultMemberPermissions: Unlink{}.RequiredPerm(),
+				Name:                     Unsync{}.Name(),
+				Description:              Unsync{}.Description(),
+				Options:                  Unsync{}.Options(),
+				DefaultMemberPermissions: Unsync{}.RequiredPerm(),
 			},
 		}, want: false,
 		},

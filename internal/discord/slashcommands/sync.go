@@ -13,33 +13,33 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type Link struct{}
+type Sync struct{}
 
-func (p Link) Name() string {
-	return "link"
+func (p Sync) Name() string {
+	return "sync"
 }
 
-func (p Link) Description() string {
-	return "Allow you to link to an omega strikers account."
+func (p Sync) Description() string {
+	return "Allows you to sync to an omega strikers account."
 }
 
-func (p Link) RequiredPerm() *int64 {
+func (p Sync) RequiredPerm() *int64 {
 	perm := int64(discordgo.PermissionSendMessages)
 	return &perm
 }
 
-func (p Link) Options() []*discordgo.ApplicationCommandOption {
+func (p Sync) Options() []*discordgo.ApplicationCommandOption {
 	return []*discordgo.ApplicationCommandOption{
 		{
 			Name:        "username",
-			Description: "User name in omega strikers",
+			Description: "Username in omega strikers",
 			Type:        discordgo.ApplicationCommandOptionString,
 			Required:    true,
 		},
 	}
 }
 
-func (p Link) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func (p Sync) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	options := i.ApplicationCommandData().Options
 	optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
 	for _, opt := range options {
@@ -52,11 +52,11 @@ func (p Link) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		string(static.UUIDKey):     ctx.Value(static.UUIDKey),
 		string(static.CallerIDKey): playerID,
 		string(static.UsernameKey): username,
-	}).Info("Link slash command invoked")
+	}).Info("Sync slash command invoked")
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: "Link slash command invoked. Please wait...",
+			Content: "Sync slash command invoked. Please wait...",
 		},
 	})
 	if err != nil {
@@ -81,36 +81,36 @@ func (p Link) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 	err = rank.LinkPlayerToUsername(ctx, playerID, username)
 	if err != nil {
-		log.Errorf("failed to link player %s with username %s: "+err.Error(), playerID, username)
+		log.Errorf("failed to sync player %s with username %s: "+err.Error(), playerID, username)
 		switch {
 		case errors.Is(err, static.ErrUsernameInvalid):
 			log.WithFields(log.Fields{
 				string(static.UUIDKey):     ctx.Value(static.UUIDKey),
 				string(static.CallerIDKey): i.Member.User.ID,
 				string(static.UsernameKey): username,
-			}).Warning("failed to link player, username invalid")
-			message = fmt.Sprintf("Failed to link because username does not exist: %s (Perhaps you just have not reached Top 10,000 yet)", username)
+			}).Warning("failed to sync player, username invalid")
+			message = fmt.Sprintf("Failed to sync because username does not exist: %s", username)
 		case errors.Is(err, static.ErrUserAlreadyLinked):
 			log.WithFields(log.Fields{
 				string(static.UUIDKey):     ctx.Value(static.UUIDKey),
 				string(static.CallerIDKey): i.Member.User.ID,
 			}).Warning("failed to link player, user already linked")
-			message = "You have already linked an omega strikers account. Please contact a mod if you want to unlink."
+			message = "You have already synchronized an omega strikers account. Please contact a mod if you want to unsync."
 		case errors.Is(err, static.ErrUsernameAlreadyLinked):
 			log.WithFields(log.Fields{
 				string(static.UUIDKey):     ctx.Value(static.UUIDKey),
 				string(static.CallerIDKey): i.Member.User.ID,
 				string(static.UsernameKey): username,
-			}).Warning("failed to link player, username already linked")
-			message = fmt.Sprintf("%s is already linked to an account. Please contact a mod if you think you are the rightful owner of the account.", username)
+			}).Warning("failed to sync player, username already synced")
+			message = fmt.Sprintf("%s is already synchronized to an account. Please contact a mod if you think you are the rightful owner of the account.", username)
 		default:
 			log.WithFields(log.Fields{
 				string(static.UUIDKey):     ctx.Value(static.UUIDKey),
 				string(static.CallerIDKey): i.Member.User.ID,
 				string(static.UsernameKey): username,
 				string(static.ErrorKey):    err.Error(),
-			}).Error("failed to link player")
-			message = fmt.Sprintf("Failed to link to %s.", username)
+			}).Error("failed to sync player")
+			message = fmt.Sprintf("Failed to sync to %s.", username)
 		}
 		return
 	}
@@ -118,26 +118,26 @@ func (p Link) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		string(static.UUIDKey):     ctx.Value(static.UUIDKey),
 		string(static.CallerIDKey): i.Member.User.ID,
 		string(static.UsernameKey): username,
-	}).Info("player successfully linked")
-	message = fmt.Sprintf("Successfully linked to %s.", username)
+	}).Info("player successfully synced")
+	message = fmt.Sprintf("Successfully synchronized to %s.", username)
 }
 
-type Unlink struct{}
+type Unsync struct{}
 
-func (p Unlink) Name() string {
-	return "unlink"
+func (p Unsync) Name() string {
+	return "unsync"
 }
 
-func (p Unlink) Description() string {
-	return "Allow mods to unlink someone from his omega strikers."
+func (p Unsync) Description() string {
+	return "Allow mods to unsync someone from his omega strikers."
 }
 
-func (p Unlink) RequiredPerm() *int64 {
+func (p Unsync) RequiredPerm() *int64 {
 	perm := int64(discordgo.PermissionModerateMembers)
 	return &perm
 }
 
-func (p Unlink) Options() []*discordgo.ApplicationCommandOption {
+func (p Unsync) Options() []*discordgo.ApplicationCommandOption {
 	return []*discordgo.ApplicationCommandOption{
 		{
 			Name:        "discorduser",
@@ -148,7 +148,7 @@ func (p Unlink) Options() []*discordgo.ApplicationCommandOption {
 	}
 }
 
-func (p Unlink) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func (p Unsync) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	ctx := context.WithValue(context.Background(), static.UUIDKey, uuid.New())
 	options := i.ApplicationCommandData().Options
 	optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
@@ -161,11 +161,11 @@ func (p Unlink) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		string(static.UUIDKey):     ctx.Value(static.UUIDKey),
 		string(static.CallerIDKey): callerID,
 		string(static.PlayerIDKey): user.ID,
-	}).Info("unlink slash command invoked")
+	}).Info("unsync slash command invoked")
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: "Unlink slash command invoked. Please wait...",
+			Content: "Unsync slash command invoked. Please wait...",
 		},
 	})
 	if err != nil {
@@ -188,7 +188,7 @@ func (p Unlink) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 	}()
 	if i.Member.Permissions&discordgo.PermissionModerateMembers != discordgo.PermissionModerateMembers {
-		message = "You do not have the permission to unlink."
+		message = "You do not have the permission to unsync."
 		return
 	}
 	err = rank.UnlinkPlayer(ctx, user.ID)
@@ -198,18 +198,18 @@ func (p Unlink) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 				string(static.UUIDKey):     ctx.Value(static.UUIDKey),
 				string(static.CallerIDKey): i.Member.User.ID,
 				string(static.PlayerIDKey): user.ID,
-			}).Warning("player is not linked")
-			message = fmt.Sprintf("%s has not linked an omega strikers account.", user.Mention())
+			}).Warning("player is not synced")
+			message = fmt.Sprintf("%s has not synchronized an omega strikers account.", user.Mention())
 		} else {
 			log.WithFields(log.Fields{
 				string(static.UUIDKey):     ctx.Value(static.UUIDKey),
 				string(static.CallerIDKey): i.Member.User.ID,
 				string(static.PlayerIDKey): user.ID,
 				string(static.ErrorKey):    err.Error(),
-			}).Error("failed to unlink player")
-			message = fmt.Sprintf("Failed to unlink %s.", user.Mention())
+			}).Error("failed to unsync player")
+			message = fmt.Sprintf("Failed to unsync %s.", user.Mention())
 		}
 		return
 	}
-	message = fmt.Sprintf("Successfully unlinked %s.", user.Mention())
+	message = fmt.Sprintf("Successfully unsynced %s.", user.Mention())
 }
