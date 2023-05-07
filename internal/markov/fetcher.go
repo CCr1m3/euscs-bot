@@ -50,10 +50,6 @@ func loadMarkovFromFile(ctx context.Context) {
 	if err != nil {
 		log.Fatal("failed to save markov occurences: " + err.Error())
 	}
-	_, err = readFile.WriteString("")
-	if err != nil {
-		log.Errorf("failed to write messages: " + err.Error())
-	}
 	readFile.Close()
 }
 
@@ -96,6 +92,10 @@ func fetchAllMessages(ctx context.Context) {
 			if countIte == 10 {
 				log.Info("done reading lines: ", countLines)
 				loadMarkovFromFile(ctx)
+				_, err = f.WriteString("")
+				if err != nil {
+					log.Errorf("failed to write messages: " + err.Error())
+				}
 				countIte = 0
 			}
 
