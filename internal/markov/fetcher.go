@@ -17,11 +17,6 @@ func loadMarkovFromFile(ctx context.Context) {
 		log.Fatal("failed to open file: " + err.Error())
 		return
 	}
-	err = db.DeleteAllMarkov()
-	if err != nil {
-		log.Fatal("failed to drop table markov: " + err.Error())
-		return
-	}
 	fileScanner := bufio.NewScanner(readFile)
 	fileScanner.Split(bufio.ScanLines)
 	ms := make([]*db.Markov, 0)
@@ -67,6 +62,7 @@ func fetchAllMessages(ctx context.Context) {
 	if err != nil {
 		log.Errorf("failed to get guild channels: " + err.Error())
 	}
+	countIte, countLines := 1, 0
 	for _, channel := range channels {
 		//get all messages
 		log.Debugf("getting messages from %s", channel.Name)
@@ -79,16 +75,32 @@ func fetchAllMessages(ctx context.Context) {
 				if message.Author.ID == session.State.User.ID {
 					continue
 				}
+				if len(message.Content) > 100 {
+					continue
+				}
 				_, err = f.WriteString(strings.ToLower(message.Content) + "\n")
 				if err != nil {
 					log.Errorf("failed to write messages: " + err.Error())
 				}
 			}
-			lastMessage := messages[len(messages)-1]
+			lenMsgs := len(messages)
+			lastMessage := messages[lenMsgs-1]
+			countLines += lenMsgs
 			messages, err = session.ChannelMessages(channel.ID, 100, lastMessage.ID, "", "")
 			if err != nil {
 				log.Errorf("failed to get messages: " + err.Error())
 			}
+			countIte++
+			if countIte == 10 {
+				log.Info("done reading %d lines", countLines)
+				loadMarkovFromFile(ctx)
+				_, err = f.WriteString("")
+				if err != nil {
+					log.Errorf("failed to write messages: " + err.Error())
+				}
+				countIte = 0
+			}
+
 		}
 	}
 }

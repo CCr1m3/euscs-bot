@@ -16,10 +16,14 @@ var reset = flag.Bool("resetmarkov", false, "")
 func Init() {
 	if *reset {
 		ctx := context.Background()
+		err := db.DeleteAllMarkov()
+		if err != nil {
+			log.Fatal("failed to drop table markov: " + err.Error())
+			return
+		}
+		log.Info("deleted table markov")
 		log.Info("fetching all messages from discord server")
 		fetchAllMessages(ctx)
-		log.Info("loading all messages into db")
-		loadMarkovFromFile(ctx)
 		log.Info("done loading messages into db")
 	}
 	session := discord.GetSession()
