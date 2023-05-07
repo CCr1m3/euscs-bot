@@ -124,7 +124,7 @@ func (p Join) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 	err = matchmaking.AddPlayerToQueue(ctx, playerID, db.Role(role))
 	if err != nil {
-		if errors.As(err, static.ErrUserNotLinked) {
+		if errors.Is(err, static.ErrUserNotLinked) {
 			log.WithFields(log.Fields{
 				string(static.UUIDKey):     ctx.Value(static.UUIDKey),
 				string(static.CallerIDKey): i.Member.User.ID,

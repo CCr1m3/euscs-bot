@@ -48,7 +48,7 @@ func (p Predict) Options() []*discordgo.ApplicationCommandOption {
 			},
 		},
 		{
-			Name:        "Amount",
+			Name:        "amount",
 			Description: "How much are you betting?",
 			Type:        discordgo.ApplicationCommandOptionInteger,
 			Required:    true,
