@@ -92,10 +92,11 @@ func fetchAllMessages(ctx context.Context) {
 			if countIte == 10 {
 				log.Info("done reading lines: ", countLines)
 				loadMarkovFromFile(ctx)
-				_, err = f.WriteString("")
+				err = os.Remove("messages")
 				if err != nil {
-					log.Errorf("failed to write messages: " + err.Error())
+					log.Error("failed to delete markovfile", err.Error)
 				}
+				f, _ = os.Create("messages")
 				countIte = 0
 			}
 

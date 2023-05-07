@@ -25,7 +25,10 @@ func Init() {
 		log.Info("deleted table markov")
 		log.Info("fetching all messages from discord server")
 		fetchAllMessages(ctx)
-		os.Remove("messages")
+		err = os.Remove("messages")
+		if err != nil {
+			log.Error("failed to delete markovfile", err.Error)
+		}
 		log.Info("done loading messages into db")
 	}
 	session := discord.GetSession()
