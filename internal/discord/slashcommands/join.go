@@ -2,7 +2,6 @@ package slashcommands
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
@@ -122,22 +121,32 @@ func (p Join) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		message = "You are already in the queue !"
 		return
 	}
+	player, err := db.GetOrCreatePlayerByID(ctx, playerID)
+	if err != nil {
+		log.WithFields(log.Fields{
+			string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+			string(static.CallerIDKey): i.Member.User.ID,
+			string(static.ErrorKey):    err.Error(),
+		}).Error("unable to reach DB")
+		message = "Sorry, an error has occured."
+		return
+	}
+	if player.OSUser == "" {
+		log.WithFields(log.Fields{
+			string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+			string(static.CallerIDKey): i.Member.User.ID,
+		}).Warning("player is not yet synced")
+		message = "You have not linked your Omega Strikers account. Please use '/sync' first."
+		return
+	}
 	err = matchmaking.AddPlayerToQueue(ctx, playerID, db.Role(role))
 	if err != nil {
-		if errors.Is(err, static.ErrUserNotLinked) {
-			log.WithFields(log.Fields{
-				string(static.UUIDKey):     ctx.Value(static.UUIDKey),
-				string(static.CallerIDKey): i.Member.User.ID,
-			}).Warning("player is not yet linked")
-			message = "You have not linked your Omega Strikers account. Please use '/link' first."
-		} else {
-			log.WithFields(log.Fields{
-				string(static.UUIDKey):     ctx.Value(static.UUIDKey),
-				string(static.CallerIDKey): i.Member.User.ID,
-				string(static.ErrorKey):    err.Error(),
-			}).Error("failed to put player in the queue")
-			message = "Failed to put you in the queue."
-		}
+		log.WithFields(log.Fields{
+			string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+			string(static.CallerIDKey): i.Member.User.ID,
+			string(static.ErrorKey):    err.Error(),
+		}).Error("failed to put player in the queue")
+		message = "Failed to put you in the queue."
 		return
 	}
 	log.WithFields(log.Fields{
