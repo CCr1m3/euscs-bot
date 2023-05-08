@@ -59,8 +59,8 @@ var migration1 = `CREATE TABLE players (
     discordID VARCHAR(100) UNIQUE NOT NULL,
 		elo INTEGER DEFAULT 1500 NOT NULL,
 		osuser VARCHAR(100) DEFAULT "" NOT NULL,
-		lastrankupdate INT NOT NULL,
-		credits INT NOT NULL,
+		lastrankupdate INT NOT NULL DEFAULT 0,
+		credits INT NOT NULL DEFAULT 0,
 		PRIMARY KEY (discordID)
 );`
 
