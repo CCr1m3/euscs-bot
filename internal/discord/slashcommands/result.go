@@ -3,7 +3,6 @@ package slashcommands
 import (
 	"context"
 	"fmt"
-	"math"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/euscs/euscs-bot/internal/db"
@@ -101,7 +100,7 @@ func (p Result) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			string(static.UUIDKey):      ctx.Value(static.UUIDKey),
 			string(static.ChannelIDKey): i.ChannelID,
 		}).Warning("incorrect result values")
-		message = "Please enter proper result values ranging from 0 to 3."
+		message = "Please enter valid result values ranging from 0 to 3."
 		return
 	}
 	inMatch := false
@@ -139,10 +138,10 @@ func (p Result) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		message = "The match is already over."
 		return
 	}
-	if math.Abs(float64(team1Score-team2Score)) < 2 {
-		message = fmt.Sprintf("The result (%d-%d) is not a valid result.", team1Score, team2Score)
-		return
-	}
+	// if math.Abs(float64(team1Score-team2Score)) < 2 {
+	// 	message = fmt.Sprintf("The result (%d-%d) is not a valid result.", team1Score, team2Score)
+	// 	return
+	// }
 	message = "Confirmation started."
 	matchmaking.VoteResultMatch(ctx, match, int(team1Score), int(team2Score))
 }
