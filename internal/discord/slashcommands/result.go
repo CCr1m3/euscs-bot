@@ -95,14 +95,6 @@ func (p Result) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		message = "This channel is not a match lobby."
 		return
 	}
-	if (team1Score > 3 || team1Score < 0) || (team2Score > 3 || team2Score < 0) {
-		log.WithFields(log.Fields{
-			string(static.UUIDKey):      ctx.Value(static.UUIDKey),
-			string(static.ChannelIDKey): i.ChannelID,
-		}).Warning("incorrect result values")
-		message = "Please enter valid result values ranging from 0 to 3."
-		return
-	}
 	inMatch := false
 	for _, p := range match.Team1 {
 		if p.DiscordID == i.Member.User.ID {
@@ -136,6 +128,14 @@ func (p Result) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			string(static.ChannelIDKey): i.ChannelID,
 		}).Warning("can't result, match is over")
 		message = "The match is already over."
+		return
+	}
+	if (team1Score > 3 || team1Score < 0) || (team2Score > 3 || team2Score < 0) {
+		log.WithFields(log.Fields{
+			string(static.UUIDKey):      ctx.Value(static.UUIDKey),
+			string(static.ChannelIDKey): i.ChannelID,
+		}).Warning("incorrect result values")
+		message = "Please enter valid result values ranging from 0 to 3."
 		return
 	}
 	// if math.Abs(float64(team1Score-team2Score)) < 2 {
