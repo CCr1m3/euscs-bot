@@ -5,6 +5,7 @@ import (
 	"context"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/euscs/euscs-bot/internal/db"
 	"github.com/euscs/euscs-bot/internal/discord"
@@ -56,6 +57,7 @@ func loadMarkovFromFile(ctx context.Context) {
 func fetchAllMessages(ctx context.Context) {
 	session := discord.GetSession()
 	f, _ := os.Create("messages")
+	var err error
 	channels, err := session.GuildChannels(discord.GuildID)
 	if err != nil {
 		log.Errorf("failed to get guild channels: " + err.Error())
@@ -70,10 +72,7 @@ func fetchAllMessages(ctx context.Context) {
 		}
 		for len(messages) != 0 {
 			for _, message := range messages {
-				if message.Author.ID == session.State.User.ID {
-					continue
-				}
-				if len(message.Content) > 100 {
+				if message.Author.ID == session.State.User.ID || len(message.Content) > 100 {
 					continue
 				}
 				_, err = f.WriteString(strings.ToLower(message.Content) + "\n")
@@ -86,7 +85,18 @@ func fetchAllMessages(ctx context.Context) {
 			countLines += lenMsgs
 			messages, err = session.ChannelMessages(channel.ID, 100, lastMessage.ID, "", "")
 			if err != nil {
-				log.Errorf("failed to get messages: " + err.Error())
+				// definitely need a better way of catching this error
+				if strings.Contains(err.Error(), "500 Internal Server Error") {
+					log.Info("failed to request messages" + err.Error())
+					log.Info("reattempting request...")
+					time.Sleep(time.Second / 10)
+					messages, err = session.ChannelMessages(channel.ID, 100, lastMessage.ID, "", "")
+					if err != nil {
+						log.Errorf("failed to reattempt request" + err.Error())
+					}
+				} else {
+					log.Errorf("failed to get messages: " + err.Error())
+				}
 			}
 			countIte++
 			if countIte == 10 {
