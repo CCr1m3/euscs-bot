@@ -108,6 +108,10 @@ func (p Updatecredits) Run(s *discordgo.Session, i *discordgo.InteractionCreate)
 		message = "You do not have the permission to update credits."
 		return
 	}
+	if amount < 0 {
+		message = "Please enter a positive number."
+		return
+	}
 
 	player, err := db.GetOrCreatePlayerByID(ctx, user.ID)
 	if err != nil {
@@ -127,7 +131,6 @@ func (p Updatecredits) Run(s *discordgo.Session, i *discordgo.InteractionCreate)
 			message = "Failed to update credits."
 			return
 		}
-
 	case "add":
 		player.Credits += amount
 		err = player.SetCredits(ctx, player.Credits)
@@ -150,4 +153,5 @@ func (p Updatecredits) Run(s *discordgo.Session, i *discordgo.InteractionCreate)
 		}
 	}
 	message = fmt.Sprintf("Successfully updated credits of %s.", user.Mention())
+	log.Info("updated user: ", user.ID, " ; option: ", option, "; amount: ", amount)
 }
