@@ -77,7 +77,7 @@ func (p Update) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 				string(static.UUIDKey):     ctx.Value(static.UUIDKey),
 				string(static.CallerIDKey): i.Member.User.ID,
 			}).Warning("player is not linked")
-			message = "You have not linked your omega strikers account. Please use 'link' first."
+			message = "You have not synchronized your Omega Strikers account. Please use \"sync\" first."
 		default:
 			log.WithFields(log.Fields{
 				string(static.UUIDKey):     ctx.Value(static.UUIDKey),
