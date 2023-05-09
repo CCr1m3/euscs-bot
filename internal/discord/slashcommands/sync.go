@@ -129,7 +129,7 @@ func (p Unsync) Name() string {
 }
 
 func (p Unsync) Description() string {
-	return "Allow mods to unsync someone from his omega strikers."
+	return "Allow mods to unsync someone from his Omega Strikers' account."
 }
 
 func (p Unsync) RequiredPerm() *int64 {
@@ -141,7 +141,7 @@ func (p Unsync) Options() []*discordgo.ApplicationCommandOption {
 	return []*discordgo.ApplicationCommandOption{
 		{
 			Name:        "discorduser",
-			Description: "User in discord",
+			Description: "User in Discord",
 			Type:        discordgo.ApplicationCommandOptionUser,
 			Required:    true,
 		},

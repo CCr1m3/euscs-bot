@@ -138,10 +138,6 @@ func (p Result) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		message = "Please enter valid result values ranging from 0 to 3."
 		return
 	}
-	// if math.Abs(float64(team1Score-team2Score)) < 2 {
-	// 	message = fmt.Sprintf("The result (%d-%d) is not a valid result.", team1Score, team2Score)
-	// 	return
-	// }
 	message = "Confirmation started."
 	matchmaking.VoteResultMatch(ctx, match, int(team1Score), int(team2Score))
 }
