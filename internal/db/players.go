@@ -29,7 +29,7 @@ func CreatePlayerWithID(ctx context.Context, discordID string) (*Player, error) 
 	if err != nil {
 		return nil, static.ErrDB(err)
 	}
-	return &Player{DiscordID: discordID, Elo: 1500}, nil
+	return &Player{DiscordID: discordID, Elo: 0}, nil
 }
 
 func GetPlayerByID(ctx context.Context, discordID string) (*Player, error) {

@@ -104,6 +104,6 @@ func initRoles() error {
 			log.Fatalf("failed to create role RoleRookie")
 		}
 	}
-	RankRoles = []*discordgo.Role{RoleOmega, RoleChallenger, RoleDiamond, RolePlatinum, RoleGold, RoleSilver, RoleBronze}
+	RankRoles = []*discordgo.Role{RoleOmega, RoleChallenger, RoleDiamond, RolePlatinum, RoleGold, RoleSilver, RoleBronze, RoleRookie}
 	return err
 }
