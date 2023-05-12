@@ -110,7 +110,7 @@ func handleMatchVoteResult(match *db.Match) {
 	}
 	playersOK := len(reactions[0])
 	playersNOK := len(reactions[1])
-	requiredReactions := 4
+	requiredReactions := 3
 	if os.Getenv("mode") == "dev" {
 		requiredReactions = 1
 	}
@@ -200,15 +200,15 @@ func CloseMatch(ctx context.Context, match *db.Match) error {
 		log.Debugf("paying out players for match %s", match.ID)
 		if match.State == db.MatchStateTeam1Won {
 			for _, p := range match.Team1 {
-				p.Credits += 10
+				p.Credits += 25
 			}
 		} else if match.State == db.MatchStateTeam2Won {
 			for _, p := range match.Team2 {
-				p.Credits += 10
+				p.Credits += 25
 			}
 		}
 		for _, p := range players {
-			p.Credits += 10
+			p.Credits += 25
 			err = p.SetCredits(ctx, p.Credits)
 			if err != nil {
 				log.Errorf("failed to update player %s: "+err.Error(), p.DiscordID)

@@ -78,6 +78,12 @@ func (p Update) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 				string(static.CallerIDKey): i.Member.User.ID,
 			}).Warning("player is not linked")
 			message = "You have not synchronized your Omega Strikers account. Please use \"sync\" first."
+		case errors.Is(err, static.ErrUnrankedUser):
+			log.WithFields(log.Fields{
+				string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+				string(static.CallerIDKey): i.Member.User.ID,
+			}).Warning("player is not linked")
+			message = "Unable to determine rank due to being outside of top 10,000 in global or europe leaderboards."
 		default:
 			log.WithFields(log.Fields{
 				string(static.UUIDKey):     ctx.Value(static.UUIDKey),

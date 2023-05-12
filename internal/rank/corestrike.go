@@ -95,7 +95,27 @@ func GetCorestrikeInfoFromUsername(ctx context.Context, username string) (*Cores
 		return nil, err
 	}
 	if strings.EqualFold(response.Error, "") {
-		return &response, nil
+		if !response.RankedStats.IsRanked {
+			corestrikeUrl := fmt.Sprintf("https://corestrike.gg/lookup/%s?region=Europe&json=true", url.PathEscape(username))
+			resp, err := http.Get(corestrikeUrl)
+			if err != nil {
+				return nil, err
+			}
+			defer resp.Body.Close()
+			jsonBytes, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			err = json.Unmarshal(jsonBytes, &response)
+			if err != nil {
+				return nil, err
+			}
+		}
+		if response.RankedStats.IsRanked {
+			return &response, nil
+		} else {
+			return &response, static.ErrUnrankedUser
+		}
 	} else if strings.EqualFold(response.Error, "Invalid username") {
 		return nil, static.ErrUsernameInvalid
 	} else {

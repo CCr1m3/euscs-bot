@@ -26,7 +26,7 @@ func AddPlayerToQueue(ctx context.Context, playerID string, role db.Role) error 
 	}
 	err = rank.UpdateRankIfNeeded(ctx, playerID)
 	if err != nil {
-		if errors.Is(err, static.ErrRankUpdateTooFast) {
+		if errors.Is(err, static.ErrRankUpdateTooFast) || errors.Is(err, static.ErrUnrankedUser) {
 		} else {
 			log.WithFields(log.Fields{
 				string(static.UUIDKey):     ctx.Value(static.UUIDKey),

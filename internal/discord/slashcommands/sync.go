@@ -103,6 +103,13 @@ func (p Sync) Run(s *discordgo.Session, i *discordgo.InteractionCreate) {
 				string(static.UsernameKey): username,
 			}).Warning("failed to sync player, username already synced")
 			message = fmt.Sprintf("%s is already synchronized to an account. Please contact a mod if you think you are the rightful owner of the account.", username)
+		case errors.Is(err, static.ErrUnrankedUser):
+			log.WithFields(log.Fields{
+				string(static.UUIDKey):     ctx.Value(static.UUIDKey),
+				string(static.CallerIDKey): i.Member.User.ID,
+				string(static.UsernameKey): username,
+			}).Warning("unranked user")
+			message = fmt.Sprintf("Successfully synchronized to %s. However, rank was unable to be determined due to being outside of top 10,000 in both global and europe leaderboards.", username)
 		default:
 			log.WithFields(log.Fields{
 				string(static.UUIDKey):     ctx.Value(static.UUIDKey),

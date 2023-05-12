@@ -32,7 +32,11 @@ func LinkPlayerToUsername(ctx context.Context, playerID string, username string)
 		}
 		err = UpdateRank(ctx, playerID)
 		if err != nil {
-			return err
+			if errors.Is(err, static.ErrUnrankedUser) {
+				return err
+			} else {
+				return err
+			}
 		}
 		return nil
 	} else {
@@ -121,8 +125,16 @@ func UpdateRank(ctx context.Context, playerID string) error {
 				}
 			}
 			return err
+		} else if errors.Is(err, static.ErrUnrankedUser) {
+			log.Warningf("user %s is unranked, unable to retrieve rank of %s", playerID, player.OSUser)
+			err = player.SetLastUpdate(ctx)
+			if err != nil {
+				log.Errorf("failed to update time of user %s: "+err.Error(), player.DiscordID)
+			}
+			return static.ErrUnrankedUser
+		} else {
+			return err
 		}
-		return err
 	}
 	rank := info.RankedStats.Rating
 	if rank > player.Elo {
