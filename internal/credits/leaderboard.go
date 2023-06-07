@@ -64,7 +64,7 @@ func updateLeaderboard() {
 	}
 	contents := make([]string, nbMessagesNeeded)
 	for i, player := range players {
-		contents[i/5] += fmt.Sprintf("%d: %s (%d credits)\n", i+1, "<@"+player.DiscordID+">", player.Credits)
+		contents[i/7] += fmt.Sprintf("%d: %s (%d credits)\n", i+1, "<@"+player.DiscordID+">", player.Credits)
 	}
 	for i := 0; i < nbMessagesNeeded; i++ {
 		_, err := session.ChannelMessageEdit(discord.LeaderboardChannel.ID, messages[i].ID, contents[nbMessagesNeeded-i-1])
