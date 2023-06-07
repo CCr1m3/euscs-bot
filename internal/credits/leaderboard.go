@@ -23,9 +23,10 @@ func updateLeaderboard() {
 		}).Error("failed to get players ordered by credits")
 		return
 	}
-	nbMessagesNeeded := (len(players)-1)/5 + 1
+	nbMessagesNeeded := (len(players)-1)/7 + 1
+	maxMessages := 100
 	session := discord.GetSession()
-	messages, err := session.ChannelMessages(discord.LeaderboardChannel.ID, 100, "", "", "")
+	messages, err := session.ChannelMessages(discord.LeaderboardChannel.ID, maxMessages, "", "", "")
 	if err != nil {
 		log.WithFields(log.Fields{
 			string(static.UUIDKey):  ctx.Value(static.UUIDKey),
