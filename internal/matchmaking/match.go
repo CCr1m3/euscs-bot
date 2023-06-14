@@ -252,7 +252,7 @@ func CloseMatch(ctx context.Context, match *db.Match) error {
 				}
 			}
 		}
-		total -= 50 * ratio
+		total -= 100 * ratio
 		if total > 0 {
 			for _, pred := range predictions {
 				if match.State != db.MatchState(pred.Team) {

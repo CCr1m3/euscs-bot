@@ -236,8 +236,8 @@ func evaluatePlayers(indices *[6]int, players []*db.QueuedPlayer) float64 {
 	}
 	softMaxElo := maxElo
 	// This is "temporary", as in for the foreseeable future. Makes all omega players eligible to play with all other omegas.
-	if softMaxElo > 3400 {
-		softMaxElo = 3400
+	if softMaxElo > 3100 {
+		softMaxElo = 3100
 	}
 	if softMaxElo-minElo > 500 { // This is negative therefore match won't be accepted
 		return float64(eloRange - (maxElo - minElo))

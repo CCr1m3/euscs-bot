@@ -77,5 +77,5 @@ func GetPredictionsTotalOnMatch(ctx context.Context, matchID string) (int, int, 
 		return 0, 0, static.ErrDB(err)
 	}
 	//we had 50 here to make it for low population
-	return team1 + 50, team2 + 50, nil
+	return team1 + 100, team2 + 100, nil
 }
