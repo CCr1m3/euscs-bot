@@ -18,7 +18,7 @@ func (p Update) Name() string {
 }
 
 func (p Update) Description() string {
-	return "Allow you to update discord role using your linked omega strikers account."
+	return "Allows you to update your discord role using your linked Omega Strikers account."
 }
 
 func (p Update) RequiredPerm() *int64 {

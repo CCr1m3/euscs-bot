@@ -5,6 +5,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var RoleProLeague *discordgo.Role
 var RoleOmega *discordgo.Role
 var RoleChallenger *discordgo.Role
 var RoleDiamond *discordgo.Role
@@ -22,6 +23,9 @@ func initRoles() error {
 		return err
 	}
 	for _, role := range roles {
+		if role.Name == "Pro League" {
+			RoleProLeague = role
+		}
 		if role.Name == "Omega" {
 			RoleOmega = role
 		}
@@ -49,8 +53,15 @@ func initRoles() error {
 	}
 	mentionnable := true
 	hoist := true
+	if RoleProLeague == nil {
+		color := 12647899
+		RoleProLeague, err = session.GuildRoleCreate(GuildID, &discordgo.RoleParams{Name: "Pro League", Color: &color, Mentionable: &mentionnable, Hoist: &hoist})
+		if err != nil {
+			log.Fatalf("failed to create role RoleProLeague")
+		}
+	}
 	if RoleOmega == nil {
-		color := 15548997
+		color := 15277667
 		RoleOmega, err = session.GuildRoleCreate(GuildID, &discordgo.RoleParams{Name: "Omega", Color: &color, Mentionable: &mentionnable, Hoist: &hoist})
 		if err != nil {
 			log.Fatalf("failed to create role RoleOmega")
@@ -104,6 +115,6 @@ func initRoles() error {
 			log.Fatalf("failed to create role RoleRookie")
 		}
 	}
-	RankRoles = []*discordgo.Role{RoleOmega, RoleChallenger, RoleDiamond, RolePlatinum, RoleGold, RoleSilver, RoleBronze, RoleRookie}
+	RankRoles = []*discordgo.Role{RoleProLeague, RoleOmega, RoleChallenger, RoleDiamond, RolePlatinum, RoleGold, RoleSilver, RoleBronze, RoleRookie}
 	return err
 }
