@@ -165,7 +165,9 @@ func updatePlayerDiscordRole(ctx context.Context, playerID string) error {
 		return err
 	}
 	var roleToAdd *discordgo.Role
-	if player.Elo >= 2900 {
+	if player.Elo >= 3000 {
+		roleToAdd = discord.RoleProLeague
+	} else if player.Elo >= 2900 {
 		roleToAdd = discord.RoleOmega
 	} else if player.Elo >= 2600 {
 		roleToAdd = discord.RoleChallenger
@@ -189,6 +191,9 @@ func updatePlayerDiscordRole(ctx context.Context, playerID string) error {
 	}
 	var currentRole *discordgo.Role
 	for _, roleID := range member.Roles {
+		if roleID == discord.RoleProLeague.ID {
+			currentRole = discord.RoleProLeague
+		}
 		if roleID == discord.RoleOmega.ID {
 			currentRole = discord.RoleOmega
 		}
@@ -229,7 +234,7 @@ func updatePlayerDiscordRole(ctx context.Context, playerID string) error {
 		if err != nil {
 			return err
 		}
-		_, err = session.ChannelMessageSend(discord.RankUpChannel.ID, fmt.Sprintf("%s just got promoted to %s !", "<@"+player.DiscordID+">", roleToAdd.Name))
+		_, err = session.ChannelMessageSend(discord.RankUpChannel.ID, fmt.Sprintf("%s just got promoted to %s!", "<@"+player.DiscordID+">", roleToAdd.Name))
 		if err != nil {
 			return err
 		}
